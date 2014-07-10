@@ -1,0 +1,55 @@
+/*
+ * Make icons css out of a simple list of icon names
+ */
+/* line 3, ../sass/layout_4link.sass */
+.layout_4link {
+  -webkit-transform: translateZ(0);
+}
+/* line 31, ../sass/_base.scss */
+.layout_4link .signpost {
+  background-image: url('http://ya.wf-res.com/assets/images/icons/icon_signpost.png?1335224463');
+  background-repeat: no-repeat;
+  background-position: center center;
+  height: 32px;
+}
+/* line 31, ../sass/_base.scss */
+.layout_4link .info {
+  background-image: url('http://ya.wf-res.com/assets/images/icons/icon_info.png?1335224463');
+  background-repeat: no-repeat;
+  background-position: center center;
+  height: 32px;
+}
+/* line 31, ../sass/_base.scss */
+.layout_4link .phone {
+  background-image: url('http://ya.wf-res.com/assets/images/icons/icon_phone.png?1335224463');
+  background-repeat: no-repeat;
+  background-position: center center;
+  height: 32px;
+}
+/* line 31, ../sass/_base.scss */
+.layout_4link .camera {
+  background-image: url('http://ya.wf-res.com/assets/images/icons/icon_camera.png?1340669983');
+  background-repeat: no-repeat;
+  background-position: center center;
+  height: 32px;
+}
+/* line 25, ../sass/_base.scss */
+.layout_4link .ui-btn-text {
+  display: none;
+}
+/* line 6, ../sass/layout_4link.sass */
+.layout_4link .ui-btn-inner {
+  padding: 5px !important;
+}
+/* line 13, ../sass/layout_4link.sass */
+.layout_4link .ui-btn-text {
+  display: inherit;
+}
+/* line 16, ../sass/layout_4link.sass */
+.layout_4link .signpost, .layout_4link .info, .layout_4link .phone, .layout_4link .camera {
+  width: 32px;
+  text-indent: -999px;
+  display: block;
+  margin: 0 auto;
+}
+

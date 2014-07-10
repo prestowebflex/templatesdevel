@@ -1,0 +1,31 @@
+!!! 5
+%html
+  %head
+    %title=current_page.data.title || "The Middleman"
+    %meta{name:"viewport", content:"width=device-width, initial-scale=1"}
+    = stylesheet_link_tag "all"
+    = javascript_include_tag  "all"
+  %body{"class" => page_classes}
+    %div{data:{role:"page"}}
+      %div.main-header{data: {role: "header"}}
+        %a.nodelink{href: "#", data: {icon: "arrow-u", iconpos: "left"}} Back
+        %h2=current_page.data.title || "The Middleman"
+        %a.nodelink{href: "#", data: {icon: "home", iconpos: "right"}} Home
+      %div{data:{role:"content"}}
+        =yield
+      %div{data:{theme:"e",role:"footer",position:"fixed"}}
+        %div.layout_4link{data:{role:"navbar"}}
+          %ul
+            %li
+              %a{href:"#"}
+                %span.signpost Directions
+            %li
+              %a{href:"#"}
+                %span.phone Contact
+            %li
+              %a{href:"#"}
+                %span.info Services
+            %li
+              %a{href:"#"}
+                %span.camera Camera
+                
