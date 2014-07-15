@@ -1,0 +1,12 @@
+@import compass/css3
+
+.ui-bar
+  div
+    border: solid 1px black
+  +perspective(600px)
+  +transform-style(preserve-3d)
+  +transition(0.5s ease-in-out)
+  z-index: 900
+.flipped
+  div
+  +transform(rotatey(-180deg))
