@@ -14,6 +14,6 @@ title: Pick a Box
 %div.ui-grid-c
   -4.times.each do
     -('a'..'d').each do |letter|
-      %div{class: "ui-block-#{letter}", style: "padding-bottom: 25%; position: relative; overflow: hidden;"}
-        .ui-bar.ui-bar-e{style:"position: absolute; top:0; left:0; right: 0; bottom: 0;"}
-          %div CONTENT
+      .panel{class: "ui-block-#{letter}"}
+        .front FRONT
+        .back BACK

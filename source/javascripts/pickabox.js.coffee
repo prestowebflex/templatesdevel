@@ -1,4 +1,4 @@
 $ ->
-  $(".ui-bar").click ->
+  $(".panel").click ->
     $(@).toggleClass "flipped"
     false

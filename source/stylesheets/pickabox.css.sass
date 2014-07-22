@@ -1,12 +1,52 @@
 @import compass/css3
 
-.ui-bar
-  div
-    border: solid 1px black
-  +perspective(600px)
-  +transform-style(preserve-3d)
-  +transition(0.5s ease-in-out)
-  z-index: 900
-.flipped
-  div
-  +transform(rotatey(-180deg))
+//.flipped
+//  +transform(rotatey(-180deg))
+
+// the basic panel
+.panel
+  +perspective(800px)
+  //+transform-style(preserve-3d)
+  //+transition(0.5s ease-in-out)
+  // padding for perfect square box!
+  padding-bottom: 25%
+  position: relative
+  // position of boxes
+  .front, .back
+    position: absolute
+    top: 10px
+    left: 10px
+    right: 10px
+    bottom: 10px
+    border: 1px solid #ccc
+
+    +transform-style(preserve-3d)
+    +backface-visibility(hidden)
+    +transition(all 2s ease-in-out)
+  &.flipped .front, &.flipped .back
+    +box-shadow(0 1px 5px rgba(0,0,0,0.9))
+    top: -10px
+    left: -10px
+    right: -10px
+    bottom: -10px
+
+  .front
+    z-index: 900
+    background: #6b7077
+
+    // note about 180 causing an unnatural looking half flip?
+    +transform(rotatey(0deg) rotatex(0deg))
+  &.flipped .front
+    background: #333 // why?
+    +box-shadow(0 15px 50px rgba(0,0,0,0.2)) // why?
+    +transform(rotatey(180deg))
+  .back
+    z-index: 800
+    background: #333
+
+    +transform(rotatey(-179deg) rotatex(0deg))
+  &.flipped .back
+    z-index: 1000 // on top
+    background: #80868d
+    +transform(rotatey(0deg))
+    
