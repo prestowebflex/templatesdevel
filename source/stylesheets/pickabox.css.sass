@@ -28,17 +28,31 @@
   // padding for perfect square box!
   //position: relative
   // position of boxes
+  +transform-style(preserve-3d)
+  +transition(all 0.5s ease-in-out)
+  &.hidden
+    +scale(0)
+    +opacity(0)
+    //+transform(rotatey(-180deg))
+    //+transform-style(preserve-3d)
+    //+backface-visibility(hidden)
+  &.hidden .back
+    display: none
   .front, .back
     position: absolute
-    top: 10px
-    left: 10px
-    right: 10px
-    bottom: 10px
+    top: 2%
+    left: 2%
+    right: 2%
+    bottom: 2%
     border: 1px solid #ccc
-
-    +transform-style(preserve-3d)
     +backface-visibility(hidden)
+    +transform-style(preserve-3d)
     +transition(all 0.5s ease-in-out)
+  &.flipped
+    width: 100%
+    height: 100%
+    left: 0
+    top: 0
   &.flipped .front, &.flipped .back
     +box-shadow(0 1px 5px rgba(0,0,0,0.9))
 
