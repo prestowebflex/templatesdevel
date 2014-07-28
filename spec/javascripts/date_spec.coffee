@@ -11,7 +11,7 @@ describe "Date", ->
   describe "Equal Dates", ->
     d1 = d = md = null
     beforeEach ->
-      d = new Date(0)
+      d = new Date()
       md = new MyDate(d)
       d1 = null
     it "getDateArray", ->
@@ -31,7 +31,7 @@ describe "Date", ->
       
       #console.log(d1)
     afterEach ->
-      expect(d1.getTime()).toEqual 0
+      expect(d1.getTime()).toEqual d.getTime()
       #expect(`d==d1`).toBe true
   xdescribe "As Days of Week", ->
     it "works out next Tuesday Given a saturday", ->
