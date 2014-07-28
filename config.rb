@@ -40,6 +40,13 @@ configure :development do
   activate :livereload
 end
 
+activate :jasmine do |options|
+  #options.fixtures_dir = "sprc"
+end
+activate :sprokets
+
+sprockets.import_asset 'underscore.js' 
+
 # Methods defined in the helpers block are available in templates
 # helpers do
 #   def some_helper
