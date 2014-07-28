@@ -15,8 +15,9 @@ title: Pick a Box
   %div{class: "grid#{count+1}"}
     -((count+1)**2).times.each do |cell|
       .panel{class: "box#{cell+1}"}
-        .front FRONT
-        .back BACK
+        .front
+          .boxicon
+        .back YOUR PRIZE
 -# %div.ui-grid-c
   -# -4.times.each do
     -# -('a'..'d').each do |letter|

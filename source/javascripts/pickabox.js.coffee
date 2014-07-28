@@ -7,3 +7,5 @@ $ ->
       $(@).parent().find(".panel").not(@).addClass "hidden"
       $(@).addClass "flipped"
     false
+  .touch ->
+    false
