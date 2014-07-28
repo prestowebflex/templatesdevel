@@ -27,8 +27,10 @@ delegate = (klass, property, methods...) ->
 delegate_setter = (klass, methods...) ->
   for m in methods
     do (m) -> klass::[m] = (args...) ->
+      # clone the MyDate Class
       o = new klass(@date)
-      o[m](args...)
+      # call the delegate method
+      o.date[m](args...)
       o
 
 class @MyDate
