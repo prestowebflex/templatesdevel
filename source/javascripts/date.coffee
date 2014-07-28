@@ -21,7 +21,11 @@
 ###
 delegate = (klass, property, methods...) ->
   for m in methods
-    do (m) -> klass::[m] = (args...) -> @[property][m](args...)
+    do (m) ->
+      klass::[m] = (args...) ->
+        @[property][m](args...)
+      return
+  return
 
 # setters return @ each time
 delegate_setter = (klass, methods...) ->
@@ -35,7 +39,7 @@ delegate_setter = (klass, methods...) ->
 
 class @MyDate
   # proxy some methods from date onto MyDate
-  delegate @, 'date', 'getFullYear', 'getMonth', 'getDate', 'getHours', 'getMinutes', 'getSeconds', 'getMilliseconds', 'getTime', 
+  delegate @, 'date', 'getFullYear', 'getMonth', 'getDate', 'getHours', 'getMinutes', 'getSeconds', 'getMilliseconds', 'getTime', 'getDay'
   delegate_setter @, 'date', 'setFullYear', 'setMonth', 'setDate', 'setHours', 'setMinutes', 'setSeconds', 'setMilliseconds'
   
   @SUNDAY = 0
@@ -49,6 +53,7 @@ class @MyDate
     if _.isArray(args[0])
       args = args[0] # undo array
     @date = switch args.length
+      when 0 then new Date()
       when 1 then new Date(args[0])
       when 2 then new Date(args[0],args[1])
       when 3 then new Date(args[0],args[1], args[2])
@@ -71,3 +76,12 @@ class @MyDate
     #year, month, date[, hours[, minutes[, seconds[,ms]]]]
     [@getFullYear(), @getMonth(), @getDate(), @getHours(), @getMinutes(), @getSeconds(), @getMilliseconds()]
   
+  # get next Tuesday/ Tuesday week etc...
+  setNextDay: (day, skip=0) ->
+    days = day - @getDay()
+    # if moving backwards then add 7 days (skip 1 period)
+    if days <= 0
+      skip += 1
+    days += 7*skip
+    # return new Object with date set correctly
+    @setDate @getDate() + days

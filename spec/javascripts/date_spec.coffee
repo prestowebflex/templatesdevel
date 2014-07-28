@@ -33,7 +33,34 @@ describe "Date", ->
     afterEach ->
       expect(d1.getTime()).toEqual d.getTime()
       #expect(`d==d1`).toBe true
-  xdescribe "As Days of Week", ->
+  describe "other benavior", ->
+    it "should setup a default date", ->
+      d = new MyDate()
+      expect(d.date).toBeDefined()
+  describe "As Days of Week", ->
     it "works out next Tuesday Given a saturday", ->
-      d = Date()
-      expect(d.dateOfWeek).toBe 1
+      d = new MyDate()
+      expect(d.getDay()).toBe d.getDay()
+  describe "Date operations", ->
+    d = null
+    beforeEach ->
+      # Monday the 28th July 2014
+      d = new MyDate(2014, 6, 28)
+    it "should be a monday", ->
+      expect(d.getDay()).toEqual MyDate.MONDAY
+    afterEach ->
+      # year should stay the same
+      expect(d.getFullYear()).toEqual 2014
+    it "should work out next Monday 4th August", ->
+      d = d.setNextDay(MyDate.MONDAY)
+      expect(d.getMonth()).toEqual 7
+      expect(d.getDate()).toEqual 4
+    it "should work out next Tuesday 29 July", ->
+      d = d.setNextDay(MyDate.TUESDAY)
+      expect(d.getMonth()).toEqual 6
+      expect(d.getDate()).toEqual 29
+    it "should work out next Sunday 3rd August", ->
+      d = d.setNextDay(MyDate.SUNDAY)
+      expect(d.getMonth()).toEqual 7
+      expect(d.getDate()).toEqual 3
+      
