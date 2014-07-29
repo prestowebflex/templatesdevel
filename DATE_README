@@ -1,0 +1,24 @@
+Functions of date object
+
+each operation is a single change only
+
+If values are blank for hour, minute, seconds, milliseconds assume
+set value for date object
+ -> so date is usually set to current time
+
+Jump to next day of week
+nextDay(DAY, HOUR, MINUTE, SECONDS, MILLISECONDS)
+
+Jump to next day of month
+nextDate(DATE, HOUR, MINUTE, SECONDS, MILLISECONDS)
+
+# jump to tomorrow
+tomorrow()
+
+# jump forward a week
+nextWeek()
+
+# jump to next month
+nextMonth()
+
+
