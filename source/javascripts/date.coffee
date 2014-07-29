@@ -54,13 +54,18 @@ class @MyDate
       args = args[0] # undo array
     @date = switch args.length
       when 0 then new Date()
-      when 1 then new Date(args[0])
+      when 1
+        # IE when passed in a date object seems to round off the milliseconds get it's primitiave value
+        if _.isDate(args[0])
+          new Date(args[0].valueOf())
+        else
+          new Date(args[0])
       when 2 then new Date(args[0],args[1])
       when 3 then new Date(args[0],args[1], args[2])
       when 4 then new Date(args[0],args[1], args[2], args[3])
       when 5 then new Date(args[0],args[1], args[2], args[3], args[4])
       when 6 then new Date(args[0],args[1], args[2], args[3], args[4], args[5])
-      when 7 then new Date(args[0],args[1], args[2], args[3], args[4], args[5],args[6])
+      when 7 then new Date(args[0],args[1], args[2], args[3], args[4], args[5], args[6])
   # generate a date object based upon an array
   # this trick calls the constructor for the date object
   # @getDateObject: (a) ->
