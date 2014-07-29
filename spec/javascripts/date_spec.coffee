@@ -16,7 +16,6 @@ describe "Date", ->
       d1 = null
     it "getDateArray", ->
       a = md.getDateArray()
-      console.log md
       d1 = new MyDate(a[0], a[1], a[2], a[3], a[4], a[5], a[6])
       #d1 = Object.create(Date::)
       #Date.apply(d1,md.getDateArray())
