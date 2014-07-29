@@ -77,11 +77,10 @@ class @MyDate
     [@getFullYear(), @getMonth(), @getDate(), @getHours(), @getMinutes(), @getSeconds(), @getMilliseconds()]
   
   # get next Tuesday/ Tuesday week etc...
-  setNextDay: (day, skip=0) ->
+  setNextDay: (day, hour=0, minute=0) ->
     days = day - @getDay()
-    # if moving backwards then add 7 days (skip 1 period)
-    if days <= 0
-      skip += 1
-    days += 7*skip
+    # if moving backwards then add 7 days (skip 1 week)
+    if days < 0
+      days += 7
     # return new Object with date set correctly
     @setDate @getDate() + days

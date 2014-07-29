@@ -41,26 +41,37 @@ describe "Date", ->
     it "works out next Tuesday Given a saturday", ->
       d = new MyDate()
       expect(d.getDay()).toBe d.getDay()
-  describe "Date operations", ->
+  describe "Date operations setNextDay()", ->
     d = null
     beforeEach ->
-      # Monday the 28th July 2014
-      d = new MyDate(2014, 6, 28)
+      # Monday the 28th July 2014 @ 11am
+      d = new MyDate(2014, 6, 28, 11)
+      console.log(d.date)
     it "should be a monday", ->
       expect(d.getDay()).toEqual MyDate.MONDAY
     afterEach ->
       # year should stay the same
       expect(d.getFullYear()).toEqual 2014
+      expect(d.getHours()).toEqual 11
+      expect(d.getMinutes()).toEqual 0
     it "should work out next Monday 4th August", ->
       d = d.setNextDay(MyDate.MONDAY)
       expect(d.getMonth()).toEqual 7
       expect(d.getDate()).toEqual 4
+      expect(d.getDay()).toEqual MyDate.MONDAY
     it "should work out next Tuesday 29 July", ->
       d = d.setNextDay(MyDate.TUESDAY)
       expect(d.getMonth()).toEqual 6
       expect(d.getDate()).toEqual 29
+      expect(d.getDay()).toEqual MyDate.TUESDAY
+    it "should work out next Tuesday week - 5th August", ->
+      d = d.setNextDay(MyDate.TUESDAY,1)
+      expect(d.getMonth()).toEqual 7
+      expect(d.getDate()).toEqual 5
+      expect(d.getDay()).toEqual MyDate.TUESDAY
     it "should work out next Sunday 3rd August", ->
       d = d.setNextDay(MyDate.SUNDAY)
       expect(d.getMonth()).toEqual 7
       expect(d.getDate()).toEqual 3
+      expect(d.getDay()).toEqual MyDate.SUNDAY
       
