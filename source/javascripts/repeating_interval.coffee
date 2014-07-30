@@ -128,14 +128,15 @@ class @RepeatingInterval extends TimeInterval
   class @MonthlyDate extends BaseInterval
     # this is the 1st of the month regarless of date
     # from current one work out next instance
-    
+    _validDates = _.flatten([-3,-2,-1,_.range(1, 32)])
+    console.log _validDates
     setDates: (dates...) ->
       dates = _.flatten(dates)
-      unless _.every(days, (v) -> _.contains(_validDays, v))
+      unless _.every(dates, (v) -> _.contains(_validDates, v))
         throw Error "Days must be between 0 and 6"
-      if days.length == 0
+      if dates.length == 0
         throw Error "Must set at least 1 day" 
-      @days = _.chain(days).uniq().sort().value()
+      @dates = _.chain(dates).uniq().sort().value()
       @
       
     
@@ -155,13 +156,25 @@ class @RepeatingInterval extends TimeInterval
           start.setDate start.getDate() + 1 # increment by 1 day
         @setStart start
         @setEnd new Date(start.valueOf() + @spec.getLength())
+      # quick method to get the number of days in the given month given by date
+      _daysInMonth = (date) ->
+        # go to next month and go back 1 day (0th date)
+        new Date(date.getFullYear(), date.getMonth()+1, 0).getDate()
       _validDate: (date) ->
+        # convert -ve dates into actual date values
+        # -1 means last day of month etc...
+        daysInMonth = _daysInMonth(date) 
+        # convert the dates
+        dates = for v in @spec.dates
+          if v < 0
+            v = (daysInMonth+1) + v # ie if 28 then 28+1 + -1 = 28
+          v
         # is the day of this date one of our target days
-        date.getDate() == @spec.date
+        _.indexOf(dates, date.getDate()) != -1
       #next is simply myself combined with the end interval
-      next: ->
-        # creep it forward 1 ms to move out of current range
-        new MonthlyRepeatingInterval(@spec, new Date(@getEnd().valueOf()+1))
+      
+    # save a reference to this class on the class itself to be reused by the parent classes
+    intervalClass: MonthlyDateRepeatingInterval
 
   class @MonthlyDay extends BaseInterval
     # this handles day of month

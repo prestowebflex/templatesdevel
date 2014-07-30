@@ -89,3 +89,21 @@ describe "RepeatingInterval", ->
          expect(@interval.getStart()).toEqualTime 0,0,0,0
          expect(@interval.getStart()).toEqualDate 1,1,2014
          expect(@interval.getEnd()).toEqualDate 1,1,2014
+
+  describe "Monthly", ->
+    beforeEach ->
+      @i = new RepeatingInterval.MonthlyDate(new Date(2014,0,1))
+    it "works for multiple dates", ->
+      @i.setDates 1,2
+      interval = @i.interval()
+      expect(interval.getStart()).toEqualDate 1,1,2014
+      expect(interval.next().getStart()).toEqualDate 2,1,2014
+      expect(interval.next().next().getStart()).toEqualDate 1,2,2014
+    it "works for -ve dates", ->
+      @i.setDates -1
+      interval = @i.interval()
+      expect(interval.getStart()).toEqualDate 31,1,2014
+      expect(interval.next().getStart()).toEqualDate 28,2,2014
+      expect(interval.next().next().getStart()).toEqualDate 31,3,2014
+      
+      
