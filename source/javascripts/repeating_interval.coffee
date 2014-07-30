@@ -43,6 +43,10 @@ class @RepeatingInterval extends TimeInterval
     next: -> @interval().next()
     
     setMilliseconds: (ms) ->
+      if ms > 7 * 24 * 60 * 60 * 1000 - 1
+        throw Error "Length of interval can not be more than 1 week"
+      if ms < 0
+        throw Error "Interval can not be negative"
       @length = ms
       # return this
       @
@@ -84,13 +88,14 @@ class @RepeatingInterval extends TimeInterval
     interval: ->
       new DailyRepeatingInterval(@, @startTime)
     
-    # set the repeating days, By default no days
+    # set the repeating days, By default every day
     setDays: (days...) ->
-      if _.isArray(days[0])
-        days = days[0]
+      days = _.flatten(days)
       unless _.every(days, (v) -> _.contains(_validDays, v))
         throw Error "Days must be between 0 and 6"
-      @days = _(days).uniq().sort().value()
+      if days.length == 0
+        throw Error "Must set at least 1 day" 
+      @days = _.chain(days).uniq().sort().value()
       @
     # this is the generator class which returns 
     class DailyRepeatingInterval extends RepeatingInterval
@@ -102,7 +107,10 @@ class @RepeatingInterval extends TimeInterval
         # start the loop off
         start = new Date(@starttime.valueOf()) # use the end date
         start = @spec._resetTime(start)
-        until start.valueOf() > @starttime.valueOf() and @_validDay(start)
+        # rewind 7 days and set the correct start time
+        start.setDate start.getDate() - 7
+        # use greater than or equals here this is MILLISECONDS resolution here
+        until (start.valueOf()+@spec.getLength()) >= @starttime.valueOf() and @_validDay(start)
           start.setDate start.getDate() + 1 # increment by 1 day
         @setStart start
         @setEnd new Date(start.valueOf() + @spec.getLength())
@@ -111,7 +119,8 @@ class @RepeatingInterval extends TimeInterval
         _.indexOf(@spec.days, date.getDay(), true) != -1
       #next is simply myself combined with the end interval
       next: ->
-        new DailyRepeatingInterval(@spec, @getEnd())
+        # creep it forward 1 ms to move out of current range
+        new DailyRepeatingInterval(@spec, new Date(@getEnd().valueOf()+1))
   class @MonthlyDate extends BaseInterval
     # this is the 1st of the month regarless of date
     # from current one work out next instance

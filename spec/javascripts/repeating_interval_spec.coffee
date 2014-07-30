@@ -37,30 +37,46 @@ describe "RepeatingInterval", ->
           r
   describe "Daily", ->
     beforeEach ->
-      @i = new RepeatingInterval.Daily(new Date(2014,0,0))
-    describe "default start Date", ->
-      # the default start date of the interval is 24 hours 
-    it "default length", ->
-      # expect length of interval to equal 1 hour
-      @interval = @i.interval()
-      expect(@interval).toBeLength(60*60*1000*24 - 1)
-      
-    describe "Length", ->
-      # check the length of the intervals to 1 hour
-      it "Hours", ->
-        @i.setHours 1
-      it "minutes", ->
-        @i.setMinutes 60
-      it "seconds", ->
-        @i.setSeconds 60*60
-      it "milliseconds", ->
-        @i.setMilliseconds 60*60*1000
-      afterEach ->
-        # get the next interval
-        @interval = @i.interval()
+      # wednesday 1st jan 2014 1am
+      @i = new RepeatingInterval.Daily(new Date(2014,0,1))
+    describe "days of week", ->
+      it "returns the current within the interval", ->
+        @i = new RepeatingInterval.Daily(new Date(2014,0,1,1))
+        @i.setDays MyDate.WEDNESDAY
+        interval = @i.interval()
+        console.log interval
+        expect(interval.isWithinStart)
+        expect(interval.getStart()).toEqualDate 1,1,2014
+      it "works for Sunday", ->
+        @i.setDays 0
+        interval = @i.interval()
+        expect(interval.getStart()).toEqualDate 5,1,2014
+        expect(interval.next().getStart()).toEqualDate 12,1,2014
+        expect(interval.next().next().getStart()).toEqualDate 19,1,2014
+    describe "everyDay", ->
+      describe "default start Date", ->
+        # the default start date of the interval is 24 hours 
+      it "default length", ->
         # expect length of interval to equal 1 hour
-        expect(@interval).toBeLength(60*60*1000)
-   afterEach ->
-     expect(@interval.getStart()).toEqualTime 0,0,0,0
-     expect(@interval.getStart()).toEqualDate 1,1,2014
-     expect(@interval.getEnd()).toEqualDate 1,1,2014
+        @interval = @i.interval()
+        expect(@interval).toBeLength(60*60*1000*24 - 1)
+      
+      describe "Length", ->
+        # check the length of the intervals to 1 hour
+        it "Hours", ->
+          @i.setHours 1
+        it "minutes", ->
+          @i.setMinutes 60
+        it "seconds", ->
+          @i.setSeconds 60*60
+        it "milliseconds", ->
+          @i.setMilliseconds 60*60*1000
+        afterEach ->
+          # get the next interval
+          @interval = @i.interval()
+          # expect length of interval to equal 1 hour
+          expect(@interval).toBeLength(60*60*1000)
+       afterEach ->
+         expect(@interval.getStart()).toEqualTime 0,0,0,0
+         expect(@interval.getStart()).toEqualDate 1,1,2014
+         expect(@interval.getEnd()).toEqualDate 1,1,2014
