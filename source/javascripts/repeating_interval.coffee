@@ -84,7 +84,7 @@ class @RepeatingInterval extends TimeInterval
     
   class @Daily extends BaseInterval
     
-    _validDays = _.range 7
+    _validDays = [0..6]
 
     # this handles multiple days per week
     # sunday, tuesday, wednesday
@@ -128,8 +128,10 @@ class @RepeatingInterval extends TimeInterval
   class @MonthlyDate extends BaseInterval
     # this is the 1st of the month regarless of date
     # from current one work out next instance
-    _validDates = _.flatten([-3,-2,-1,_.range(1, 32)])
-    console.log _validDates
+    _validDates = (x for x in [-3..31] when x isnt 0)
+    
+    # every day is valid
+    dates: _validDates
     setDates: (dates...) ->
       dates = _.flatten(dates)
       unless _.every(dates, (v) -> _.contains(_validDates, v))
@@ -177,7 +179,61 @@ class @RepeatingInterval extends TimeInterval
     intervalClass: MonthlyDateRepeatingInterval
 
   class @MonthlyDay extends BaseInterval
+    _validWeeks = (x for x in [-2..5] when x isnt 0)
+    _validDays = [0..6]
+
+    # default is 2nd last Sunday of the month
+    # week number is first followed by the day number
+    dayWeeks: [[_validWeeks[0], _validDays[0]]]
+    
+    setDayWeeks: (ranges...) ->
+      throw Error "Need at least 1 range" unless ranges.length > 0
+      # check values
+      for range in ranges
+        throw Error "Need 2 values" unless range.length == 2
+        throw Error "Week out of range -2->5 expect 0 required" unless _.indexOf(_validWeeks, range[0], true) != -1
+        throw Error "Day out of range 0-6" unless _.indexOf(_validDays, range[1], true) != -1
+      @dayWeeks = ranges 
     # this handles day of month
     # 1st sunday of month
     # from current one work out next instance
     class MonthlyDateRepeatingInterval extends RepeatingInterval
+      constructor: (@spec, @starttime) ->
+        # work out the next interval based upon the spec
+        # keep adding 1 day to starttime until the day matches one of the array values
+        # then set the start time approiapetly
+        # compare to starttime if greater than start time it's good
+        # start the loop off
+        start = new Date(@starttime.valueOf()) # use the end date
+        start = @spec._resetTime(start)
+        # rewind 1 days and set the correct start time - this makes no sense to have longer than 7 days
+        # this will allow for last week of month first week etc...
+        start.setDate start.getDate() - 7
+        # use greater than or equals here this is MILLISECONDS resolution here
+        until (start.valueOf()+@spec.getLength()) > @starttime.valueOf() and @_validDate(start)
+          start.setDate start.getDate() + 1 # increment by 1 day
+        @setStart start
+        @setEnd new Date(start.valueOf() + @spec.getLength())
+      # quick method to get the number of days in the given month given by date
+      _daysInMonth = (date) ->
+        # go to next month and go back 1 day (0th date)
+        new Date(date.getFullYear(), date.getMonth()+1, 0).getDate()
+      _validDate: (date) ->
+        # convert -ve dates into actual date values
+        # -1 means last day of month etc...
+        # used for negative calculations
+        daysInMonth = _daysInMonth(date) 
+        # convert the dates
+        for dayWeek in @spec.dayWeeks
+          # return true on first match
+          if (date.getDay() == dayWeek[1] and 
+            if dayWeek[0] < 0 # -ve value
+              (daysInMonth - date.getDate())//7 == (-1 * dayWeek[0]) - 1
+            else
+              (date.getDate()-1)//7 == (dayWeek[0]-1))
+            # day and week needs to match
+            # if week is -ve then need to work from length of month
+            return true
+        false
+
+    intervalClass: MonthlyDateRepeatingInterval
