@@ -16,8 +16,10 @@
 # of time slots
 class @RepeatingInterval extends TimeInterval
   
-  
-  next: -> throw Error "unimplemented method"
+  next: ->
+    throw Error "unimplemented method" unless @spec.intervalClass
+    # creep it forward 1 ms to move out of current range
+    new @spec.intervalClass(@spec, new Date(@getEnd().valueOf()+1))
   
   # interval just return self
   interval: -> @
@@ -40,8 +42,13 @@ class @RepeatingInterval extends TimeInterval
     minute: 0
     second: 0
     millisecond: 0
-    
-    interval: -> throw Error "interval generator is not implemented"
+
+    constructor: (@startTime = new Date()) ->
+
+    interval: ->
+      throw Error "interval generator is not implemented" unless @intervalClass
+      new @intervalClass(@, @startTime)
+
     # this is a delegate method to the generator
     next: -> @interval().next()
     
@@ -62,7 +69,7 @@ class @RepeatingInterval extends TimeInterval
     # defaults to 0 if left off
     setStartTime: (startTime...) ->
       startTime = _.flatten(startTime)
-      for i, val in startTime
+      for val, i in startTime
         @[_intervalNames[i]] = val
 
     # reset a date to the starttime given
@@ -85,11 +92,6 @@ class @RepeatingInterval extends TimeInterval
     # this is a single day of month
     # from current one work out the next instance
     days: _validDays
-
-    constructor: (@startTime = new Date())-> 
-      super
-    interval: ->
-      new DailyRepeatingInterval(@, @startTime)
     
     # set the repeating days, By default every day
     setDays: (days...) ->
@@ -120,16 +122,47 @@ class @RepeatingInterval extends TimeInterval
       _validDay: (date) ->
         # is the day of this date one of our target days
         _.indexOf(@spec.days, date.getDay(), true) != -1
-      #next is simply myself combined with the end interval
-      next: ->
-        # creep it forward 1 ms to move out of current range
-        new DailyRepeatingInterval(@spec, new Date(@getEnd().valueOf()+1))
+
+    intervalClass: DailyRepeatingInterval
+    
   class @MonthlyDate extends BaseInterval
     # this is the 1st of the month regarless of date
     # from current one work out next instance
+    
+    setDates: (dates...) ->
+      dates = _.flatten(dates)
+      unless _.every(days, (v) -> _.contains(_validDays, v))
+        throw Error "Days must be between 0 and 6"
+      if days.length == 0
+        throw Error "Must set at least 1 day" 
+      @days = _.chain(days).uniq().sort().value()
+      @
+      
+    
     class MonthlyDateRepeatingInterval extends RepeatingInterval
-    
-    
+      constructor: (@spec, @starttime) ->
+        # work out the next interval based upon the spec
+        # keep adding 1 day to starttime until the day matches one of the array values
+        # then set the start time approiapetly
+        # compare to starttime if greater than start time it's good
+        # start the loop off
+        start = new Date(@starttime.valueOf()) # use the end date
+        start = @spec._resetTime(start)
+        # rewind 1 days and set the correct start time - this makes no sense to have longer than 1 day
+        start.setDate start.getDate() - 1
+        # use greater than or equals here this is MILLISECONDS resolution here
+        until (start.valueOf()+@spec.getLength()) > @starttime.valueOf() and @_validDate(start)
+          start.setDate start.getDate() + 1 # increment by 1 day
+        @setStart start
+        @setEnd new Date(start.valueOf() + @spec.getLength())
+      _validDate: (date) ->
+        # is the day of this date one of our target days
+        date.getDate() == @spec.date
+      #next is simply myself combined with the end interval
+      next: ->
+        # creep it forward 1 ms to move out of current range
+        new MonthlyRepeatingInterval(@spec, new Date(@getEnd().valueOf()+1))
+
   class @MonthlyDay extends BaseInterval
     # this handles day of month
     # 1st sunday of month
