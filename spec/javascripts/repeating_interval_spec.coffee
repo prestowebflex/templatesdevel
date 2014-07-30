@@ -52,6 +52,16 @@ describe "RepeatingInterval", ->
         expect(interval.getStart()).toEqualDate 5,1,2014
         expect(interval.next().getStart()).toEqualDate 12,1,2014
         expect(interval.next().next().getStart()).toEqualDate 19,1,2014
+      it "works for Tuesday, Thursday", ->
+        @i.setDays MyDate.TUESDAY, MyDate.THURSDAY
+        @i.setHours 1
+        @i.setStartTime 17
+        interval = @i.interval()
+        expect(interval.getStart()).toEqualTime 17,0,0,0
+        expect(interval.getEnd()).toEqualTime 18,0,0,0
+        expect(interval.getStart()).toEqualDate 2,1,2014
+        expect(interval.next().getStart()).toEqualDate 7,1,2014
+        expect(interval.next().next().getStart()).toEqualDate 9,1,2014
     describe "everyDay", ->
       describe "default start Date", ->
         # the default start date of the interval is 24 hours 
