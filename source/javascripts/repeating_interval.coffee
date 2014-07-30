@@ -32,7 +32,7 @@ class @RepeatingInterval extends TimeInterval
     _intervalNames = ['hour', 'minute', 'second', 'millisecond']
     
     # default length is 1 day
-    length: 60*60*1000*24 # 1 hour * milliseconds * 1 day
+    length: 60*60*1000*24 - 1 # 1 hour * milliseconds * 1 day
     hour: 0
     minute: 0
     second: 0
@@ -79,10 +79,10 @@ class @RepeatingInterval extends TimeInterval
     # from current one work out the next instance
     days: _validDays
 
-    constructor: -> 
+    constructor: (@startTime = new Date())-> 
       super
     interval: ->
-      new DailyRepeatingInterval(@, new Date())
+      new DailyRepeatingInterval(@, @startTime)
     
     # set the repeating days, By default no days
     setDays: (days...) ->
