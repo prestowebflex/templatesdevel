@@ -113,7 +113,7 @@ class @RepeatingInterval extends TimeInterval
         # rewind 7 days and set the correct start time
         start.setDate start.getDate() - 7
         # use greater than or equals here this is MILLISECONDS resolution here
-        until (start.valueOf()+@spec.getLength()) >= @starttime.valueOf() and @_validDay(start)
+        until (start.valueOf()+@spec.getLength()) > @starttime.valueOf() and @_validDay(start)
           start.setDate start.getDate() + 1 # increment by 1 day
         @setStart start
         @setEnd new Date(start.valueOf() + @spec.getLength())
