@@ -44,11 +44,10 @@ describe "RepeatingInterval", ->
         @i = new RepeatingInterval.Daily(new Date(2014,0,1,1))
         @i.setDays MyDate.WEDNESDAY
         interval = @i.interval()
-        console.log interval
-        expect(interval.isWithinStart)
+        expect(interval.isWithinStart()).toBeTruthy()
         expect(interval.getStart()).toEqualDate 1,1,2014
       it "works for Sunday", ->
-        @i.setDays 0
+        @i.setDays MyDate.SUNDAY
         interval = @i.interval()
         expect(interval.getStart()).toEqualDate 5,1,2014
         expect(interval.next().getStart()).toEqualDate 12,1,2014

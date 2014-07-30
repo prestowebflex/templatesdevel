@@ -11,3 +11,5 @@ class @TimeInterval
   getStart: -> @start
   getEnd: -> @end
   getLength: -> @getEnd().valueOf() - @getStart().valueOf()
+  isWithinInterval: (date) ->
+    @getStart().valueOf() <= date.valueOf() and @getEnd().valueOf() > date.valueOf()

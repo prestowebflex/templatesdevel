@@ -21,6 +21,9 @@ class @RepeatingInterval extends TimeInterval
   
   # interval just return self
   interval: -> @
+
+  isWithinStart: ->
+    @isWithinInterval(@spec.startTime)
   
   # these are the generator classes
   # so these are used to generate sequences of intervals
