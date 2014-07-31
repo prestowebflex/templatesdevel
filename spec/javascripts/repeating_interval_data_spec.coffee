@@ -4,7 +4,8 @@ describe "Repeating Interval gernator", ->
   beforeEach ->
     @realDate = Date
     @gen = RepeatingIntervalGenerator
-    jasmine.clock().install().mockDate(new Date(2014,0,2,16,30))
+    @clock = jasmine.clock().install()
+    @clock.mockDate(new Date(2014,0,2,16,30))
   afterEach ->
     jasmine.clock().uninstall()
   it "has a fake clock that works", ->
@@ -39,17 +40,37 @@ describe "Repeating Interval gernator", ->
   describe "Weekly function", ->
     it "generates 2 dates", ->
       # date is Jan 2 2014
-      intervals = @gen.generate(data.weekly())
+      d = data.weekly()
+      d.generate_extra = "0"
+      @clock.mockDate(new Date(2014,0,4,16,30))
+      expect(new Date()).toEqualDate 4,1,2014
+      expect(new Date()).toEqualTime 16,30
+      intervals = @gen.generate(d)
       expect(intervals.length).toEqual 2
-      expect(intervals[0].getStart()).toBeDate 5,1,2014
-      expect(intervals[1].getStart()).toBeDate 6,1,2014
-      expect(intervals[0].getEnd()).toBeDate 5,1,2014
-      expect(intervals[1].getEnd()).toBeDate 6,1,2014
-      expect(intervals[0].getStart()).toBeTime 17,0,0
-      expect(intervals[1].getStart()).toBeTime 20,0,0
-      expect(intervals[0].getStart()).toBeTime 17,0,0
-      expect(intervals[1].getStart()).toBeTime 20,0,0
+      expect(intervals[0]).toEqualInterval 180*60*1000, 5,1,2014, 17
+      expect(intervals[1]).toEqualInterval 180*60*1000, 6,1,2014, 17
+    it "generates 2 dates skipping first date 59 min in", ->
+      # date is Jan 2 2014
+      d = data.weekly()
+      d.generate_extra = "0"
+      @clock.mockDate(new Date(2014,0,5,16,1))
+      expect(new Date()).toEqualDate 5,1,2014
+      expect(new Date()).toEqualTime 16,1
+      intervals = @gen.generate(d)
       expect(intervals.length).toEqual 2
+      expect(intervals[0]).toEqualInterval 180*60*1000, 6,1,2014, 17
+      expect(intervals[1]).toEqualInterval 180*60*1000, 7,1,2014, 17
+    it "generates 2 dates skipping first date in period", ->
+      # date is Jan 2 2014
+      d = data.weekly()
+      d.generate_extra = "0"
+      @clock.mockDate(new Date(2014,0,5,19,59))
+      expect(new Date()).toEqualDate 5,1,2014
+      expect(new Date()).toEqualTime 19,59
+      intervals = @gen.generate(d)
+      expect(intervals.length).toEqual 2
+      expect(intervals[0]).toEqualInterval 180*60*1000, 6,1,2014, 17
+      expect(intervals[1]).toEqualInterval 180*60*1000, 7,1,2014, 17
   # type day, date, monthday, numberofdays
   # repeat if less than X hours left in period?
   data =
