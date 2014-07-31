@@ -149,7 +149,6 @@ class @RepeatingInterval extends TimeInterval
         throw Error "Must set at least 1 day" 
       @dates = _.chain(dates).uniq().sort().value()
       @
-      
     
     class MonthlyDateRepeatingInterval extends RepeatingInterval
       @scandays: 1

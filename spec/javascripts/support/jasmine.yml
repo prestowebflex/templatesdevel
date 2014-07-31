@@ -17,6 +17,7 @@ src_files:
   - javascripts/date.js
   - javascripts/time_interval.js
   - javascripts/repeating_interval.js
+  - javascripts/repeating_interval_generator.js
   
 # stylesheets
 #
