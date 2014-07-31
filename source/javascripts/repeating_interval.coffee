@@ -16,6 +16,27 @@
 # of time slots
 class @RepeatingInterval extends TimeInterval
   
+  #utility method to get the number of days in the month given by the date passed in
+  _daysInMonth = (date) ->
+    # go to next month and go back 1 day (0th date)
+    new Date(date.getFullYear(), date.getMonth()+1, 0).getDate()
+
+  constructor: (@spec, @starttime) ->
+    # work out the next interval based upon the spec
+    # keep adding 1 day to starttime until the day matches one of the array values
+    # then set the start time approiapetly
+    # compare to starttime if greater than start time it's good
+    # start the loop off
+    start = new Date(@starttime.valueOf()) # use the end date
+    start = @spec._resetTime(start)
+    # rewind 7 days and set the correct start time
+    start.setDate start.getDate() - @constructor.scandays
+    # use greater than or equals here this is MILLISECONDS resolution here
+    until (start.valueOf()+@spec.getLength()) > @starttime.valueOf() and @_validDate(start)
+      start.setDate start.getDate() + 1 # increment by 1 day
+    @setStart start
+    @setEnd new Date(start.valueOf() + @spec.getLength())
+
   next: ->
     throw Error "unimplemented method" unless @spec.intervalClass
     # creep it forward 1 ms to move out of current range
@@ -30,6 +51,8 @@ class @RepeatingInterval extends TimeInterval
   # these are the generator classes
   # so these are used to generate sequences of intervals
   class BaseInterval
+    
+
     # default is midnight
     # default is a whole day 00:00 -> 23:59:59
     # get the repeating interval method
@@ -104,22 +127,8 @@ class @RepeatingInterval extends TimeInterval
       @
     # this is the generator class which returns 
     class DailyRepeatingInterval extends RepeatingInterval
-      constructor: (@spec, @starttime) ->
-        # work out the next interval based upon the spec
-        # keep adding 1 day to starttime until the day matches one of the array values
-        # then set the start time approiapetly
-        # compare to starttime if greater than start time it's good
-        # start the loop off
-        start = new Date(@starttime.valueOf()) # use the end date
-        start = @spec._resetTime(start)
-        # rewind 7 days and set the correct start time
-        start.setDate start.getDate() - 7
-        # use greater than or equals here this is MILLISECONDS resolution here
-        until (start.valueOf()+@spec.getLength()) > @starttime.valueOf() and @_validDay(start)
-          start.setDate start.getDate() + 1 # increment by 1 day
-        @setStart start
-        @setEnd new Date(start.valueOf() + @spec.getLength())
-      _validDay: (date) ->
+      @scandays: 7
+      _validDate: (date) ->
         # is the day of this date one of our target days
         _.indexOf(@spec.days, date.getDay(), true) != -1
 
@@ -143,25 +152,7 @@ class @RepeatingInterval extends TimeInterval
       
     
     class MonthlyDateRepeatingInterval extends RepeatingInterval
-      constructor: (@spec, @starttime) ->
-        # work out the next interval based upon the spec
-        # keep adding 1 day to starttime until the day matches one of the array values
-        # then set the start time approiapetly
-        # compare to starttime if greater than start time it's good
-        # start the loop off
-        start = new Date(@starttime.valueOf()) # use the end date
-        start = @spec._resetTime(start)
-        # rewind 1 days and set the correct start time - this makes no sense to have longer than 1 day
-        start.setDate start.getDate() - 1
-        # use greater than or equals here this is MILLISECONDS resolution here
-        until (start.valueOf()+@spec.getLength()) > @starttime.valueOf() and @_validDate(start)
-          start.setDate start.getDate() + 1 # increment by 1 day
-        @setStart start
-        @setEnd new Date(start.valueOf() + @spec.getLength())
-      # quick method to get the number of days in the given month given by date
-      _daysInMonth = (date) ->
-        # go to next month and go back 1 day (0th date)
-        new Date(date.getFullYear(), date.getMonth()+1, 0).getDate()
+      @scandays: 1
       _validDate: (date) ->
         # convert -ve dates into actual date values
         # -1 means last day of month etc...
@@ -198,26 +189,8 @@ class @RepeatingInterval extends TimeInterval
     # 1st sunday of month
     # from current one work out next instance
     class MonthlyDateRepeatingInterval extends RepeatingInterval
-      constructor: (@spec, @starttime) ->
-        # work out the next interval based upon the spec
-        # keep adding 1 day to starttime until the day matches one of the array values
-        # then set the start time approiapetly
-        # compare to starttime if greater than start time it's good
-        # start the loop off
-        start = new Date(@starttime.valueOf()) # use the end date
-        start = @spec._resetTime(start)
-        # rewind 1 days and set the correct start time - this makes no sense to have longer than 7 days
-        # this will allow for last week of month first week etc...
-        start.setDate start.getDate() - 7
-        # use greater than or equals here this is MILLISECONDS resolution here
-        until (start.valueOf()+@spec.getLength()) > @starttime.valueOf() and @_validDate(start)
-          start.setDate start.getDate() + 1 # increment by 1 day
-        @setStart start
-        @setEnd new Date(start.valueOf() + @spec.getLength())
+      @scandays: 7
       # quick method to get the number of days in the given month given by date
-      _daysInMonth = (date) ->
-        # go to next month and go back 1 day (0th date)
-        new Date(date.getFullYear(), date.getMonth()+1, 0).getDate()
       _validDate: (date) ->
         # convert -ve dates into actual date values
         # -1 means last day of month etc...
