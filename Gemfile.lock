@@ -1,6 +1,6 @@
 GIT
-  remote: git://github.com/jeffborg/jasmine.git
-  revision: 33362bf585370636ab3c9ea991879f85ed368c0f
+  remote: git://github.com/pivotal/jasmine.git
+  revision: cee3cc56e64181eec8779985004284996b12dcc4
   specs:
     jasmine-core (2.0.1)
 
