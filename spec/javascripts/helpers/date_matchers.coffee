@@ -17,7 +17,7 @@ beforeEach ->
         passEndDate = equalDate interval.getEnd(), day, month, year
         passStartTime = equalTime interval.getStart(), time...
         endTime = new Date interval.getStart().valueOf()
-        endTime.setMilliseconds endTime.getMilliseconds + lengthMs
+        endTime.setMilliseconds endTime.getMilliseconds() + lengthMs
         passEndTime = interval.getEnd().valueOf() == endTime.valueOf()
         
         pass = passLength && passStartDate && passEndDate and passStartTime and passEndTime
@@ -34,6 +34,8 @@ beforeEach ->
             msg += " End Date should be #{day}/#{month}/#{year} was #{interval.getEnd()}"
           unless passStartTime
             msg += " Start time should be #{time} was #{interval.getStart()}"
+          unless passEndTime
+            msg += " End time incorrect #{endTime} != #{interval.getEnd()}"
           msg
         pass: pass, message: message
     toBeLength: ->
