@@ -38,9 +38,9 @@ class @RepeatingInterval extends TimeInterval
     @setEnd new Date(start.valueOf() + @spec.getLength())
 
   next: ->
-    throw Error "unimplemented method" unless @spec.intervalClass
+    throw Error "unimplemented method" unless @spec.constructor.intervalClass
     # creep it forward 1 ms to move out of current range
-    new @spec.intervalClass(@spec, new Date(@getEnd().valueOf()+1))
+    new @spec.constructor.intervalClass(@spec, new Date(@getEnd().valueOf()+1))
   
   # interval just return self
   interval: -> @
@@ -69,8 +69,8 @@ class @RepeatingInterval extends TimeInterval
     constructor: (@startTime = new Date()) ->
 
     interval: ->
-      throw Error "interval generator is not implemented" unless @intervalClass
-      new @intervalClass(@, @startTime)
+      throw Error "interval generator is not implemented" unless @constructor.intervalClass
+      new @constructor.intervalClass(@, @startTime)
 
     # this is a delegate method to the generator
     next: -> @interval().next()
@@ -132,7 +132,7 @@ class @RepeatingInterval extends TimeInterval
         # is the day of this date one of our target days
         _.indexOf(@spec.days, date.getDay(), true) != -1
 
-    intervalClass: DailyRepeatingInterval
+    @intervalClass: DailyRepeatingInterval
     
   class @MonthlyDate extends BaseInterval
     # this is the 1st of the month regarless of date
@@ -167,7 +167,7 @@ class @RepeatingInterval extends TimeInterval
       #next is simply myself combined with the end interval
       
     # save a reference to this class on the class itself to be reused by the parent classes
-    intervalClass: MonthlyDateRepeatingInterval
+    @intervalClass: MonthlyDateRepeatingInterval
 
   class @MonthlyDay extends BaseInterval
     _validWeeks = (x for x in [-2..5] when x isnt 0)
@@ -209,4 +209,24 @@ class @RepeatingInterval extends TimeInterval
             return true
         false
 
-    intervalClass: MonthlyDateRepeatingInterval
+    @intervalClass: MonthlyDateRepeatingInterval
+  
+  # simple number of days generator
+  class @NumberOfDays extends BaseInterval
+    
+    days: 1
+    setDays: (@days) ->
+    
+    class NumberOfDaysRepeatingInterval extends RepeatingInterval
+      constructor: (@spec, @starttime) ->
+        @setStart new Date(@starttime.valueOf())
+        end = new Date(@starttime.valueOf())
+        end.setDate end.getDate() + @spec.days
+        end.setMinutes 59
+        end.setHours 23
+        end.setSeconds 59
+        end.setMilliseconds 999
+        @setEnd end
+      
+    @intervalClass: NumberOfDaysRepeatingInterval
+      
