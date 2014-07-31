@@ -23,3 +23,5 @@ gem "jquery-rails", "2.1.4", require: false
 
 gem "rails-backbone", "0.9.0", require: false
 
+
+gem "jasmine-core", github: "jeffborg/jasmine"
