@@ -94,7 +94,6 @@ describe "RepeatingInterval", ->
     it "generates 30 day intervals", ->
       @i.setDays 30
       interval = @i.interval()
-      console.log interval
       expect(interval.getStart()).toEqualDate 1,1,2014
       expect(interval.getStart()).toEqualTime 11,0,0,0
       expect(interval.getEnd()).toEqualDate 31,1,2014
