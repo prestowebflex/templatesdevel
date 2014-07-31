@@ -13,3 +13,5 @@ class @TimeInterval
   getLength: -> @getEnd().valueOf() - @getStart().valueOf()
   isWithinInterval: (date) ->
     @getEnd().valueOf() > date.valueOf() >= @getStart().valueOf()
+  toString: ->
+    "TimeInterval(#{@getStart()}-#{@getEnd()})"
