@@ -23,13 +23,12 @@ makeArray = (spec, generator) ->
     # and generate 
   if (intervals[0].getStart().valueOf() - (spec.leeway_before*60*1000)) < new Date().valueOf()
     unless spec.generate_extra=="1"
-      intervals = intervals[1...]
+      intervals[1...]
+    else
+      intervals
   else
     # chop the end off
-    intervals = intervals[...-1]
-  # else chop the last one off 
-  #  intervals.push generator.next()
-  intervals
+    intervals[...-1]
 @RepeatingIntervalGenerator =
   generate: (spec) ->
     switch spec.type
