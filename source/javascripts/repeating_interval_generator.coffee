@@ -54,5 +54,10 @@ makeArray = (spec, generator) ->
           [Number(week), Number(day)] 
         o.setDayWeeks weeks...
         makeArray(spec, o)
+      when "duration_days"
+        o = gen({}, RepeatingInterval.NumberOfDays)
+        o.setDays Number(spec.days) if spec.days isnt ""
+        # return single interval
+        [o.interval()]
       else
         throw Error "Unknown type #{spec.type}!"

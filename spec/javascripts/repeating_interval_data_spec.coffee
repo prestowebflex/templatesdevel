@@ -210,6 +210,35 @@ describe "Repeating Interval gernator", ->
         else
           expect(intervals[0]).toEqualInterval 180*60*1000, 14,1,2014, 17 # sunday
           expect(intervals[1]).toEqualInterval 180*60*1000, 26,1,2014, 17 # monday
+  describe "Fixed duration", ->
+    d = intervals = null
+    beforeEach ->
+      d = data.duration()
+      @clock.mockDate(new Date(2014,0,14,15,59,59)) # Sunday 3:59pm (time is irrelevant)
+    it "works for 15 days ahead", ->
+      d.days = "15"
+      intervals = @gen.generate d
+      expect(intervals[0].getStart()).toEqualDate 14,1,2014
+      expect(intervals[0].getStart()).toEqualTime 15,59,59,0
+      expect(intervals[0].getEnd()).toEqualDate 29,1,2014
+      expect(intervals[0].getEnd()).toEqualTime 23,59,59,999
+    it "works for 30 days ahead", ->
+      d.days = "30"
+      intervals = @gen.generate d
+      expect(intervals[0].getStart()).toEqualDate 14,1,2014
+      expect(intervals[0].getStart()).toEqualTime 15,59,59,0
+      expect(intervals[0].getEnd()).toEqualDate 13,2,2014
+      expect(intervals[0].getEnd()).toEqualTime 23,59,59,999
+    it "works for 1 days ahead", ->
+      d.days = ""
+      intervals = @gen.generate d
+      expect(intervals[0].getStart()).toEqualDate 14,1,2014
+      expect(intervals[0].getStart()).toEqualTime 15,59,59,0
+      expect(intervals[0].getEnd()).toEqualDate 15,1,2014
+      expect(intervals[0].getEnd()).toEqualTime 23,59,59,999
+    afterEach ->
+      expect(intervals.length).toEqual 1
+      
   # type day, date, monthday, numberofdays
   # repeat if less than X hours left in period?
   data =
