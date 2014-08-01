@@ -181,8 +181,8 @@ class @RepeatingInterval extends TimeInterval
       # check values
       for range in ranges
         throw Error "Need 2 values" unless range.length == 2
-        throw Error "Week out of range -2->5 expect 0 required" unless _.indexOf(_validWeeks, range[0], true) != -1
-        throw Error "Day out of range 0-6" unless _.indexOf(_validDays, range[1], true) != -1
+        throw Error "Week out of range -2->5 except 0 required got #{range[0]}" unless _.indexOf(_validWeeks, range[0], true) != -1
+        throw Error "Day out of range 0-6 got #{range[1]}" unless _.indexOf(_validDays, range[1], true) != -1
       @dayWeeks = ranges 
     # this handles day of month
     # 1st sunday of month

@@ -38,5 +38,21 @@ makeArray = (spec, generator) ->
         # setup specific propertities
         o.setDays(filterArray(spec.days))
         makeArray(spec, o)
+      when "monthly"
+        # initialize basic properties
+        o = gen(spec, RepeatingInterval.MonthlyDate)
+        # setup specific propertities
+        o.setDates(filterArray(spec.days))
+        makeArray(spec, o)
+      when "monthly_day"
+        # initialize basic properties
+        o = gen(spec, RepeatingInterval.MonthlyDay)
+        # setup specific propertities
+        weeks = for x in spec.days when x isnt ""
+          # day week use regexps to split out
+          [day, week] = x.split ","
+          [Number(week), Number(day)] 
+        o.setDayWeeks weeks...
+        makeArray(spec, o)
       else
         throw Error "Unknown type #{spec.type}!"
