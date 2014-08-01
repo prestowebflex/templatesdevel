@@ -38,39 +38,54 @@ describe "Repeating Interval gernator", ->
       expect(convert(original)).toEqual strings
   
   describe "Weekly function", ->
-    it "generates 2 dates", ->
-      # date is Jan 2 2014
+    length = d = intervals = null
+    beforeEach ->
       d = data.weekly()
-      d.generate_extra = "0"
-      @clock.mockDate(new Date(2014,0,4,16,30))
-      expect(new Date()).toEqualDate 4,1,2014
-      expect(new Date()).toEqualTime 16,30
-      intervals = @gen.generate(d)
-      expect(intervals.length).toEqual 2
-      expect(intervals[0]).toEqualInterval 180*60*1000, 5,1,2014, 17
-      expect(intervals[1]).toEqualInterval 180*60*1000, 6,1,2014, 17
-    it "generates 2 dates skipping first date 59 min in", ->
-      # date is Jan 2 2014
-      d = data.weekly()
-      d.generate_extra = "0"
-      @clock.mockDate(new Date(2014,0,5,16,1))
-      expect(new Date()).toEqualDate 5,1,2014
-      expect(new Date()).toEqualTime 16,1
-      intervals = @gen.generate(d)
-      expect(intervals.length).toEqual 2
-      expect(intervals[0]).toEqualInterval 180*60*1000, 6,1,2014, 17
-      expect(intervals[1]).toEqualInterval 180*60*1000, 7,1,2014, 17
-    it "generates 2 dates skipping first date in period", ->
-      # date is Jan 2 2014
-      d = data.weekly()
-      d.generate_extra = "0"
-      @clock.mockDate(new Date(2014,0,5,19,59))
-      expect(new Date()).toEqualDate 5,1,2014
-      expect(new Date()).toEqualTime 19,59
-      intervals = @gen.generate(d)
-      expect(intervals.length).toEqual 2
-      expect(intervals[0]).toEqualInterval 180*60*1000, 6,1,2014, 17
-      expect(intervals[1]).toEqualInterval 180*60*1000, 7,1,2014, 17
+    describe "Include extra period", ->
+      beforeEach ->
+        length = 3
+        d.generate_extra = "1"
+        d.leeway_before = "60"
+      it "works up to N+1 minutes before only 2 events", ->
+        length = 2
+        @clock.mockDate(new Date(2014,0,5,15,59,59)) # Sunday 3:59pm
+      it "works up to N-1 minutes before", ->
+        @clock.mockDate(new Date(2014,0,5,16,0,1)) # Sunday 4:01pm
+      it "works up to 1 minutes before", ->
+        @clock.mockDate(new Date(2014,0,5,16,59,59)) # Sunday 4:59pm
+      it "works during the interval at the bbeginning", ->
+        @clock.mockDate(new Date(2014,0,5,17,0,1)) # Sunday 5:01pm
+      it "at the end of the interval", ->
+        @clock.mockDate(new Date(2014,0,5,19,59,59)) # Sunday 7:59pm
+      afterEach ->
+        intervals = @gen.generate d
+        expect(intervals.length).toEqual length
+        expect(intervals[0]).toEqualInterval 180*60*1000, 5,1,2014, 17 # sunday
+        expect(intervals[1]).toEqualInterval 180*60*1000, 6,1,2014, 17 # monday
+        if length is 3
+          expect(intervals[2]).toEqualInterval 180*60*1000, 7,1,2014, 17 # tuesday
+    describe "Exclude extra period", ->
+      dayoffset = null
+      beforeEach ->
+        dayoffset = 0
+        d.generate_extra = "0"
+        d.leeway_before = "60"
+      it "works up to N+1 minutes before only 2 events", ->
+        dayoffset = -1
+        @clock.mockDate(new Date(2014,0,5,15,59,59)) # Sunday 3:59pm
+      it "works up to N-1 minutes before", ->
+        @clock.mockDate(new Date(2014,0,5,16,0,1)) # Sunday 4:01pm
+      it "works up to 1 minutes before", ->
+        @clock.mockDate(new Date(2014,0,5,16,59,59)) # Sunday 4:59pm
+      it "works during the interval at the bbeginning", ->
+        @clock.mockDate(new Date(2014,0,5,17,0,1)) # Sunday 5:01pm
+      it "at the end of the interval", ->
+        @clock.mockDate(new Date(2014,0,5,19,59,59)) # Sunday 7:59pm
+      afterEach ->
+        intervals = @gen.generate d
+        expect(intervals.length).toEqual 2
+        expect(intervals[0]).toEqualInterval 180*60*1000, 6+dayoffset,1,2014, 17 # sunday
+        expect(intervals[1]).toEqualInterval 180*60*1000, 7+dayoffset,1,2014, 17 # monday
   # type day, date, monthday, numberofdays
   # repeat if less than X hours left in period?
   data =
