@@ -1,0 +1,31 @@
+Data strcuture
+======================================
+
+html_before:
+html_after:
+# don't bother with the reset spec just yet
+(DATE SPEC VARS - reset timetable) - once on mondays, etc... (use start of period)
+number of draws in a period: 
+prizes[]:
+	html:
+	odds: # relative to other prizes
+	validTo: DATE # to remove from prize pool
+	validFrom: DATE # to remove from prize pool
+	coupons[]: # empty for no associated prizes
+		html:
+		(DATE SPEC VARS)
+		
+
+
+
+User data storage struture
+========================================
+	Drawn tickets:
+		last picked date: (count these to work out how many draws in period) - same as coffee card (singe record type A)
+	coupon:
+		ID: (reference coupon data above)
+		Valid periods: []
+		Claimed: date
+	
+# prizes is id based
+data[prizes][12345]

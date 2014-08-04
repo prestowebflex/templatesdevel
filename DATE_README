@@ -22,3 +22,19 @@ nextWeek()
 nextMonth()
 
 
+
+
+FORM Values example
+
+Type -> Dropdown String value
+depending on type the next form elements show hide
+
+Common for repeating ones
+ -> start hour:minute
+ -> duration minutes
+day of week repeating type
+ -> multiple select for days
+day of month
+ -> date of month dropdown 1-31 + -3 to -1 for from last of month
+day within month
+ -> date select
