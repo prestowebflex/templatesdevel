@@ -34,7 +34,13 @@
   .boxicon
     height: 20px
     width: 20px
-    background-color: black
+    background-color: green
+  .openicon
+    height: 20px
+    width: 20px
+    background-color: red
+  &.available .openicon, &.revealed .boxicon
+    display: none
   &.hidden
     +scale(0)
     +opacity(0)
@@ -76,6 +82,16 @@
   .back
     z-index: 800
     background: #333
+    .info, .buttonbar
+      position: absolute
+      left: 0
+      right: 0
+    .info
+      top: 0
+      bottom: 50px
+    .buttonbar
+      bottom: 0
+      height: 50px
 
     +transform(rotatey(-179deg) rotatex(0deg))
   &.flipped .back

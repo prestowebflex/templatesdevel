@@ -17,10 +17,11 @@ title: Pick a Box
     .panel{class: "box#{cell+1}", data: {box: cell}}
       .front
         .boxicon
+        .openicon
       .back
         .info HTML IS LOADED INTO HERE
         .buttonbar
-          .button CLOSE
+          %a{href:"#", data:{role:"button"}} CLOSE
 .html_after
 -# %div.ui-grid-c
   -# -4.times.each do

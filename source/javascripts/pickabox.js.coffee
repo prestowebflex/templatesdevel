@@ -36,14 +36,15 @@ $ =>
   
   #refresh panel based upon the state of the boxes
   refreshPanel = ->
-    $(".panel").each ->
+    $(".panel").removeClass("flipped hidden revealed available").each ->
       p = $(@)
       box = p.data "box"
       # remove presentastional classes
-      p.removeClass("flipped hidden revealed")
       # determine if drawn
-      if boxes.isRevealed(p)
+      if boxes.isRevealed(box)
         p.addClass "revealed"
+      else
+        p.addClass "available"
         
   refreshCoupons = ->
     
@@ -51,10 +52,23 @@ $ =>
   refreshPanel()
   # this is just to flip panel bits only.
   # trigger the update of grabbing a prize and initialize it.
-  
+  $(".panel .buttonbar a").click ->
+    refreshPanel()
+    false
+    #panel = $(@).parents(".panel")
+    #console.log panel.parent().find(".panel")
+    #.removeClass "hidden flipped"
   $(".panel").click ->
     unless $(@).hasClass "flipped"
-      boxes.getPrize($(@).data("box"))
+      prize = boxes.getPrize($(@).data("box"))
+      #console.log 
+      $(@).find(".back > .info").html prize.html
+      #console.log prize
+       # setup the dada
+      refreshPanel()
+      # setup the visuals
+      $(@).addClass "flipped"
+      $(@).parent().find(".panel").not(@).addClass "hidden"
       # viewing backside of card
       # # put back to front of card #mark as revealed
       # $(@).parent().find(".panel").removeClass "hidden"
