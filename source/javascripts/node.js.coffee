@@ -1,7 +1,6 @@
 # abstract class
 class Obj
-  constructor: (attributes) ->
-    @attributes = {}
+  constructor: (@attributes = {}) ->
     @set "updated_at", new Date()
     @set "created_at", new Date()
   

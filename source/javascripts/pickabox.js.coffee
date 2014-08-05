@@ -1,10 +1,8 @@
 #= require time_interval
 #= require repeating_interval
 #= require repeating_interval_generator
-$ =>
-  node = new Node()
-  # initialize pick a box
-  @boxes = boxes = new PickABox
+@node = node = new Node
+  data: 
     html_before: "
       <p>Text before pick a box</p>
       "
@@ -30,6 +28,10 @@ $ =>
             times: 5
             leeway_before: 60
             generate_extra: 1
+
+$ =>
+  # initialize pick a box
+  @boxes = boxes = new PickABox node.get("data")
   
   $(".html_before").html boxes.html_before
   $(".html_after").html boxes.html_after
