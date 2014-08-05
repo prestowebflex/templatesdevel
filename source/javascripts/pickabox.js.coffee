@@ -32,9 +32,14 @@ $ =>
   
   $(".html_before").html boxes.html_before
   $(".html_after").html boxes.html_after
+  prizes = boxes.getPrizes 16
+  
   $(".panel").click ->
+    console.log $(@).data "box"
+    return
     if $(@).hasClass "flipped"
       # viewing backside of card
+      # put back to front of card #mark as revealed
       $(@).parent().find(".panel").removeClass "hidden"
       $(@).removeClass "flipped"
     else
