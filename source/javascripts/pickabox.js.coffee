@@ -2,6 +2,7 @@
 #= require repeating_interval
 #= require repeating_interval_generator
 $ =>
+  node = new Node()
   # initialize pick a box
   @boxes = boxes = new PickABox
     html_before: "
