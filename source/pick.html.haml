@@ -10,19 +10,23 @@ title: Pick a Box
 %div{data:{role:"navbar"},style:"margin-left: -15px; margin-right: -15px;"}
   %ul
     %li
-      %a.ui-btn-active{href:"#"} Pick a box
+      %a.ui-btn-active{data:{panel:"pickabox"},href:"#"} Pick a box
     %li
-      %a{href:"#"} Coupons (5)
-%div{class: "grid4", style: "margin: 0 auto;"}
-  -(4**2).times.each do |cell|
-    .panel{class: "box#{cell+1}", data: {box: cell}}
-      .front
-        .boxicon
-        .openicon
-      .back
-        .info HTML IS LOADED INTO HERE
-        .buttonbar
-          %a{href:"#", data:{role:"button"}} CLOSE
+      %a{data:{panel:"coupons"},href:"#"} Coupons (5)
+.panels
+  .pickabox
+    %div{class: "grid4", style: "margin: 0 auto;"}
+      -(4**2).times.each do |cell|
+        .panel{class: "box#{cell+1}", data: {box: cell}}
+          .front
+            .boxicon
+            .openicon
+          .back
+            .info HTML IS LOADED INTO HERE
+            .buttonbar
+              %a{href:"#", data:{role:"button"}} CLOSE
+  .coupons{style: "display: none;"}
+    %p coupons go here
 .html_after
 -# %div.ui-grid-c
   -# -4.times.each do

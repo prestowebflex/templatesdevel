@@ -38,21 +38,29 @@ $ =>
   #prizes = boxes.getPrizes 16
   
   #refresh panel based upon the state of the boxes
-  refreshPanel = ->
+  refreshPanel = (revealbox) ->
     $(".panel").removeClass("flipped hidden revealed available").each ->
       p = $(@)
       box = p.data "box"
       # remove presentastional classes
       # determine if drawn
-      if boxes.isRevealed(box)
+      if boxes.isRevealed(box) and revealbox != box
         p.addClass "revealed"
       else
         p.addClass "available"
         
   refreshCoupons = ->
-    
+    # this is the same as the panel, create node data's to represent the coupons
     
   refreshPanel()
+  
+  
+  # deal with the link for pick a box and coupons
+  # really only has to update coupon counts and change the box class
+  $("[data-role=navbar] a").click ->
+    $(".panels > div").hide()
+    $(".panels > .#{$(@).data("panel")}").show()
+  
   # this is just to flip panel bits only.
   # trigger the update of grabbing a prize and initialize it.
   $(".panel .buttonbar a").click ->
@@ -62,16 +70,17 @@ $ =>
     #console.log panel.parent().find(".panel")
     #.removeClass "hidden flipped"
   $(".panel").click ->
-    unless $(@).hasClass "flipped"
-      prize = boxes.getPrize($(@).data("box"))
+    $_  = $(@)
+    unless $_.hasClass("flipped") or $_.hasClass("revealed")
+      prize = boxes.getPrize($_.data("box"))
       #console.log 
-      $(@).find(".back > .info").html prize.html
+      $_.find(".back > .info").html prize.html
       #console.log prize
        # setup the dada
-      refreshPanel()
+      refreshPanel($(@).data("box"))
       # setup the visuals
-      $(@).addClass "flipped"
-      $(@).parent().find(".panel").not(@).addClass "hidden"
+      $_.addClass "flipped"
+      $_.parent().find(".panel").not(@).addClass "hidden"
       # viewing backside of card
       # # put back to front of card #mark as revealed
       # $(@).parent().find(".panel").removeClass "hidden"
@@ -158,7 +167,7 @@ class Coupon
   id: null # needs an identifier
   html: ""
   intervals: null
-  constructor: (@id, @data = {}) ->
+  constructor: (@id, @data = {}, @userdata = {}) ->
     {html: @html} = @data
     # generate the intervals generator from the data
     #@intervals = RepeatingIntervalGenerator.generate data

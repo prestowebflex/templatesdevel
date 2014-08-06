@@ -8,8 +8,12 @@ class Obj
     @attributes[key] = value
   get: (key) ->
     @attributes[key]
+  # stub save method
+  save: ->
+    true
+  # dud function keep things happy
   destroy: ->
-    # dud function keep things happy
+    true
     
 
 # node has many node data's accessable via create and getNodeData
