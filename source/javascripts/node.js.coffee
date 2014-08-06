@@ -35,14 +35,16 @@ class @Node extends Obj
     @nodedata
 
   create: (data={}) ->
-    @nodedata.push new NodeData content: data
+    @nodedata.push new NodeData data
   where: (conditions={}) ->
-    _.filter(@getNodeData(), (obj) ->
+    result = _.filter(@getNodeData(), (obj) ->
         for key, value of conditions
           if obj.get(key) != value
             return false
         true
       )
+    @log "where", conditions, result
+    result
     
 
 class NodeData extends Obj
