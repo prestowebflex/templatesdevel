@@ -31,7 +31,7 @@
 
 $ =>
   # initialize pick a box
-  @boxes = boxes = new PickABox node.get("data")
+  @boxes = boxes = new PickABox node.get("data"), node
   
   $(".html_before").html boxes.html_before
   $(".html_after").html boxes.html_after
@@ -107,7 +107,7 @@ class PickABox
   size: 16
   drawn_prizes: null # the prize state as drawn
   
-  constructor: (data = {}) ->
+  constructor: (data = {}, @node) ->
     {html_before: @html_before, html_after: @html_after} = data
     @prize_pool = for id, prize of data.prizes
       # TODO don't include prizes which fall outsize the date spec
@@ -122,7 +122,7 @@ class PickABox
   
   # get a prize for a boxx
   getPrize: (number) ->
-    @prizes[number].generateCoupons()
+    @prizes[number].generateCoupons(@node)
     @drawn_prizes[number] = @prizes[number]
   
   # is the prize revaled
@@ -149,17 +149,20 @@ class PickABox
     throw Error "Not implemented"
 # a prize includes 1 or more coupons
 class Prize
-  coupons: []
+  coupons: null
   id: null # needs an identifier
   odds: 0 # never drawn out
   validTo: new Date(2038,1,1) # leave this out for now
   validFrom: new Date(0) # leave this out for now
   html: ""
   constructor: (@id, @data = {}) ->
-    {html: @html, odds: @odds} = data
-  generateCoupons: ->
-    for id, coupon of data.coupons
+    {@html, @odds} = @data
+  generateCoupons: (node) ->
+    # call create off node to make up the necessary data
+    @coupons = for id, coupon of @data.coupons
       new Coupon("#{@id}-#{id}", coupon)
+    node.create(coupon.toJSON()) for coupon in @coupons
+    @coupons
     # stub function finish this off
   
 # a coupon represents a coupon
