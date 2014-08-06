@@ -52,8 +52,9 @@ $ =>
   refreshCoupons = ->
     # this is the same as the panel, create node data's to represent the coupons
     
+    
   refreshPanel()
-  
+  refreshCoupons()
   
   # deal with the link for pick a box and coupons
   # really only has to update coupon counts and change the box class
