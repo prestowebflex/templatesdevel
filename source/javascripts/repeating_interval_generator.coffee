@@ -1,9 +1,9 @@
 # initialize one of the time based classes
-gen = (spec, kls) ->
+gen = (spec={}, kls) ->
   o = new kls()
   unless spec.allday=="1"
     o.setMinutes(spec.length) if spec.length
-    o.setStartTime(spec.hour, spec.minute) if spec.hour and spec.minute
+    o.setStartTime(spec.hour, spec.minute) if spec.hour? and spec.minute?
   o
 filterArray = (array) -> 
   Number(x) for x in array when x isnt ""
