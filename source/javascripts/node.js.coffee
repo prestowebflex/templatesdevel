@@ -4,8 +4,10 @@ class Obj
     @set "updated_at", new Date()
     @set "created_at", new Date()
   
+  # make values as a json value not native objects
+  # this stuffs around with dates
   set: (key, value) ->
-    @attributes[key] = value
+    @attributes[key] = JSON.parse(JSON.stringify(value))
   get: (key) ->
     @attributes[key]
   # stub save method
