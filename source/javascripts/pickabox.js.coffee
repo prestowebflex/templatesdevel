@@ -155,21 +155,58 @@ class Prize
   validTo: new Date(2038,1,1) # leave this out for now
   validFrom: new Date(0) # leave this out for now
   html: ""
-  constructor: (@id, data = {}) ->
+  constructor: (@id, @data = {}) ->
     {html: @html, odds: @odds} = data
-    @coupons = for id, coupon of data.coupons
-      new Coupon("#{@id}-#{id}", coupon)
   generateCoupons: ->
+    for id, coupon of data.coupons
+      new Coupon("#{@id}-#{id}", coupon)
     # stub function finish this off
   
 # a coupon represents a coupon
 # maybe they are initialized from the user data instead
+# tie each coupon to it's own node data instance as well.
+# saves updating when calling methods
+
+# if initialized with node data the intervals are set etc...
+# if initialised from prize then intervals set themselves
 class Coupon
   id: null # needs an identifier
-  html: ""
+  html: "" # no html
+  # intervals is an array of intervals
   intervals: null
-  constructor: (@id, @data = {}, @userdata = {}) ->
+  claimed: null
+  # generate the coupons given the JSON data
+  @generate: (nodedatas, pickabox) ->
+    for nd in nodedatas
+      data = nd.get('data') # TODO check this name
+      new @()
+  constructor: (@id, @data = {}) ->
     {html: @html} = @data
     # generate the intervals generator from the data
-    #@intervals = RepeatingIntervalGenerator.generate data
-    
+    @intervals = RepeatingIntervalGenerator.generate data
+  # first start of interval - used to sort
+  earliestDate: ->
+    # used to order coupons
+    _.min @intervals, (o) -> o.getStart()
+  latestDate: ->
+    # used to remove expired coupons
+    _.max @intervals, (o) -> o.getEnd()
+  # coupon has expired
+  isExpired: ->
+    @latestDate().valueOf() < new Date().valueOf()
+  # coupon has been claimed
+  isClaimed: ->
+    @claimed?
+  # coupon is valid for display purposes
+  isValid: ->
+    !@isClaimed() and !@isExpired()
+  # coupon is currently claimable
+  isClaimable: ->
+    _.some @intervals, (o) -> o.isWithinInterval()
+  claim: ->
+    alert 'claim!'
+  toJSON: ->
+    # overload this to create the JSON representation of a coupon
+    intervals: @intervals
+    id: @id
+    claimed: @claimed
