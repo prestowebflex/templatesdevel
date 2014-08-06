@@ -146,7 +146,10 @@ class PickABox
     @pool_size
   getCoupon: (id) ->
     # get the id of a specific coupon
-    throw Error "Not implemented"
+    # id is split into 2 parts
+    [prizeId, couponId] = id.split("-")
+    prize = _.find(@prize_pool, (o) -> o.id == prizeId)
+    prize.getCoupon couponId
 # a prize includes 1 or more coupons
 class Prize
   coupons: null
@@ -164,7 +167,8 @@ class Prize
     node.create(coupon.toJSON()) for coupon in @coupons
     @coupons
     # stub function finish this off
-  
+  getCoupon: (id) ->
+    @data.coupons[id]
 # a coupon represents a coupon
 # maybe they are initialized from the user data instead
 # tie each coupon to it's own node data instance as well.
@@ -184,9 +188,10 @@ class Coupon
       data = nd.get('data') # TODO check this name
       new @()
   constructor: (@id, @data = {}) ->
+    # TODO REDO THIS SECTION
     {html: @html} = @data
     # generate the intervals generator from the data
-    @intervals = RepeatingIntervalGenerator.generate data
+    @intervals = RepeatingIntervalGenerator.generate data # if intervals not set??? 
   # first start of interval - used to sort
   earliestDate: ->
     # used to order coupons
