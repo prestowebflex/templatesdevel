@@ -149,7 +149,7 @@ class PickABox
     # id is split into 2 parts
     [prizeId, couponId] = id.split("-")
     prize = _.find(@prize_pool, (o) -> o.id == prizeId)
-    prize.getCoupon couponId
+    prize?.getCoupon couponId
 # a prize includes 1 or more coupons
 class Prize
   coupons: null
@@ -185,7 +185,7 @@ class Coupon
   # generate the coupons given the JSON data
   @generate: (nodedatas, pickabox) ->
     for nd in nodedatas
-      data = nd.get('data') # TODO check this name
+      data = nd.get('content')
       new @()
   constructor: (@id, @data = {}) ->
     # TODO REDO THIS SECTION
