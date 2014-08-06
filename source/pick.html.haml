@@ -13,7 +13,10 @@ title: Pick a Box
     %li
       %a.ui-btn-active{data:{panel:"pickabox"},href:"#"} Pick a box
     %li
-      %a{data:{panel:"coupons"},href:"#"} Coupons (5)
+      %a{data:{panel:"coupons"},href:"#"}
+        Coupons
+        =surround '(', ')' do
+          %span.couponcount 0
 .panels
   .pickabox
     %div{class: "grid4", style: "margin: 0 auto;"}
@@ -27,6 +30,7 @@ title: Pick a Box
             .buttonbar
               %a{href:"#", data:{role:"button"}} CLOSE
   .coupons{style: "display: none;"}
+    -# markup this jquery style
     %p coupons go here
 .html_after
 -# %div.ui-grid-c

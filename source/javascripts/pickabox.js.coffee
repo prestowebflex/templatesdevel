@@ -48,11 +48,13 @@ $ =>
         p.addClass "revealed"
       else
         p.addClass "available"
-        
+    refreshCoupons() 
+  
+  @coupons = []
   refreshCoupons = ->
     # this is the same as the panel, create node data's to represent the coupons
-    
-    
+    @coupons = Coupon.generate node.where(_datatype:"coupon"), boxes
+    $('.couponcount').text @coupons.length
   refreshPanel()
   refreshCoupons()
   
@@ -164,6 +166,7 @@ class Prize
     # call create off node to make up the necessary data
     @coupons = for id, coupon of @data.coupons
       new Coupon("#{@id}-#{id}", coupon)
+    console.log @coupons
     node.create(coupon.toJSON()) for coupon in @coupons
     @coupons
     # stub function finish this off
@@ -185,13 +188,18 @@ class Coupon
   # generate the coupons given the JSON data
   @generate: (nodedatas, pickabox) ->
     for nd in nodedatas
-      data = nd.get('content')
-      new @()
+      data = nd.attributes 
+      coupondata = pickabox.getCoupon data.couponid
+      new @(data.couponid, _.extend(coupondata,data))
   constructor: (@id, @data = {}) ->
-    # TODO REDO THIS SECTION
+    # fixed information
     {html: @html} = @data
     # generate the intervals generator from the data
-    @intervals = RepeatingIntervalGenerator.generate data # if intervals not set??? 
+    console.log @data
+    if @data.intervals
+      @intervals = (new TimeInterval(interval) for interval in @data.intervals) 
+    else
+      @intervals = RepeatingIntervalGenerator.generate @data # if intervals not set???
   # first start of interval - used to sort
   earliestDate: ->
     # used to order coupons
@@ -215,6 +223,7 @@ class Coupon
     alert 'claim!'
   toJSON: ->
     # overload this to create the JSON representation of a coupon
+    _datatype: "coupon"
     intervals: @intervals
-    id: @id
+    couponid: @id
     claimed: @claimed
