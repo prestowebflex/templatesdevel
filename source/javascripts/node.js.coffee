@@ -35,7 +35,7 @@ class @Node extends Obj
     @nodedata
 
   create: (data={}) ->
-    @nodedata.push new NodeData data: data
+    @nodedata.push new NodeData content: data
   where: (conditions={}) ->
     _.filter(@getNodeData(), (obj) ->
         for key, value of conditions
