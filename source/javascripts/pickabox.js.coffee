@@ -19,6 +19,7 @@
         odds: 50
         coupons:
           1:
+            title: "My Coupon"
             html: "Free Something"
             type: "weekly"
             days: [0,1,2,3,4,5,6]
@@ -55,6 +56,16 @@ $ =>
     # this is the same as the panel, create node data's to represent the coupons
     @coupons = Coupon.generate node.where(_datatype:"coupon"), boxes
     $('.couponcount').text @coupons.length
+    $('.coupons').html ""
+    for coupon in @coupons
+      $('.coupons').append """
+            <div data-content-theme='a' data-role='collapsible' data-theme='a'>
+              <h3>#{coupon.title}</h3>
+              #{coupon.html}
+              <a class='couponclaim ui-disabled' data-role='button' href='#'>Claim</a>
+            </div>
+                           """
+    $('.coupons').trigger "create"
   refreshPanel()
   refreshCoupons()
   
@@ -193,9 +204,9 @@ class Coupon
       new @(data.couponid, _.extend(coupondata,data))
   constructor: (@id, @data = {}) ->
     # fixed information
-    {html: @html} = @data
+    {@html, @title} = @data
     # generate the intervals generator from the data
-    console.log @data
+    # this depends if we are using the resurected json form
     if @data.intervals
       @intervals = (new TimeInterval(interval) for interval in @data.intervals) 
     else
