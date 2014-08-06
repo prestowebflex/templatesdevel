@@ -1,6 +1,8 @@
 # abstract class
 class Obj
-  constructor: (@attributes = {}) ->
+  constructor: (attributes = {}) ->
+    @attributes = JSON.parse(JSON.stringify(attributes))
+    @log("constructor", @attributes)
     @set "updated_at", new Date()
     @set "created_at", new Date()
   
