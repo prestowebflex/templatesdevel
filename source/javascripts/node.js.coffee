@@ -7,16 +7,21 @@ class Obj
   # make values as a json value not native objects
   # this stuffs around with dates
   set: (key, value) ->
+    @log("set", key, value)
     @attributes[key] = JSON.parse(JSON.stringify(value))
   get: (key) ->
-    @attributes[key]
+    value = @attributes[key]
+    @log("get", key, value)
+    value
   # stub save method
   save: ->
     true
   # dud function keep things happy
   destroy: ->
     true
-    
+  log: (method, values...) ->
+    values = (JSON.stringify value for value in values)
+    console.log "#{@constructor.name}##{method}", values...
 
 # node has many node data's accessable via create and getNodeData
 class @Node extends Obj
