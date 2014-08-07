@@ -29,6 +29,9 @@
   //position: relative
   // position of boxes
   +transform-style(preserve-3d)
+  //+transition-property(height,width,top,left,right,bottom,rotate,box-shadow)
+  //+transition-duration(0.5s)
+  //+transition-timing-function(ease-in-out)
   +transition(all 0.5s ease-in-out)
   z-index: 1
   .boxicon
@@ -42,12 +45,13 @@
   &.available .openicon, &.revealed .boxicon
     display: none
   &.hidden
-    +scale(0)
-    +opacity(0)
+    //+scale(0)
+    //+opacity(0)
     //+transform(rotatey(-180deg))
     //+transform-style(preserve-3d)
     //+backface-visibility(hidden)
-    z-index: -1
+    +transition-duration(0s)
+    z-index: 0
   &.hidden .back
     display: none
   .front, .back
@@ -59,7 +63,7 @@
     border: 1px solid #ccc
     +backface-visibility(hidden)
     +transform-style(preserve-3d)
-    +transition(all 0.5s ease-in-out)
+    +transition(inherit)
   &.flipped
     width: 100%
     height: 100%
