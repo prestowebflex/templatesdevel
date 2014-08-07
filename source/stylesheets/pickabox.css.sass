@@ -69,6 +69,7 @@
     height: 100%
     left: 0
     top: 0
+    z-index: 2
   &.flipped .front, &.flipped .back
     +box-shadow(0 1px 5px rgba(0,0,0,0.9))
 
@@ -92,10 +93,11 @@
       right: 0
     .info
       top: 0
-      bottom: 50px
-    .buttonbar
       bottom: 0
-      height: 50px
+      //50px
+    // .buttonbar
+      // bottom: 0
+      // height: 50px
 
     +transform(rotatey(-179deg) rotatex(0deg))
   &.flipped .back
