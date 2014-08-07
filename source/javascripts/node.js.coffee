@@ -3,14 +3,20 @@ class Obj
   constructor: (attributes = {}) ->
     @attributes = JSON.parse(JSON.stringify(attributes))
     @log("constructor", @attributes)
-    @set "updated_at", new Date()
-    @set "created_at", new Date()
+    @set
+      updated_at: new Date()
+      created_at: new Date()
   
   # make values as a json value not native objects
   # this stuffs around with dates
-  set: (key, value) ->
-    @log("set", key, value)
-    @attributes[key] = JSON.parse(JSON.stringify(value))
+  set: (obj, value) ->
+    @log("set", obj, value)
+    unless _.isObject(obj)
+      o = {}
+      o[obj] = value
+      obj = o
+    for key, value of obj
+      @attributes[key] = JSON.parse(JSON.stringify(value))
   get: (key) ->
     value = @attributes[key]
     @log("get", key, value)
