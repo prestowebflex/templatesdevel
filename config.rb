@@ -54,6 +54,9 @@ sprockets.import_asset 'underscore.js'
 #   end
 # end
 
+activate :relative_links
+activate :relative_assets
+
 set :css_dir, 'stylesheets'
 
 set :js_dir, 'javascripts'
