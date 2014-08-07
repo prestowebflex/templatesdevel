@@ -16,7 +16,7 @@
         coupons: {}
       2:
         html: "You Win"
-        odds: 50
+        odds: 500
         coupons:
           1:
             title: "My Coupon"
@@ -29,6 +29,11 @@
             times: 5
             leeway_before: 60
             generate_extra: 1
+          2:
+            title: "My Coupon #2"
+            html: "Free Something always"
+            type: "duration_days"
+            days: 5
 
 $ =>
   # initialize pick a box
@@ -52,6 +57,8 @@ $ =>
     refreshCoupons() 
   
   @coupons = []
+  findCoupon = (id) ->
+    _.find(@coupons, (c) -> c.id is id)
   refreshCoupons = ->
     # this is the same as the panel, create node data's to represent the coupons
     @coupons = Coupon.generate node.where(_datatype:"coupon", claimed:null), boxes
@@ -67,10 +74,10 @@ $ =>
                      """
       $('.coupons').append """
             <div data-content-theme='a' data-role='collapsible' data-theme='a'>
-              <h3>#{coupon.title}</h3>
+              <h3>#{coupon.title} #{coupon.id}</h3>
               #{coupon.html}
               #{intervals}
-              <a class='couponclaim ui-disabled1' data-role='button' href='#'>Claim</a>
+              <a class='couponclaim#{if coupon.isClaimable() then "" else " ui-disabled"}' data-role='button' href='#'>Claim</a>
             </div>
                            """
     $('.coupons').trigger "create"
@@ -84,7 +91,7 @@ $ =>
     $(".panels > .#{$(@).data("panel")}").show()
   
   # coupon claim!
-  $(".coupons").on "click", "a.couponclaim:not(.ui-disabled)", {}, ->
+  $(".coupons").on "click", ".couponclaim:not(.ui-disabled)", {}, ->
     alert "claim!"
     false
   # this is just to flip panel bits only.
@@ -192,7 +199,7 @@ class Prize
   generateCoupons: (node) ->
     # call create off node to make up the necessary data
     @coupons = for id, coupon of @data.coupons
-      new Coupon("#{@id}-#{id}", coupon)
+      new Coupon("#{@id}-#{id}-#{new Date().valueOf()}", coupon)
     console.log @coupons
     node.create(coupon.toJSON()) for coupon in @coupons
     @coupons
@@ -217,7 +224,8 @@ class Coupon
     for nd in nodedatas
       data = nd.attributes 
       coupondata = pickabox.getCoupon data.couponid
-      new @(data.couponid, _.extend(coupondata,data))
+      # extend off an empty object as we don't want to copy intervals onto coupon data
+      new @(data.couponid, _.extend({},coupondata,data))
   constructor: (@id, @data = {}) ->
     # fixed information
     {@html, @title} = @data
