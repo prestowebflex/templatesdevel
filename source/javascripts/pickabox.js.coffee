@@ -74,7 +74,7 @@ $ =>
                      """
       $('.coupons').append """
             <div data-couponid='#{coupon.id}' data-content-theme='a' data-role='collapsible' data-theme='a'>
-              <h3>#{coupon.title} #{coupon.id}</h3>
+              <h3>#{coupon.title} <span class="couponexpiry">#{coupon.latestDate().toDateString()}</span></h3>
               #{coupon.html}
               #{intervals}
               <a class='couponclaim#{if coupon.isClaimable() then "" else " ui-disabled"}' data-role='button' href='#'>Claim</a>
@@ -208,7 +208,6 @@ class Prize
     # call create off node to make up the necessary data
     @coupons = for id, coupon of @data.coupons
       new Coupon("#{@id}-#{id}-#{new Date().valueOf()}", coupon)
-    console.log @coupons
     node.create(coupon.toJSON()) for coupon in @coupons
     @coupons
     # stub function finish this off
@@ -239,6 +238,10 @@ class Coupon
     {@html, @title} = @data
     # set claimed date if it's set
     @claimed = new Date(@data.claimed) if @data.claimed?
+    @created = if @data.created?
+        new Date(@data.created)
+      else
+        new Date()
     # generate the intervals generator from the data
     # this depends if we are using the resurected json form
     if @data.intervals
@@ -248,10 +251,10 @@ class Coupon
   # first start of interval - used to sort
   earliestDate: ->
     # used to order coupons
-    _.min @intervals, (o) -> o.getStart()
+    _.min(_.map @intervals, (o) -> o.getStart())
   latestDate: ->
     # used to remove expired coupons
-    _.max @intervals, (o) -> o.getEnd()
+    _.max(_.map @intervals, (o) -> o.getEnd())
   # coupon has expired
   isExpired: ->
     @latestDate().valueOf() < new Date().valueOf()
@@ -277,3 +280,4 @@ class Coupon
     intervals: @intervals
     couponid: @id
     claimed: @claimed
+    created: @created

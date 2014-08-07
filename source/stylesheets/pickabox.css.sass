@@ -32,7 +32,7 @@
   //+transition-property(height,width,top,left,right,bottom,rotate,box-shadow)
   //+transition-duration(0.5s)
   //+transition-timing-function(ease-in-out)
-  +transition(all 0.5s ease-in-out)
+  +transition(all 2s ease-in-out)
   z-index: 1
   .boxicon
     height: 20px
@@ -75,7 +75,7 @@
 
   .front
     z-index: 900
-    background: #6b7077
+    //background: #6b7077
 
     // note about 180 causing an unnatural looking half flip?
     +transform(rotatey(0deg) rotatex(0deg))
@@ -103,4 +103,11 @@
   &.flipped .back
     background: #80868d
     +transform(rotatey(0deg))
+    
+.couponexpiry
+  font-size: 75%
+  font-weight: normal
+  float: right
+  &:before
+    content: "Expires: "
     
