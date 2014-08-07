@@ -17,6 +17,12 @@ class @TimeInterval
   isWithinInterval: (date = new Date()) ->
     @getEnd().valueOf() > date.valueOf() >= @getStart().valueOf()
   toString: ->
+    # TODO extend this to pretty print times
+    # same say for example
+    # Mon 2nd August 5-7pm
+    # Mon 2nd August 5:30am-7pm
+    # Mon 2nd August 12am-11:59:59pm
+    # if different days then full print string
     "TimeInterval(#{@getStart()}-#{@getEnd()})"
   toJSON: ->
     start: @start

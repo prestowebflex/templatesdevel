@@ -63,14 +63,14 @@ $ =>
       intervals = "<p>Valid from</p>"
       for interval in coupon.intervals
         intervals += """
-                        <p>#{interval.getStart().toLocaleString()} - #{interval.getEnd().toLocaleString()}</p>
+                        <p>#{interval}</p>
                      """
       $('.coupons').append """
             <div data-content-theme='a' data-role='collapsible' data-theme='a'>
               <h3>#{coupon.title}</h3>
               #{coupon.html}
               #{intervals}
-              <a class='couponclaim ui-disabled' data-role='button' href='#'>Claim</a>
+              <a class='couponclaim ui-disabled1' data-role='button' href='#'>Claim</a>
             </div>
                            """
     $('.coupons').trigger "create"
@@ -83,36 +83,44 @@ $ =>
     $(".panels > div").hide()
     $(".panels > .#{$(@).data("panel")}").show()
   
+  # coupon claim!
+  $(".coupons").on "click", "a.couponclaim:not(.ui-disabled)", {}, ->
+    alert "claim!"
+    false
   # this is just to flip panel bits only.
   # trigger the update of grabbing a prize and initialize it.
-  $(".panel .back").click ->
+  $(".pickabox").on "click", ".flipped", {}, ->
     refreshPanel()
     false
     #panel = $(@).parents(".panel")
     #console.log panel.parent().find(".panel")
     #.removeClass "hidden flipped"
-  $(".panel").click ->
+
+  # any front available facing box can be clicked
+  # while nothing is flipped
+  .on "click", ":not(:has(.flipped)) .available", {}, ->
     $_  = $(@)
-    unless $_.hasClass("flipped") or $_.hasClass("revealed")
-      prize = boxes.getPrize($_.data("box"))
-      #console.log 
-      $_.find(".back > .info").html prize.html
-      #console.log prize
-       # setup the dada
-      refreshPanel($(@).data("box"))
-      # setup the visuals
-      $_.addClass "flipped"
-      $_.parent().find(".panel").not(@).addClass "hidden"
-      # viewing backside of card
-      # # put back to front of card #mark as revealed
-      # $(@).parent().find(".panel").removeClass "hidden"
-      # $(@).removeClass "flipped"
-    # else
-      # # determine if the panel has been viewed before
-      # # How is this to be done
-      # $(@).removeClass "selectable"
-      # $(@).parent().find(".panel").not(@).addClass "hidden"
-      # $(@).addClass "flipped"
+    #return if $_.parent().find(".flipped").length
+    #unless $_.hasClass("flipped") or $_.hasClass("revealed")
+    prize = boxes.getPrize($_.data("box"))
+    #console.log 
+    $_.find(".back > .info").html prize.html
+    #console.log prize
+     # setup the dada
+    refreshPanel($(@).data("box"))
+    # setup the visuals
+    $_.addClass "flipped"
+    $_.parent().find(".panel").not(@).addClass "hidden"
+    # viewing backside of card
+    # # put back to front of card #mark as revealed
+    # $(@).parent().find(".panel").removeClass "hidden"
+    # $(@).removeClass "flipped"
+  # else
+    # # determine if the panel has been viewed before
+    # # How is this to be done
+    # $(@).removeClass "selectable"
+    # $(@).parent().find(".panel").not(@).addClass "hidden"
+    # $(@).addClass "flipped"
     false
   .on "touch", ->
     false
