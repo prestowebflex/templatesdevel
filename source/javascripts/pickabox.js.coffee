@@ -55,13 +55,21 @@ $ =>
   refreshCoupons = ->
     # this is the same as the panel, create node data's to represent the coupons
     @coupons = Coupon.generate node.where(_datatype:"coupon"), boxes
+    # TODO coupons needs to be sorted and filtered
     $('.couponcount').text @coupons.length
     $('.coupons').html ""
     for coupon in @coupons
+      # TODO need to sort the intervals
+      intervals = "<p>Valid from</p>"
+      for interval in coupon.intervals
+        intervals += """
+                        <p>#{interval.getStart().toLocaleString()} - #{interval.getEnd().toLocaleString()}</p>
+                     """
       $('.coupons').append """
             <div data-content-theme='a' data-role='collapsible' data-theme='a'>
               <h3>#{coupon.title}</h3>
               #{coupon.html}
+              #{intervals}
               <a class='couponclaim ui-disabled' data-role='button' href='#'>Claim</a>
             </div>
                            """
