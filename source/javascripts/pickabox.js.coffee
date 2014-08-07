@@ -54,7 +54,7 @@ $ =>
   @coupons = []
   refreshCoupons = ->
     # this is the same as the panel, create node data's to represent the coupons
-    @coupons = Coupon.generate node.where(_datatype:"coupon"), boxes
+    @coupons = Coupon.generate node.where(_datatype:"coupon", claimed:null), boxes
     # TODO coupons needs to be sorted and filtered
     $('.couponcount').text @coupons.length
     $('.coupons').html ""
@@ -85,7 +85,7 @@ $ =>
   
   # this is just to flip panel bits only.
   # trigger the update of grabbing a prize and initialize it.
-  $(".panel .buttonbar a").click ->
+  $(".panel .back").click ->
     refreshPanel()
     false
     #panel = $(@).parents(".panel")
