@@ -2,7 +2,7 @@
 #= require repeating_interval
 #= require repeating_interval_generator
 @node = node = new Node
-  data: 
+  content: 
     html_before: "
       <p>Text before pick a box</p>
       "
@@ -37,7 +37,7 @@
 
 $ =>
   # initialize pick a box
-  @boxes = boxes = new PickABox node.get("data"), node
+  @boxes = boxes = new PickABox node.get("content"), node
   
   $(".html_before").html boxes.html_before
   $(".html_after").html boxes.html_after
@@ -73,7 +73,7 @@ $ =>
                         <p>#{interval}</p>
                      """
       $('.coupons').append """
-            <div data-content-theme='a' data-role='collapsible' data-theme='a'>
+            <div data-couponid='#{coupon.id}' data-content-theme='a' data-role='collapsible' data-theme='a'>
               <h3>#{coupon.title} #{coupon.id}</h3>
               #{coupon.html}
               #{intervals}
@@ -92,7 +92,15 @@ $ =>
   
   # coupon claim!
   $(".coupons").on "click", ".couponclaim:not(.ui-disabled)", {}, ->
-    alert "claim!"
+    couponid =  $(@).parents("[data-couponid]").data "couponid"
+    coupon = findCoupon couponid
+    navigator.notification.confirm "Would you like to redeem the coupon now?", (buttonIndex) ->
+      if buttonIndex==1
+        coupon.claim()
+        refreshCoupons()
+    , "#{coupon.title} Redeem", "Yes,Dismiss"
+    #console.log coupon
+    #alert "claim! #{couponid}"
     false
   # this is just to flip panel bits only.
   # trigger the update of grabbing a prize and initialize it.
@@ -225,10 +233,12 @@ class Coupon
       data = nd.attributes 
       coupondata = pickabox.getCoupon data.couponid
       # extend off an empty object as we don't want to copy intervals onto coupon data
-      new @(data.couponid, _.extend({},coupondata,data))
-  constructor: (@id, @data = {}) ->
+      new @(data.couponid, _.extend({},coupondata,data), nd)
+  constructor: (@id, @data = {}, @obj = null) ->
     # fixed information
     {@html, @title} = @data
+    # set claimed date if it's set
+    @claimed = new Date(@data.claimed) if @data.claimed?
     # generate the intervals generator from the data
     # this depends if we are using the resurected json form
     if @data.intervals
@@ -255,7 +265,12 @@ class Coupon
   isClaimable: ->
     _.some @intervals, (o) -> o.isWithinInterval()
   claim: ->
-    alert 'claim!'
+    unless @isClaimed()
+      # set claimed to current date
+      @claimed = new Date()
+      #confirm this is correct
+      @obj.set @toJSON()
+      @obj.save
   toJSON: ->
     # overload this to create the JSON representation of a coupon
     _datatype: "coupon"
