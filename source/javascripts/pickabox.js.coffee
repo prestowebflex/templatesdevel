@@ -11,6 +11,11 @@ pickabox = (node, jQuery) ->
   
   #refresh panel based upon the state of the boxes
   refreshPanel = (revealbox) ->
+    pb = $(".pickabox").removeClass("available unavailable")
+    if boxes.isValid()
+      pb.addClass "available"
+    else
+      pb.addClass "unavailable"
     $(".panel").removeClass("flipped hidden revealed available").each ->
       p = $(@)
       box = p.data "box"
@@ -28,8 +33,9 @@ pickabox = (node, jQuery) ->
   refreshCoupons = ->
     # this is the same as the panel, create node data's to represent the coupons
     @coupons = Coupon.generate node.where(_datatype:"coupon", claimed:null), boxes
-    # TODO coupons needs to be sorted and filtered
+    # coupons come back sorted and filtered for us
     $('.couponcount').text @coupons.length
+    # wipe out coupons html
     $('.coupons').html ""
     for coupon in @coupons
       # TODO need to sort the intervals
