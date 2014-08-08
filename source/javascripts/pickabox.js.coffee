@@ -33,11 +33,16 @@ pickabox = (node, jQuery) ->
     $('.coupons').html ""
     for coupon in @coupons
       # TODO need to sort the intervals
-      intervals = "<p>Valid from</p>"
+      intervals = """
+                    <div class="coupon_validility">
+                       <h4>Valid for:</h4>
+                          <ul>
+                  """
       for interval in coupon.intervals
         intervals += """
-                        <p>#{interval}</p>
+                        <li>#{interval}</li>
                      """
+      intervals += "</ul></div>"
       $('.coupons').append """
             <div data-couponid='#{coupon.id}' data-content-theme='a' data-role='collapsible' data-theme='a'>
               <h3>#{coupon.title} <span class="couponexpiry">#{coupon.latestDate().toDateString()}</span></h3>
