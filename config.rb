@@ -43,7 +43,7 @@ end
 activate :jasmine do |options|
   #options.fixtures_dir = "sprc"
 end
-activate :sprokets
+#activate :sprokets
 
 sprockets.import_asset 'underscore.js' 
 
@@ -54,7 +54,7 @@ sprockets.import_asset 'underscore.js'
 #   end
 # end
 
-activate :relative_links
+#activate :relative_links
 activate :relative_assets
 
 set :css_dir, 'stylesheets'
