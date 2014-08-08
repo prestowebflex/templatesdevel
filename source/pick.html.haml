@@ -5,7 +5,6 @@ title: Pick a Box
   = stylesheet_link_tag "pickabox"
   = javascript_include_tag  "underscore"
   = javascript_include_tag  "node"
-  = javascript_include_tag  "phonegap"
   = javascript_include_tag  "environment"
   = javascript_include_tag  "pickabox"
 .html_before
@@ -20,7 +19,8 @@ title: Pick a Box
           %span.couponcount 0
 .panels
   .pickabox
-    %div{class: "grid4", style: "margin: 0 auto;"}
+    .try_again Try Again Tomorrow!
+    .grid.grid4
       -(4**2).times.each do |cell|
         .panel{class: "box#{cell+1}", data: {box: cell}}
           .front

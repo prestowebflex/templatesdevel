@@ -61,11 +61,19 @@ pickabox = (node, jQuery) ->
     $(".panels > div").hide()
     $(".panels > .#{$(@).data("panel")}").show()
   
+  
+  n = window.navigator?.notification? ||
+        confirm: (message, callback, title, buttons) ->
+          callback? if confirm(message) then 1 else 2
+        alert: (message, callback, title, buttons) ->
+          alert message
+          callback?()
+  
   # coupon claim!
   $(".coupons").on "click", ".couponclaim:not(.ui-disabled)", {}, ->
     couponid =  $(@).parents("[data-couponid]").data "couponid"
     coupon = findCoupon couponid
-    navigator.notification.confirm "Would you like to redeem the coupon now?", (buttonIndex) ->
+    n.confirm "Would you like to redeem the coupon now?", (buttonIndex) ->
       if buttonIndex==1
         coupon.claim()
         refreshCoupons()
