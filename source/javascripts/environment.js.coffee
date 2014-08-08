@@ -6,6 +6,10 @@ node = new Node
     html_after: "
       <p>Text after pick a box</p>
       "
+    html_tryagain: "
+      <p>Try again tomorrow</p>
+    "
+    draws: 1
     prizes:
       1:
         html: "Try Again :("
