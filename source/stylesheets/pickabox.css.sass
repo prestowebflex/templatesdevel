@@ -79,7 +79,7 @@
     z-index: 2
     +transition-duration(2s)
   &.flipped .front, &.flipped .back
-    +box-shadow(0 1px 5px rgba(0,0,0,0.9))
+    //+box-shadow(0 1px 5px rgba(0,0,0,0.9))
 
   .front
     z-index: 900
@@ -94,7 +94,7 @@
     z-index: 950
   .back
     z-index: 800
-    background: #333
+    //background: #333
     .info, .buttonbar
       position: absolute
       left: 0
@@ -109,7 +109,7 @@
 
     +transform(rotatey(-179deg) rotatex(0deg))
   &.flipped .back
-    background: #80868d
+    //background: #80868d
     +transform(rotatey(0deg))
     
 .couponexpiry
