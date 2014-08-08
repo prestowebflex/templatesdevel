@@ -327,6 +327,21 @@ RepeatingIntervalGenerator =
 class TimeInterval
   # has start / end
   # has start / duration
+  lpad = (number, length=2, pad="0") ->
+    n = "#{number}"
+    n = "#{pad}#{n}" while n.length < length
+    n
+  # break a time into HH:MM:SS:MS am/pm
+  formatTime = (date) ->
+    # 12:45am ->0,1
+    # 12:45pm ->12,1
+    hours = date.getHours()%12
+    hours = 12 if hours == 0
+    hour: "#{hours}"
+    minute: lpad(date.getMinutes())
+    second:lpad(date.getSeconds())
+    millisecond:lpad(date.getMilliseconds(),3)
+    ampm: if date.getHours() < 12 then "am" else "pm"
   constructor: (options={}) ->
     for opt in ["start", "end"]
       @[opt] = new Date(options[opt].valueOf?() || options[opt]) if options[opt]?
@@ -337,14 +352,37 @@ class TimeInterval
   getLength: -> @getEnd().valueOf() - @getStart().valueOf()
   isWithinInterval: (date = new Date()) ->
     @getEnd().valueOf() > date.valueOf() >= @getStart().valueOf()
+  isSameDay: -> @valuesSame "Date", "Month", "FullYear"
+  # check if a bunch of values are the same
+  valuesSame: (values...) ->
+    for value in values
+      return false unless @getStart()["get#{value}"]() == @getEnd()["get#{value}"]() 
+    true
   toString: ->
-    # TODO extend this to pretty print times
-    # same say for example
-    # Mon 2nd August 5-7pm
-    # Mon 2nd August 5:30am-7pm
-    # Mon 2nd August 12am-11:59:59pm
-    # if different days then full print string
-    "TimeInterval(#{@getStart()}-#{@getEnd()})"
+    start = formatTime @getStart()
+    end = formatTime @getEnd()
+    minute = (spec) ->
+      if spec.minute == "00"
+        ""
+      else
+        ":#{spec.minute}"
+    hour = (spec, end=null) ->
+      if spec.hour=="12" and spec.minute=="00"
+        if spec.ampm == "am"
+          "midnight"
+        else
+          "midday"
+      else
+        # check if end spec am/pm matches leave off
+        ampm = unless end?.ampm == spec.ampm
+          spec.ampm
+        else
+          ""
+        "#{spec.hour}#{minute(spec)}#{ampm}"
+    if @isSameDay()
+      "#{@getStart().toDateString()} #{hour(start,end)}-#{hour(end)}"
+    else
+      "#{@getStart().toDateString()} #{hour(start)}-#{@getEnd().toDateString()} #{hour(end)}"
   toJSON: ->
     start: @start
     end: @end
@@ -584,5 +622,6 @@ class RepeatingInterval extends TimeInterval
 
 @RepeatingIntervalGenerator = RepeatingIntervalGenerator
 @RepeatingInterval = RepeatingInterval
+@TimeInterval = TimeInterval
 @pickabox = pickabox
 
