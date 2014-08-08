@@ -64,7 +64,7 @@ pickabox = (node, jQuery) ->
       if buttonIndex==1
         coupon.claim()
         refreshCoupons()
-    , "#{coupon.title} Redeem", "Yes,Dismiss"
+    , "Redeem #{coupon.title}", "Yes,Dismiss"
     #console.log coupon
     #alert "claim! #{couponid}"
     false
@@ -198,11 +198,17 @@ class Coupon
   claimed: null
   # generate the coupons given the JSON data
   @generate: (nodedatas, pickabox) ->
-    for nd in nodedatas
-      data = nd.attributes 
-      coupondata = pickabox.getCoupon data.couponid
-      # extend off an empty object as we don't want to copy intervals onto coupon data
-      new @(data.couponid, _.extend({},coupondata,data), nd)
+    _.chain(
+        for nd in nodedatas
+          data = nd.attributes 
+          coupondata = pickabox.getCoupon data.couponid
+          # extend off an empty object as we don't want to copy intervals onto coupon data
+          new @(data.couponid, _.extend({},coupondata,data), nd)
+      )
+      .reject (o) -> o.isExpired()
+      .sortBy (o) -> o.created
+      .reverse()
+      .value()
   constructor: (@id, @data = {}, @obj = null) ->
     # fixed information
     {@html, @title} = @data
