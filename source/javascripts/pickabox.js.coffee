@@ -7,6 +7,7 @@ pickabox = (node, jQuery) ->
   
   $(".html_before").html boxes.html_before
   $(".html_after").html boxes.html_after
+  $(".try_again").html boxes.html_tryagain
   #prizes = boxes.getPrizes 16
   
   #refresh panel based upon the state of the boxes
