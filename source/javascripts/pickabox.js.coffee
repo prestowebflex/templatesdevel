@@ -128,14 +128,16 @@ class PickABox
   prize_pool: null
   html_before: ""
   html_after: ""
+  html_tryagain: "Try Again"
   # number of items in the pool
   pool_size: null
   # size of the grid
   size: 16
   drawn_prizes: null # the prize state as drawn
-  
+  draws: 0
+  drawn: 0
   constructor: (data = {}, @node) ->
-    {html_before: @html_before, html_after: @html_after} = data
+    {@html_before,@html_after,@html_tryagain,@draws} = data
     @prize_pool = for id, prize of data.prizes
       # TODO don't include prizes which fall outsize the date spec
       new Prize(id, prize)
@@ -149,13 +151,18 @@ class PickABox
   
   # get a prize for a boxx
   getPrize: (number) ->
-    @prizes[number].generateCoupons(@node)
-    @drawn_prizes[number] = @prizes[number]
+    if !@isRevealed(number) and @isValid() 
+      @drawn++
+      @prizes[number].generateCoupons(@node)
+      @drawn_prizes[number] = @prizes[number]
   
   # is the prize revaled
   isRevealed: (boxNumber) ->
     @drawn_prizes[boxNumber]?
   
+  # is the current pick a box valid to draw from
+  isValid: ->
+    @drawn < @draws   
   # genrate single prize
   generateRandomPrize: ->
     # draw a prize based upon the pool size and odds etc...
