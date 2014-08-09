@@ -1,26 +1,25 @@
 node = new Node
   content: 
     html_before: "
-      <p>Text before pick a box</p>
+      <p>AA Text before pick a box</p>
       "
     html_after: "
-      <p>Text after pick a box</p>
+      <p>AA Text after pick a box</p>
       "
     html_tryagain: "
-      <p>Try again tomorrow</p>
+      <p>AA Try again tomorrow</p>
     "
-    draws: 2
+    draws: "4"
     prizes:
       1:
-        html: "Try Again :("
-        odds: 50
-        coupons: {}
+        html: "AA Try Again :("
+        odds: "1"
       2:
-        html: "You Win"
-        odds: 500
+        html: "AA You Win"
+        odds: "1"
         coupons:
           1:
-            title: "My Coupon"
+            title: "AA y Coupon"
             html: "Free Something"
             type: "weekly"
             days: [0,1,2,3,4,5,6]
@@ -31,7 +30,7 @@ node = new Node
             leeway_before: 60
             generate_extra: 1
           2:
-            title: "My Coupon #2"
+            title: "AA My Coupon #2"
             html: "Free Something always"
             type: "duration_days"
             days: 5
