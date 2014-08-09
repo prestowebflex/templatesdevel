@@ -30,10 +30,10 @@
     //position: relative
     // position of boxes
     +transform-style(preserve-3d)
-    //+transition-property(height,width,top,left,right,bottom,rotate,box-shadow)
-    //+transition-duration(0.5s)
-    //+transition-timing-function(ease-in-out)
-    +transition(all 0.5s ease-in-out)
+    +transition-property(height,width,top,left,right,bottom,rotate,box-shadow)
+    +transition-duration(0.5s)
+    +transition-timing-function(ease-in-out)
+    //+transition(all 0.5s ease-in-out)
     z-index: 1
     .boxicon, .openicon
       position: absolute
@@ -78,7 +78,7 @@
       height: 100%
       left: 0
       top: 0
-      z-index: 2
+      z-index: 9999
       +transition-duration(2s)
       cursor: pointer
     &.flipped .front, &.flipped .back
@@ -127,17 +127,27 @@
     margin-top: 1ex
     ul,li,h4
       margin: 0
-  .try_again
+  .pickabox .try_again
+    //border: solid 1px black
+    //background-color: blue
     position: absolute
+    height: inherit
+    width: inherit
     top: 0
     left: 0
     right: 0
     bottom: 0
-    z-index: 3
+    z-index: 1
+    //display: block
+    visibility: hidden
+    +opacity(0)
   .pickabox
-    &.available
-      .try_again
-        display: none
     &.unavailable
       .try_again
-        display: block
+        //+transform-style(preserve-3d)
+        +transition(all 2s ease-in-out)
+        +opacity(1)
+        visibility: visible
+        //display: block
+        z-index: 2
+        
