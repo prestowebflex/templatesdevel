@@ -50,8 +50,8 @@ pickabox = (node, jQuery) ->
     $('.couponcount').text @coupons.length
     # wipe out coupons html
     $('.coupons').html ""
+    couponhtml = ""
     for coupon in @coupons
-      couponhtml = ""
       intervals = """
                     <div class="coupon_validility">
                        <h4>Valid for:</h4>
