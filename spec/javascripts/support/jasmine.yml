@@ -15,6 +15,7 @@ src_files:
 #  - javascripts/**/*.coffee
   - javascripts/underscore.js
   - javascripts/date.js
+  - javascripts/node.js
   - javascripts/pickabox.js
   
 # stylesheets
