@@ -82,23 +82,20 @@ pickabox = (node, jQuery) ->
     $(".panels > div").hide()
     $(".panels > .#{$(@).data("panel")}").show()
   
-  
-  n = window.navigator?.notification? ||
-        confirm: (message, callback, title, buttons) ->
-          callback? if confirm(message) then 1 else 2
-        alert: (message, callback, title, buttons) ->
-          alert message
-          callback?()
-  
   # coupon claim!
   $(".coupons").on "click", ".couponclaim:not(.ui-disabled)", {}, ->
     couponid =  $(@).parents("[data-couponid]").data "couponid"
     coupon = findCoupon couponid
-    n.confirm "Would you like to redeem the coupon now?", (buttonIndex) ->
-      if buttonIndex==1
+    if window.navigator?.notification?.confirm?
+      window.navigator.notification.confirm "Would you like to redeem the coupon now?", (buttonIndex) ->
+        if buttonIndex==1
+          coupon.claim()
+          refreshCoupons()
+      , "Redeem #{coupon.title}", "Yes,Dismiss"
+    else
+      if confirm("Would you like to redeem the coupon now?")
         coupon.claim()
         refreshCoupons()
-    , "Redeem #{coupon.title}", "Yes,Dismiss"
     #console.log coupon
     #alert "claim! #{couponid}"
     false
@@ -293,7 +290,7 @@ class Coupon
       @claimed = new Date()
       #confirm this is correct
       @obj.set @toJSON()
-      @obj.save
+      @obj.save()
   toJSON: ->
     # overload this to create the JSON representation of a coupon
     _datatype: "coupon"
