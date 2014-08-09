@@ -39,7 +39,12 @@ class @Node extends Obj
   getNodeData: ->
     # FAKE STUB
     @nodedata
-
+  collection:
+    # only mock up for images
+    getAsync: (obj, id, callback) ->
+      callback?(
+        geturl: (callback) -> callback? "http://placehold.it/350x150"
+        )
   create: (data={}) ->
     @nodedata.push new NodeData data
   where: (conditions={}) ->
