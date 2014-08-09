@@ -1,13 +1,25 @@
 pickabox = (node, jQuery) ->
+  
+  # process html via collection
+  html = (jquery, html) ->
+    # load in html
+    jquery.html html
+    # proces each image
+    jquery.find("img").not("[src]").each (i) ->
+      img = $ @
+      node.collection.getAsync "image", img.data("image"), (image) ->
+        image.geturl (href) ->
+          img.attr "src", href
+
   # quick mockup around jquery
   $ = (selector) ->
     jQuery.find selector
   # initialize pick a box
   boxes = new PickABox node.get("content"), node
   
-  $(".html_before").html boxes.html_before
-  $(".html_after").html boxes.html_after
-  $(".try_again").html boxes.html_tryagain
+  html $(".html_before"), boxes.html_before  
+  html $(".html_after"), boxes.html_after  
+  html $(".try_again"), boxes.html_tryagain  
   #prizes = boxes.getPrizes 16
   
   #refresh panel based upon the state of the boxes
@@ -39,7 +51,7 @@ pickabox = (node, jQuery) ->
     # wipe out coupons html
     $('.coupons').html ""
     for coupon in @coupons
-      # TODO need to sort the intervals
+      couponhtml = ""
       intervals = """
                     <div class="coupon_validility">
                        <h4>Valid for:</h4>
@@ -50,7 +62,7 @@ pickabox = (node, jQuery) ->
                         <li>#{interval}</li>
                      """
       intervals += "</ul></div>"
-      $('.coupons').append """
+      couponhtml += """
             <div data-couponid='#{coupon.id}' data-content-theme='a' data-role='collapsible' data-theme='a'>
               <h3>#{coupon.title} <span class="couponexpiry">#{coupon.latestDate().toDateString()}</span></h3>
               #{coupon.html}
@@ -58,7 +70,9 @@ pickabox = (node, jQuery) ->
               <a class='couponclaim#{if coupon.isClaimable() then "" else " ui-disabled"}' data-role='button' href='#'>Claim</a>
             </div>
                            """
-    $('.coupons').trigger "create"
+    c = $('.coupons')
+    html c, couponhtml 
+    c.trigger "create"
   refreshPanel()
   refreshCoupons()
   
@@ -100,12 +114,13 @@ pickabox = (node, jQuery) ->
   # any front available facing box can be clicked
   # while nothing is flipped
   .on "click", ":not(:has(.flipped)) .available", {}, ->
+    return false unless boxes.isValid()
     $_  = $(@)
     #return if $_.parent().find(".flipped").length
     #unless $_.hasClass("flipped") or $_.hasClass("revealed")
     prize = boxes.getPrize($_.data("box"))
-    #console.log 
-    $_.find(".back > .info").html prize.html
+    #console.log
+    html $_.find(".back > .info"), prize.html
     #console.log prize
      # setup the dada
     refreshPanel($(@).data("box"))
@@ -173,7 +188,7 @@ class PickABox
   # genrate single prize
   generateRandomPrize: ->
     # draw a prize based upon the pool size and odds etc...
-    number = _.random @getPoolSize() # eg 0-99 total odds
+    number = _.random(@getPoolSize()-1) # eg 0-99 total odds
     # decrement number till it's -ve
     for prize in @prize_pool
       number -= prize.odds
@@ -201,6 +216,8 @@ class Prize
   html: ""
   constructor: (@id, @data = {}) ->
     {@html, @odds} = @data
+    @odds = Number(@odds)
+    @data.coupons = {} unless @data.coupons?
   generateCoupons: (node) ->
     # call create off node to make up the necessary data
     @coupons = for id, coupon of @data.coupons
@@ -657,4 +674,4 @@ class RepeatingInterval extends TimeInterval
 @RepeatingInterval = RepeatingInterval
 @TimeInterval = TimeInterval
 @pickabox = pickabox
-
+@PickABox = PickABox
