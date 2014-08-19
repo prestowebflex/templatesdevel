@@ -340,19 +340,19 @@ RepeatingIntervalGenerator =
         # initialize basic properties
         o = gen(spec, RepeatingInterval.Daily)
         # setup specific propertities
-        o.setDays(filterArray(spec.days))
+        o.setDays(filterArray(spec.week_days))
         makeArray(spec, o)
       when "monthly"
         # initialize basic properties
         o = gen(spec, RepeatingInterval.MonthlyDate)
         # setup specific propertities
-        o.setDates(filterArray(spec.days))
+        o.setDates(filterArray(spec.month_dates))
         makeArray(spec, o)
       when "monthly_day"
         # initialize basic properties
         o = gen(spec, RepeatingInterval.MonthlyDay)
         # setup specific propertities
-        weeks = for x in spec.days when x isnt ""
+        weeks = for x in spec.month_days when x isnt ""
           # day week use regexps to split out
           [day, week] = x.split ","
           [Number(week), Number(day)] 

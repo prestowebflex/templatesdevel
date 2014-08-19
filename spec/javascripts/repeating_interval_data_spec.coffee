@@ -275,7 +275,7 @@ describe "Repeating Interval gernator", ->
     weekly: ->
       convert
         type: "weekly"
-        days: ["",0,1,2] # sun, mon, tuesday
+        week_days: ["",0,1,2] # sun, mon, tuesday
         allday: 0
         hour: 17
         minute: 0
@@ -286,7 +286,7 @@ describe "Repeating Interval gernator", ->
     monthly: ->
       convert
         type: "monthly"
-        days: ["",-1,15] # last and 15th
+        month_dates: ["",-1,15] # last and 15th
         allday: 0
         hour: 17
         minute: 0
@@ -297,7 +297,7 @@ describe "Repeating Interval gernator", ->
     monthly_day: ->
       convert
         type: "monthly_day"
-        days: ["","0,-1","2,2"] #last Sunday(-1,0) and 2nd Tuesday(2,2) 
+        month_days: ["","0,-1","2,2"] #last Sunday(-1,0) and 2nd Tuesday(2,2) 
         allday: 0
         hour: 17
         minute: 0
