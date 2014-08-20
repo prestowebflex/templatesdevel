@@ -241,11 +241,12 @@ class Coupon
   @generate: (nodedatas, pickabox) ->
     _.chain(
         for nd in nodedatas
-          data = nd.attributes 
+          data = nd.attributes
           coupondata = pickabox.getCoupon data.couponid
           # extend off an empty object as we don't want to copy intervals onto coupon data
-          new @(data.couponid, _.extend({},coupondata,data), nd)
+          new @(data.couponid, _.extend({},coupondata,data), nd) if coupondata?
       )
+      .select (o) -> o?
       .reject (o) -> o.isExpired()
       .sortBy (o) -> o.created
       .reverse()
