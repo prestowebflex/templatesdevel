@@ -23,7 +23,7 @@ node = new Node
             title: "AA y Coupon"
             html: "Free Something <img />"
             type: "weekly"
-            days: [0,1,2,3,4,5,6]
+            week_days: [0,1,2,3,4,5,6]
             hour: 17
             minute: 0
             length: 180
