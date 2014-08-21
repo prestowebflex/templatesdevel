@@ -392,11 +392,14 @@ class TimeInterval
     ampm: if date.getHours() < 12 then "am" else "pm"
   constructor: (options={}) ->
     for opt in ["start", "end"]
-      @[opt] = new Date(options[opt].valueOf?() || options[opt]) if options[opt]?
-  setStart: (@start) ->
-  setEnd: (@end) ->
-  getStart: -> @start
-  getEnd: -> @end
+      @[opt] = new Date(options[opt]) if options[opt]?
+  setStart: (start) ->
+    @start = new Date(start.valueOf?() || start)
+  setEnd: (end) ->
+    @end = new Date(end.valueOf?() || end)
+  # make clones of the date objects
+  getStart: -> new Date(@start.valueOf())
+  getEnd: -> new Date(@end.valueOf())
   getLength: -> @getEnd().valueOf() - @getStart().valueOf()
   isWithinInterval: (date = new Date()) ->
     @getEnd().valueOf() > date.valueOf() >= @getStart().valueOf()
@@ -481,6 +484,23 @@ class RepeatingInterval extends TimeInterval
     # creep it forward 1 ms to move out of current range
     new @spec.constructor.intervalClass(@spec, new Date(@getEnd().valueOf()+1))
   
+  prev: ->
+    # keep going back 1 day at a time until the next() == this
+    # that object is then the previous interval return it
+    searchStart = @getStart()
+    interval = @
+    counter = 0
+    #console.log "INTERVAL IS #{@}"
+    until @equals n=interval.next()
+      searchStart.setDate searchStart.getDate() - 1 # go back 1 day at a time
+      interval = new @spec.constructor.intervalClass(@spec, searchStart.valueOf())
+      #console.log "#{@}"
+      #console.log "DATE: #{searchStart} INT: #{interval} NEXT:#{n} EQ: #{@equals n}"
+      #console.log "NEXT:#{n.getStart().valueOf()-@getStart().valueOf()}-#{n.getEnd().valueOf()-@getEnd().valueOf()} THIS:#{interval.getStart().valueOf()}-#{interval.getEnd().valueOf()}"
+      if ++counter > 120 # days
+        throw Error "Infinite loop tried #{counter} times!"
+    interval
+      
   # interval just return self
   interval: -> @
 
@@ -512,8 +532,12 @@ class RepeatingInterval extends TimeInterval
       new @constructor.intervalClass(@, @startTime)
 
     # this is a delegate method to the generator
-    next: -> @interval().next()
-    
+    next: -> @interval().next()    
+    prev: -> @interval().prev()
+    equals: (interval) -> @interval().equals(interval)
+    getStart: -> @interval().getStart()
+    getEnd: -> @interval().getEnd()
+        
     setMilliseconds: (ms) ->
       if ms > 7 * 24 * 60 * 60 * 1000 - 1
         throw Error "Length of interval can not be more than 1 week"

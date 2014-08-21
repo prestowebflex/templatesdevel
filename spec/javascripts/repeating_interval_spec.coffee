@@ -69,7 +69,15 @@ describe "RepeatingInterval", ->
       expect(interval.getStart()).toEqualDate 31,1,2014
       expect(interval.next().getStart()).toEqualDate 28,2,2014
       expect(interval.next().next().getStart()).toEqualDate 31,3,2014
-      
+    it "works for prev()", ->
+      @i.setDates -1
+      interval = @i.interval()
+      expect(interval.getStart()).toEqualDate 31,1,2014
+      expect(interval.next().prev().getStart()).toEqualDate 31,1,2014
+      expect(interval.next().getStart()).toEqualDate 28,2,2014
+      expect(interval.next().prev().next().getStart()).toEqualDate 28,2,2014
+      expect(interval.next().next().getStart()).toEqualDate 31,3,2014
+      expect(interval.next().prev().prev().next().next().next().getStart()).toEqualDate 31,3,2014
   describe "MonthlyDay", ->
     beforeEach ->
       @i = new RepeatingInterval.MonthlyDay(new Date(2014,0,1))
