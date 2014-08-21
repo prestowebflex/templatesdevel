@@ -406,6 +406,8 @@ class TimeInterval
     for value in values
       return false unless @getStart()["get#{value}"]() == @getEnd()["get#{value}"]() 
     true
+  equals: (interval) ->
+    @getStart().valueOf?()==interval?.getStart().valueOf?() and @getEnd().valueOf?()==interval?.getEnd().valueOf?()  
   toString: ->
     start = formatTime @getStart()
     end = formatTime @getEnd()

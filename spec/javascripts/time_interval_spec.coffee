@@ -17,6 +17,34 @@ describe "Time Interval", ->
     new Date(y,month-1,d,h,m,s,ms)
   int = (s,e) ->
     new TimeInterval(start:s,end:e).toString()
+  it "equals an identical interval", ->
+    start = new Date(1234)
+    end = new Date(4567)
+    i1 = new TimeInterval(start:start, end:end )
+    i2 = new TimeInterval(start:start, end:end )
+    expect(i1.equals(i2)).toEqual(true)
+    expect(i2.equals(i1)).toEqual(true)
+  it "not equals an non identical interval end", ->
+    start = new Date(1234)
+    end = new Date(4567)
+    i1 = new TimeInterval(start:start, end:end )
+    i2 = new TimeInterval(start:start, end:4568 )
+    expect(i1.equals(i2)).toEqual(false)
+    expect(i2.equals(i1)).toEqual(false)
+  it "not equals an non identical interval start", ->
+    start = new Date(1234)
+    end = new Date(4567)
+    i1 = new TimeInterval(start:start, end:end )
+    i2 = new TimeInterval(start:1235, end:end )
+    expect(i1.equals(i2)).toEqual(false)
+    expect(i2.equals(i1)).toEqual(false)
+  it "not equals an non identical interval both", ->
+    start = new Date(1234)
+    end = new Date(4567)
+    i1 = new TimeInterval(start:start, end:end )
+    i2 = new TimeInterval(start:1235, end:4568 )
+    expect(i1.equals(i2)).toEqual(false)
+    expect(i2.equals(i1)).toEqual(false)
   it "7-8pm", ->
     expect(int(t(19), t(20))).toMatch /7-8pm$/
   it "9am-5pm", ->
