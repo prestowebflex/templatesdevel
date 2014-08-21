@@ -96,6 +96,13 @@ describe "RepeatingInterval", ->
       expect(interval.next().getStart()).toEqualDate 24,2,2014
       expect(interval.next().next().getStart()).toEqualDate 31,3,2014
       expect(interval.next().next().next().getStart()).toEqualDate 28,4,2014
+    it "works for prev()", ->
+      @i.setDayWeeks [-1, MyDate.MONDAY]
+      interval = @i.interval()
+      expect(interval.prev().next().getStart()).toEqualDate 27,1,2014
+      expect(interval.prev().next().next().getStart()).toEqualDate 24,2,2014
+      expect(interval.prev().next().next().next().prev().next().getStart()).toEqualDate 31,3,2014
+      expect(interval.prev().next().next().next().prev().prev().next().next().next().getStart()).toEqualDate 28,4,2014
   describe "NumberOfDays", ->
     beforeEach ->
       @i = new RepeatingInterval.NumberOfDays(new Date(2014,0,1,11))
@@ -110,3 +117,9 @@ describe "RepeatingInterval", ->
       expect(interval.next().getStart()).toEqualTime 0,0,0,0
       expect(interval.next().getEnd()).toEqualDate 3,3,2014
       expect(interval.next().getEnd()).toEqualTime 23,59,59,999
+    it "doesn't do prev()", ->
+      @i.setDays 30
+      interval = @i.interval()
+      expect ->
+          interval.prev()
+        .toThrow Error "Not Implemented"

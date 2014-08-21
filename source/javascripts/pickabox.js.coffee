@@ -689,7 +689,8 @@ class RepeatingInterval extends TimeInterval
         end.setSeconds 59
         end.setMilliseconds 999
         @setEnd end
-      
+      prev: ->
+        throw Error "Not Implemented"
     @intervalClass: NumberOfDaysRepeatingInterval
       
 
