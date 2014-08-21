@@ -140,8 +140,6 @@ pickabox = (node, jQuery) ->
     
 
 
-
-
 # pick a box pulls from a pool of prizes
 class PickABox
   prize_pool: null
@@ -157,12 +155,16 @@ class PickABox
   drawn: 0
   constructor: (data = {}, @node) ->
     {@html_before,@html_after,@html_tryagain,@draws} = data
+    @pool_size = Number(data.pool_size)
     @prize_pool = for id, prize of data.prizes
       # TODO don't include prizes which fall outsize the date spec
       new Prize(id, prize)
+    # put THE dud prize into the prize pool now
+    @prize_pool.push new Prize(0, {html: data.html_tryagain, odds: (@pool_size - @_calculatePoolSize())})
     # predraw the prizes now
     @prizes = @getRandomPrizes()
     @drawn_prizes = [] # store the drawn prizes somewhere
+    @drawn = @node.where(_datatype:"boxshow").length
   # generate N number of prizes as an array
   getRandomPrizes: (number) ->
     number = @size unless number?
@@ -171,6 +173,7 @@ class PickABox
   # get a prize for a boxx
   getPrize: (number) ->
     if !@isRevealed(number) and @isValid() 
+      @node.create(_datatype:"boxshow", timedrawn: new Date())
       @drawn++
       @prizes[number].generateCoupons(@node)
       @drawn_prizes[number] = @prizes[number]
@@ -185,18 +188,20 @@ class PickABox
   # genrate single prize
   generateRandomPrize: ->
     # draw a prize based upon the pool size and odds etc...
-    number = _.random(@getPoolSize()-1) # eg 0-99 total odds
+    number = Math.random() * @getPoolSize() # number between 
     # decrement number till it's -ve
     for prize in @prize_pool
       number -= prize.odds
       return prize if number < 0
   # prize pool size
-  getPoolSize: ->
-    if @pool_size==null
-      @pool_size = 0
-      for prize in @prize_pool
-        @pool_size += prize.odds
-    @pool_size
+  getPoolSize: -> @pool_size
+  
+  _calculatePoolSize: ->
+    pool_size = 0
+    for prize in @prize_pool
+      pool_size += prize.odds
+    pool_size
+    
   getCoupon: (id) ->
     # get the id of a specific coupon
     # id is split into 2 parts
