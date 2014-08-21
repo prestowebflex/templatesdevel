@@ -11,10 +11,11 @@ node = new Node
       <p>AA Try again tomorrow</p>
     "
     draws: "4"
+    # use these to rework out the pool size and try again etc...
+    pool_size: "2"
+    html_tryagain: "AA Try Again :( <img />"
+    type: "daily" # just midnight every day 0 length only using start of interval
     prizes:
-      1:
-        html: "AA Try Again :( <img />"
-        odds: "1"
       2:
         html: "AA You Win <img />"
         odds: "1"
