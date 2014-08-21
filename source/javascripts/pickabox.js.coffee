@@ -164,7 +164,15 @@ class PickABox
     # predraw the prizes now
     @prizes = @getRandomPrizes()
     @drawn_prizes = [] # store the drawn prizes somewhere
-    @drawn = @node.where(_datatype:"boxshow").length
+    
+    gen = new RepeatingInterval.EveryDay()
+    gen.setMilliseconds 0
+    period = gen.prev().getStart()
+    # filter this by date
+    @drawn = _.chain(@node.where(_datatype:"boxshow")).select((v) ->
+        d = new Date(v.get("timedrawn"))
+        d.valueOf() > period.valueOf()
+       ).value().length
   # generate N number of prizes as an array
   getRandomPrizes: (number) ->
     number = @size unless number?
