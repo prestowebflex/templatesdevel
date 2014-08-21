@@ -12,10 +12,10 @@ describe "PickABox", ->
           <p>AA Try again tomorrow</p>
         "
         draws: "4"
+        pool_size: "2"
+        html_tryagain: "AA Try Again :( <img />"
+        type: "daily" # just midnight every day 0 length only using start of interval
         prizes:
-          1:
-            html: "AA Try Again :("
-            odds: "1"
           2:
             html: "AA You Win"
             odds: "1"
@@ -37,6 +37,8 @@ describe "PickABox", ->
                 type: "duration_days"
                 days: 5
     @box = new PickABox(@node.get("content"), @node)
+  afterEach ->
+    jasmine.clock().uninstall()
   it "underscore random with low number", ->
     array = for [1..1000]
       _.random 2
@@ -53,3 +55,70 @@ describe "PickABox", ->
   it "has 16 defined prizes", ->
     for prize in @box.prizes
       expect(prize).toBeDefined()
+  it "can only draw 4 times across page reloads", ->
+    expect(@box.isValid()).toEqual true
+    @box.getPrize(1)
+    expect(@box.isValid()).toEqual true
+
+    @box = new PickABox(@node.get("content"), @node)
+    @box.getPrize(2)
+    expect(@box.isValid()).toEqual true
+
+    @box = new PickABox(@node.get("content"), @node)
+    @box.getPrize(3)
+    expect(@box.isValid()).toEqual true
+
+    @box = new PickABox(@node.get("content"), @node)
+    @box.getPrize(4)
+    expect(@box.isValid()).toEqual false
+
+  it "can only draw 4 times across page reloads and new dates", ->
+    @clock = jasmine.clock().install()
+    @clock.mockDate(new Date(2014,0,2,16,30))
+    # Day 1
+    expect(@box.isValid()).toEqual true
+    @box.getPrize(1)
+    expect(@box.isValid()).toEqual true
+
+    @box = new PickABox(@node.get("content"), @node)
+    @box.getPrize(2)
+    expect(@box.isValid()).toEqual true
+
+    @box = new PickABox(@node.get("content"), @node)
+    @box.getPrize(3)
+    expect(@box.isValid()).toEqual true
+
+    @box = new PickABox(@node.get("content"), @node)
+    @box.getPrize(4)
+    expect(@box.isValid()).toEqual false
+
+    @clock.mockDate(new Date(2014,0,3,16,30))
+    # Day 2
+    @box = new PickABox(@node.get("content"), @node)
+    expect(@box.isValid()).toEqual true
+    @box.getPrize(1)
+    expect(@box.isValid()).toEqual true
+
+    @box = new PickABox(@node.get("content"), @node)
+    @box.getPrize(2)
+    expect(@box.isValid()).toEqual true
+
+    @box = new PickABox(@node.get("content"), @node)
+    @box.getPrize(3)
+    expect(@box.isValid()).toEqual true
+
+    @box = new PickABox(@node.get("content"), @node)
+    @box.getPrize(4)
+    expect(@box.isValid()).toEqual false
+    
+  it "can only draw 4 times", ->
+    expect(@box.isValid()).toEqual true
+    @box.getPrize(1)
+    expect(@box.isValid()).toEqual true
+    @box.getPrize(2)
+    expect(@box.isValid()).toEqual true
+    @box.getPrize(3)
+    expect(@box.isValid()).toEqual true
+    @box.getPrize(4)
+    expect(@box.isValid()).toEqual false
+    
