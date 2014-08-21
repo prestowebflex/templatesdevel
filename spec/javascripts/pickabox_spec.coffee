@@ -39,7 +39,7 @@ describe "PickABox", ->
     @box = new PickABox(@node.get("content"), @node)
   afterEach ->
     jasmine.clock().uninstall()
-  it "random tests", ->
+  xit "random tests", ->
     # can generate 0 but not 1
     p1 = 0
     p2 = 0
@@ -49,7 +49,7 @@ describe "PickABox", ->
         p1++
       else
         p2++
-    alert "P1:#{p1} P2:#{p2} P1-P2:#{p1-p2} %#{(p1-p2) / (p1+p2)*100}"
+    console.log "P1:#{p1} P2:#{p2} P1-P2:#{p1-p2} %#{(p1-p2) / (p1+p2)*100}"
   it "underscore random with low number", ->
     array = for [1..1000]
       _.random 2
