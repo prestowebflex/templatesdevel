@@ -36,7 +36,62 @@ describe "Repeating Interval gernator", ->
         "d":
           "e": "1"
       expect(convert(original)).toEqual strings
-  
+  describe "EveryDay", ->
+    length = d = intervals = null
+    beforeEach ->
+      d = data.everyday()
+    describe "Include extra period", ->
+      beforeEach ->
+        length = 3
+        d.generate_extra = "1"
+        d.leeway_before = "60"
+      it "works up to N+1 minutes before only 2 events", ->
+        length = 2
+        @clock.mockDate(new Date(2014,0,5,15,59,59)) # Sunday 3:59pm
+      it "works up to N-1 minutes before", ->
+        @clock.mockDate(new Date(2014,0,5,16,0,1)) # Sunday 4:01pm
+      it "works up to 1 minutes before", ->
+        @clock.mockDate(new Date(2014,0,5,16,59,59)) # Sunday 4:59pm
+      it "works during the interval at the bbeginning", ->
+        @clock.mockDate(new Date(2014,0,5,17,0,1)) # Sunday 5:01pm
+      it "at the end of the interval", ->
+        @clock.mockDate(new Date(2014,0,5,19,59,59)) # Sunday 7:59pm
+      afterEach ->
+        intervals = @gen.generate d
+        expect(intervals.length).toEqual length
+        expect(intervals[0]).toEqualInterval 180*60*1000, 5,1,2014, 17 # sunday
+        expect(intervals[1]).toEqualInterval 180*60*1000, 6,1,2014, 17 # monday
+        if length is 3
+          expect(intervals[2]).toEqualInterval 180*60*1000, 7,1,2014, 17 # tuesday
+    describe "Exclude extra period", ->
+      dayoffset = length = null
+      beforeEach ->
+        dayoffset = 0
+        length = 2
+        d.generate_extra = "0"
+        d.leeway_before = "60"
+      it "works up to N+1 minutes before only 2 events", ->
+        dayoffset = -1
+        @clock.mockDate(new Date(2014,0,5,15,59,59)) # Sunday 3:59pm
+      it "works up to N-1 minutes before", ->
+        @clock.mockDate(new Date(2014,0,5,16,0,1)) # Sunday 4:01pm
+      it "works up to 1 minutes before", ->
+        @clock.mockDate(new Date(2014,0,5,16,59,59)) # Sunday 4:59pm
+      it "works during the interval at the bbeginning", ->
+        @clock.mockDate(new Date(2014,0,5,17,0,1)) # Sunday 5:01pm
+      it "at the end of the interval", ->
+        @clock.mockDate(new Date(2014,0,5,19,59,59)) # Sunday 7:59pm
+      it "works up to N-1 minutes before - length 1", ->
+        length = 1
+        d.times = "1"
+        @clock.mockDate(new Date(2014,0,5,16,0,1)) # Sunday 4:01pm
+      afterEach ->
+        intervals = @gen.generate d
+        expect(intervals.length).toEqual length
+        expect(intervals[0]).toEqualInterval 180*60*1000, 6+dayoffset,1,2014, 17 # sunday
+        if length is 2
+          expect(intervals[1]).toEqualInterval 180*60*1000, 7+dayoffset,1,2014, 17 # monday
+    
   describe "Weekly function", ->
     length = d = intervals = null
     beforeEach ->
@@ -272,6 +327,16 @@ describe "Repeating Interval gernator", ->
     generate_extra: 1
     
   data = 
+    everyday: ->
+      convert
+        type: "everyday"
+        allday: 0
+        hour: 17
+        minute: 0
+        length: 180
+        times: 2
+        leeway_before: 60
+        generate_extra: 1
     weekly: ->
       convert
         type: "weekly"

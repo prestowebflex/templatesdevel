@@ -3,6 +3,21 @@ describe "RepeatingInterval", ->
     beforeEach ->
       # wednesday 1st jan 2014 1am
       @i = new RepeatingInterval.Daily(new Date(2014,0,1))
+    describe "EveryDay" , ->
+      beforeEach ->
+        @i = new RepeatingInterval.EveryDay(new Date(2014, 0,1))
+      it "works for hours and time", ->
+        @i.setHours 1
+        @i.setStartTime 17
+        interval = @i.interval()
+        expect(interval.getStart()).toEqualDate(1,1,2014)
+        expect(interval.next().getStart()).toEqualDate(2,1,2014)
+        expect(interval.next().next().getStart()).toEqualDate(3,1,2014)
+        expect(interval.next().next().next().getStart()).toEqualDate(4,1,2014)
+        expect(interval.next().next().next().next().getStart()).toEqualDate(5,1,2014)
+        expect(interval.next().next().next().next().next().getStart()).toEqualDate(6,1,2014)
+        expect(interval.next().next().next().next().next().next().getStart()).toEqualDate(7,1,2014)
+        expect(interval.next().next().next().next().next().next().next().getStart()).toEqualDate(8,1,2014)
     describe "days of week", ->
       it "returns the current within the interval", ->
         @i = new RepeatingInterval.Daily(new Date(2014,0,1,1))

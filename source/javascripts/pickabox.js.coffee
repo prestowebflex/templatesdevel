@@ -337,6 +337,10 @@ RepeatingIntervalGenerator =
         intervals[...-1]
         
     switch spec.type
+      when "everyday"
+        o = gen(spec, RepeatingInterval.EveryDay)
+        # has no options
+        makeArray(spec, o)
       when "weekly"
         # initialize basic properties
         o = gen(spec, RepeatingInterval.Daily)
@@ -596,7 +600,8 @@ class RepeatingInterval extends TimeInterval
         _.indexOf(@spec.days, date.getDay(), true) != -1
 
     @intervalClass: DailyRepeatingInterval
-    
+  class @EveryDay extends @Daily
+    setDays: -> # null function  
   class @MonthlyDate extends BaseInterval
     # this is the 1st of the month regarless of date
     # from current one work out next instance
