@@ -50,6 +50,27 @@ describe "PickABox", ->
       else
         p2++
     console.log "P1:#{p1} P2:#{p2} P1-P2:#{p1-p2} %#{(p1-p2) / (p1+p2)*100}"
+  describe "Get Random Prize", ->
+    # check edge cases with random make sure that works
+    beforeEach ->
+      @dud = @box.prize_pool[1]
+      @prize = @box.prize_pool[0]
+    it "Picks the prize when random = 0.4999999999999999" , ->
+      spyOn(Math, 'random').and.returnValue 0.4999999999999999
+      expect(@box.generateRandomPrize()).toBe @prize
+    it "Picks the prize when random = 0" , ->
+      spyOn(Math, 'random').and.returnValue 0
+      expect(@box.generateRandomPrize()).toBe @prize
+    it "Picks the non winner when random = 0.5" , ->
+      spyOn(Math, 'random').and.returnValue 0.5
+      expect(@box.generateRandomPrize()).toBe @dud
+    it "Picks the non winner when random = 0.9999999999999999" , ->
+      spyOn(Math, 'random').and.returnValue 0.9999999999999999
+      expect(@box.generateRandomPrize()).toBe @dud
+    it "Returns nothing when random = 1 (which will never happen!)" , ->
+      spyOn(Math, 'random').and.returnValue 1
+      expect(@box.generateRandomPrize()).toBeUndefined()
+      
   it "underscore random with low number", ->
     array = for [1..1000]
       _.random 2
