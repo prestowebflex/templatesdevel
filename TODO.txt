@@ -1,0 +1,85 @@
+Time interval
+Implement equals method() -> another interval
+
+On repeating intervals
+implement -> prev() using next() using a loop (test this)
+
+Use this to work out the previous start period. (ignore length)
+
+
+========================================================================
+
+Make the spec work out the previous START date and this becomes date to count entries greater than
+
+==========================================================================
+
+store each hit as nodedata -> only way to count easiest way.
+
+
+
+Node data ->
+update summarised_at field
+
+when summarised_at is null or summarised_at < updated_at
+ -> get set of dates?
+
+Store summarisation data on node data
+
+
+summarisation would output
+
+DATE: METRIC: COUNT
+
+
+store this and then only adjust counts
+Store also the groups calculated at the time
+
+deletion needs to update metrics
+
+Attach as event on NodeData
+
+
+=============================
+template
+- build reporting code to update reporting table for node
+- reporting table is only for template node data's only
+
+============================
+pivot table
+
+METRIC
+ Date
+ Install-user/record
+
+Date
+Group -> group names
+
+Custom categories?????
+Category1 -> Prizes -> prize names
+Category2 -> reveals
+
+pick a box
+ -> reveals - count
+ -> prizeA - count
+ -> prizeB - count
+ -> coupon1 claims - count
+ -> coupon2 claims - count
+ -> coupon3 claims - count
+
+coupon
+ -> claims - count
+
+coffee card
+  -> claims - count
+  -> stamps collected - count
+
+Category
+V date | group -> (no sum as Everybody is the sum)
+
+
+=========================
+Node data client/server tests - later
+
+create on client -> recreate on client
+delete on server -> delete on client
+update on server -> update on client
