@@ -160,7 +160,7 @@ class PickABox
       # TODO don't include prizes which fall outsize the date spec
       new Prize(id, prize)
     # put THE dud prize into the prize pool now
-    @prize_pool.push new Prize(0, {html: data.html_tryagain, odds: (@pool_size - @_calculatePoolSize())})
+    @prize_pool.push new Prize(0, {html: data.html_nowin, odds: (@pool_size - @_calculatePoolSize())})
     # predraw the prizes now
     @prizes = @getRandomPrizes()
     @drawn_prizes = [] # store the drawn prizes somewhere

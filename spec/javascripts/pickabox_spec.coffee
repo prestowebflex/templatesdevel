@@ -13,7 +13,7 @@ describe "PickABox", ->
         "
         draws: "4"
         pool_size: "2"
-        html_tryagain: "AA Try Again :( <img />"
+        html_nowin: "AA Try Again :( <img />"
         type: "daily" # just midnight every day 0 length only using start of interval
         prizes:
           2:
