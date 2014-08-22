@@ -14,7 +14,9 @@ node = new Node
     # use these to rework out the pool size and try again etc...
     pool_size: "2"
     html_nowin: "AA Try Again :( <img />"
-    type: "daily" # just midnight every day 0 length only using start of interval
+    type: "everyday" # just midnight every day 0 length only using start of interval
+    hour: 0
+    minute: 0
     prizes:
       2:
         html: "AA You Win <img />"
