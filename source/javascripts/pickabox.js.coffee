@@ -459,8 +459,8 @@ class TimeInterval
     else
       "#{@getStart().toDateString()} #{hour(start)}-#{@getEnd().toDateString()} #{hour(end)}"
   toJSON: ->
-    start: @start
-    end: @end
+    start: @getStart()
+    end: @getEnd()
 
 ###
   A repeating interval generator class
