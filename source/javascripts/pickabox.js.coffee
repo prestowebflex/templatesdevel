@@ -155,7 +155,7 @@ class PickABox
   drawn: 0
   constructor: (data = {}, @node) ->
     {@html_before,@html_after,@html_tryagain,@draws} = data
-    @pool_size = Number(data.pool_size)
+    @pool_size = Number(data.pool_size ? 100)
     @prize_pool = for id, prize of data.prizes
       # TODO don't include prizes which fall outsize the date spec
       new Prize(id, prize)
@@ -166,9 +166,11 @@ class PickABox
     @drawn_prizes = [] # store the drawn prizes somewhere
     
     gen = new RepeatingInterval.EveryDay()
-    gen.setMilliseconds 0
-    period = gen.prev().getStart()
-    # filter this by date
+    gen.setMilliseconds 0 # make no length not required
+    interval = gen.interval()
+    period = interval.prev().getStart() # get the start of the previous period
+    @next_period = interval.getStart() # this is the time to start the next interval
+    # filter this by date number of records is the box count
     @drawn = _.chain(@node.where(_datatype:"boxshow")).select((v) ->
         d = new Date(v.get("timedrawn"))
         d.valueOf() > period.valueOf()
@@ -411,9 +413,9 @@ class TimeInterval
     for opt in ["start", "end"]
       @[opt] = new Date(options[opt]) if options[opt]?
   setStart: (start) ->
-    @start = new Date(start.valueOf?() || start)
+    @start = new Date(start.valueOf?() ? start)
   setEnd: (end) ->
-    @end = new Date(end.valueOf?() || end)
+    @end = new Date(end.valueOf?() ? end)
   # make clones of the date objects
   getStart: -> new Date(@start.valueOf())
   getEnd: -> new Date(@end.valueOf())
