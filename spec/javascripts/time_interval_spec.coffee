@@ -45,16 +45,22 @@ describe "Time Interval", ->
     i2 = new TimeInterval(start:1235, end:4568 )
     expect(i1.equals(i2)).toEqual(false)
     expect(i2.equals(i1)).toEqual(false)
+  it "7pm", ->
+    expect(int(t(19), t(19))).toMatch /7pm$/
   it "7-8pm", ->
     expect(int(t(19), t(20))).toMatch /7-8pm$/
   it "9am-5pm", ->
     expect(int(t(9), t(17))).toMatch /9am-5pm$/
   it "midnight-11:59pm", ->
     expect(int(t(0), t(23,59,59,999))).toMatch /midnight-11:59pm$/
+  it "11:59pm", ->
+    expect(int(t(23,59,59,999),t(23,59,59,999))).toMatch /11:59pm$/
   it "midday-11:59pm", ->
     expect(int(t(12), t(23,59,59,999))).toMatch /midday-11:59pm$/
   it "7:30am-midday", ->
     expect(int(t(7,30), t(12))).toMatch /7:30am-midday$/
+  it "prints same start and end time", ->
+    expect(int(d(8,8,2014,9), d(8,8,2014,9))).toMatch /^Fri Aug 08 2014 9am$/
   it "prints same day", ->
     expect(int(d(8,8,2014,9), d(8,8,2014,10))).toMatch /^Fri Aug 08 2014 9-10am$/
   it "prints different days", ->

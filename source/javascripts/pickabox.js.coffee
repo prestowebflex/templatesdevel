@@ -452,7 +452,10 @@ class TimeInterval
           ""
         "#{spec.hour}#{minute(spec)}#{ampm}"
     if @isSameDay()
-      "#{@getStart().toDateString()} #{hour(start,end)}-#{hour(end)}"
+      if @valuesSame "Hours", "Minutes"
+        "#{@getStart().toDateString()} #{hour(end)}"
+      else
+        "#{@getStart().toDateString()} #{hour(start,end)}-#{hour(end)}"
     else
       "#{@getStart().toDateString()} #{hour(start)}-#{@getEnd().toDateString()} #{hour(end)}"
   toJSON: ->
