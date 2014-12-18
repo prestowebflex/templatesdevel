@@ -1,0 +1,62 @@
+---
+title: CMAA
+---
+-content_for :assets do
+  = javascript_include_tag  "underscore"
+-csv = csv "data/cmaa.csv"
+-#csv = csv.first 5
+-data = csv.sort_by do |row|
+  - [row[:zone], row[:order], row[:role], row[:name]]
+-data = data.group_by do |row|
+  - row[:zone]
+%ul{data:{role:"listview", filter: "true"}}
+  - data.each do |zone, roles|
+    %li{data:{role:"list-divider"}}= zone
+    - roles.each do |role|
+      %li
+        %h5
+          = role[:name]
+          (#{role[:role]})
+          %span{style:"display: none;"}= zone
+        -if role[:clubname]!="null"
+          %p= role[:clubname]
+        -if role[:email]!="null" and role[:email].present?
+          %p
+            %a{href:"mailto:#{role[:email]}"}= role[:email] 
+        -if role[:phone]!="null" and role[:phone].present?
+          - phone = role[:phone].to_s.gsub /\D/, ""
+          %p
+            Phone:
+            %a{href:"tel:#{phone}"}= role[:phone]
+        -if role[:fax]!="null" and role[:fax].present?
+          - fax = role[:fax].to_s.gsub /\D/, ""
+          %p
+            Fax:
+            %a{href:"tel:#{fax}"}= role[:fax]
+        -if role[:address1]!="null" and role[:address1].present?
+          %p
+            = role[:address1]
+            -if role[:address2]!="null" and role[:address2].present?
+              = role[:address2]
+-#%ul{data:{role:"listview", filter: "true"}}
+  - data.each do |zone, roles|
+    %li
+      %h3= zone
+      -# %li{data:{role:"list-divider"}}= zone
+      %ul
+        - roles.each do |role|
+          %li
+            %p= role[:role]
+            %p= role[:name]
+            -if role[:clubname]!="null"
+              %p= role[:clubname]
+            -if role[:email]!="null"
+              %p= role[:email]
+            -if role[:phone]!="null"
+              %p= role[:phone]
+            -if role[:fax]!="null"
+              %p= role[:fax]
+            -if role[:address1]!="null"
+              %p= role[:address1]
+              -if role[:address2]!="null"
+                %p= role[:address2]
