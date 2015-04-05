@@ -18,6 +18,23 @@ describe "RepeatingInterval", ->
         expect(interval.next().next().next().next().next().getStart()).toEqualDate(6,1,2014)
         expect(interval.next().next().next().next().next().next().getStart()).toEqualDate(7,1,2014)
         expect(interval.next().next().next().next().next().next().next().getStart()).toEqualDate(8,1,2014)
+      it "works for DST date", ->
+        # 5pm on dst date
+        @i = new RepeatingInterval.EveryDay(new Date(2015, 3,4)) # 5th April
+        @i.setHours 1
+        @i.setStartTime 17
+        expect(@i.getStart()).toEqualDate(4,4,2015)
+        expect(@i.getStart().getHours()).toEqual 17
+        expect(@i.getEnd().getHours()).toEqual 18
+        expect(@i.getStart()).toEqualTime 17,0,0,0
+        expect(@i.getEnd()).toEqualTime 18,0,0,0
+      it "works for prev on DST Dates", ->
+        @i = new RepeatingInterval.EveryDay(new Date(2015, 3,5)) # 5th April
+        @i.setHours 1
+        @i.setStartTime 17
+        interval = @i.interval()
+        expect(interval.getStart()).toEqualDate(5,4,2015)
+        expect(interval.prev().getStart()).toEqualDate(4,4,2015)
     describe "days of week", ->
       it "returns the current within the interval", ->
         @i = new RepeatingInterval.Daily(new Date(2014,0,1,1))
