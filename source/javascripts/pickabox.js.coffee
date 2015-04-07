@@ -599,13 +599,25 @@ class RepeatingInterval extends TimeInterval
 
     # reset a date to the starttime given
     _resetTime: (date) ->
-#      console.log date
-      date.setHours @hour
-      date.setMinutes @minute
-      date.setSeconds @second
-      date.setMilliseconds @millisecond
-#      console.log date
-      date
+      #new Date(date.getYear(), date.getMonth(), date.getDate(), 1*@hour, 1*@minute, 1*@second, 1*@millisecond)
+      #      date.setHours @hour
+      #      date.setMinutes @minute
+      #      date.setSeconds @second
+      #      date.setMilliseconds @millisecond
+      # get midnight on the day in question
+      day = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+      tz = day.getTimezoneOffset()
+      hour = day.getHours()
+      if hour != 0
+        if hour > 12
+          day.setTime(day.getTime() + (1000*60*60*(24-hour)))
+        else
+          day.setTime(day.getTime() - (1000*60*60*hour))
+      newDate = new Date(day.getTime() + 1000*60*60*@hour + 1000*60*@minute + 1000*@second + 1*@millisecond)
+      adjust = tz - newDate.getTimezoneOffset()
+      if adjust != 0
+        newDate.setTime newDate.getTime() - (1000*60*adjust) # adjust for DST
+      newDate
   # constructor takes a mydate object
   # work out interval that falls on time or next
     
