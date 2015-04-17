@@ -1,16 +1,89 @@
 class ResetCoupon
+  # there are 2 modes of operation for the reset schedule
+  # A) single use only
+  # B) resets via some schedule
+  #
+  # then there are 2 modes of operation for the availablty of the coupon
+  # A) always available
+  # B) available via a schedule
+
+  # period is a reset time stamp
+  period: null
+  # available period is a interval instance (see below)
+  available_period: null
+  # number of redeems
+  redeems: 1
   constructor: (data = {}, @node) ->
+    # keys for node["content"]
+
+    # these keys are for the reset schedule
+    # type: reset schedule (when this is none then no schedule applies)
+    # week_days:
+    # month_days:
+    # month_dates:
+    # hour:
+    # minute:
+
+    # FOOTER AND HEADER HTML
+    # header_html
+    # footer_html
+
+    # available_type: (when this is always it's always available)
+    # available_* (all keys are copied from available_*)
+    # excluding times as that is always == 1
+
     # make it reset at midnight every day by default
-    @interval = RepeatingIntervalGenerator.generate(_.extend {type: "everyday", hour:0, minute:0}, data, {length: 0, allday: 0, times: 1})[0]
-    @period = @interval.prev().getStart() # get the start of the previous period
+    try
+      # @ period is a date
+      if data["type"] == "hours"
+        hours = Number(data["hours"]|| 1)
+        @period = new Date(Date.now() + (hours*3600*1000))
+      else
+        interval = RepeatingIntervalGenerator.generate(_.extend {type: "everyday", hour:0, minute:0}, data, {length: 0, allday: 0, times: 1})[0]
+        @period = interval.prev().getStart() # get the start of the previous period
+
+    @redeems = Number(data["redeems"]|| 1)
     # @next_period = interval.getStart() # this is the time to start the next interval
     # filter this by date number of records is the box count
+    try
+      # strip available_ off the start of all keys and build new object
+      data_available = {}
+      for key,value of data
+        data_available[key[10..]] = value if key[0..9]=="available_"
+      # create an interval off this
+      # use no leeway and generate extra = 1
+      # this will mean the interval falls in the current time slot and can be compared easily
+      @available_period = RepeatingIntervalGenerator.generate(_.extend {type: "always", hour:0, minute:0,length: 60, allday: 0}, data_available, {times: 1, leeway_before: 0, generate_extra: "1"})[0]
+      # now data available contains all the info needed to process
 
+
+  # has the coupon be redeemed?
+  countRedeems: ->
+    a = _.filter @node.getNodeData(), (v) =>
+      if @period
+        d = new Date(v.get("updated_at"))
+        d.valueOf() > @period.valueOf()
+      else
+        true
+    a.length
+  redeemsLeft: ->
+    @redeems - @countRedeems()
   isRedeemed: ->
-    !!_.find @node.getNodeData(), (v) =>
-      d = new Date(v.get("updated_at"))
-      d.valueOf() > @period.valueOf()
+    @redeemsLeft() <= 0
 
+  # is the coupon redeemable?
+  # only check @available_period
+  isRedeemable: ->
+    if @available_period
+      @available_period.isWithinInterval()
+    else
+      true
+
+  redeemPeriod: ->
+    if @available_period
+      @available_period.toString()
+    else
+      "Anytime"
 
 RepeatingIntervalGenerator =
   generate: (spec) ->
