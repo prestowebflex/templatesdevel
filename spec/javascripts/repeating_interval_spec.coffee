@@ -18,9 +18,11 @@ describe "RepeatingInterval", ->
         expect(interval.next().next().next().next().next().getStart()).toEqualDate(6,1,2014)
         expect(interval.next().next().next().next().next().next().getStart()).toEqualDate(7,1,2014)
         expect(interval.next().next().next().next().next().next().next().getStart()).toEqualDate(8,1,2014)
-      it "works for DST date", ->
+      # 5th April is the dst date
+      # problem in
+      it "works for DST date DST OFF", ->
         # 5pm on dst date
-        @i = new RepeatingInterval.EveryDay(new Date(2015, 3,4)) # 5th April
+        @i = new RepeatingInterval.EveryDay(new Date(2015, 3,4)) # rth April
         @i.setHours 1
         @i.setStartTime 17
         expect(@i.getStart()).toEqualDate(4,4,2015)
@@ -28,13 +30,66 @@ describe "RepeatingInterval", ->
         expect(@i.getEnd().getHours()).toEqual 18
         expect(@i.getStart()).toEqualTime 17,0,0,0
         expect(@i.getEnd()).toEqualTime 18,0,0,0
-      it "works for prev on DST Dates", ->
+      it "works for prev on DST Dates  DST OFF", ->
         @i = new RepeatingInterval.EveryDay(new Date(2015, 3,5)) # 5th April
         @i.setHours 1
         @i.setStartTime 17
         interval = @i.interval()
         expect(interval.getStart()).toEqualDate(5,4,2015)
         expect(interval.prev().getStart()).toEqualDate(4,4,2015)
+      it "works for DST date a week out  DST OFF", ->
+        # 5pm on dst date
+        @i = new RepeatingInterval.EveryDay(new Date(2015, 3,11)) # rth April
+        @i.setHours 1
+        @i.setStartTime 17
+        expect(@i.getStart()).toEqualDate(11,4,2015)
+        expect(@i.getStart().getHours()).toEqual 17
+        expect(@i.getEnd().getHours()).toEqual 18
+        expect(@i.getStart()).toEqualTime 17,0,0,0
+        expect(@i.getEnd()).toEqualTime 18,0,0,0
+      it "works for prev on DST Dates a week out  DST OFF", ->
+        @i = new RepeatingInterval.EveryDay(new Date(2015, 3,12)) # 5th April
+        @i.setHours 1
+        @i.setStartTime 17
+        interval = @i.interval()
+        expect(interval.getStart()).toEqualDate(12,4,2015)
+        expect(interval.prev().getStart()).toEqualDate(11,4,2015)
+      # 4th October is the dst date
+      # problem in
+      it "works for DST date DST ON", ->
+        # 5pm on dst date
+        @i = new RepeatingInterval.EveryDay(new Date(2015, 9,3)) # 4th April
+        @i.setHours 1
+        @i.setStartTime 17
+        expect(@i.getStart()).toEqualDate(3,10,2015)
+        expect(@i.getStart().getHours()).toEqual 17
+        expect(@i.getEnd().getHours()).toEqual 18
+        expect(@i.getStart()).toEqualTime 17,0,0,0
+        expect(@i.getEnd()).toEqualTime 18,0,0,0
+      it "works for prev on DST Dates  DST ON", ->
+        @i = new RepeatingInterval.EveryDay(new Date(1443880800000)) # 4th October (in safari this is midnight)
+        @i.setHours 1
+        @i.setStartTime 17
+        interval = @i.interval()
+        expect(interval.getStart()).toEqualDate(4,10,2015)
+        expect(interval.prev().getStart()).toEqualDate(3,10,2015)
+      it "works for DST date a week out  DST ON", ->
+        # 5pm on dst date
+        @i = new RepeatingInterval.EveryDay(new Date(2015, 9,10)) # rth April
+        @i.setHours 1
+        @i.setStartTime 17
+        expect(@i.getStart()).toEqualDate(10,10,2015)
+        expect(@i.getStart().getHours()).toEqual 17
+        expect(@i.getEnd().getHours()).toEqual 18
+        expect(@i.getStart()).toEqualTime 17,0,0,0
+        expect(@i.getEnd()).toEqualTime 18,0,0,0
+      it "works for prev on DST Dates a week out  DST ON", ->
+        @i = new RepeatingInterval.EveryDay(new Date(2015, 9,11)) # 5th April
+        @i.setHours 1
+        @i.setStartTime 17
+        interval = @i.interval()
+        expect(interval.getStart()).toEqualDate(11,10,2015)
+        expect(interval.prev().getStart()).toEqualDate(10,10,2015)
     describe "days of week", ->
       it "returns the current within the interval", ->
         @i = new RepeatingInterval.Daily(new Date(2014,0,1,1))
