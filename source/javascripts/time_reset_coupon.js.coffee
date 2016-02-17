@@ -13,6 +13,18 @@ class ResetCoupon
   available_period: null
   # number of redeems
   redeems: 1
+
+  haversine = (args...) ->
+    R = 6371000; # m
+    radians = args.map (deg) -> deg/180.0 * Math.PI
+    lat1 = radians[0]; lon1 = radians[1]; lat2 = radians[2]; lon2 = radians[3]
+    dLat = lat2 - lat1
+    dLon = lon2 - lon1
+    a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.sin(dLon / 2) * Math.sin(dLon / 2) * Math.cos(lat1) * Math.cos(lat2)
+    R * 2 * Math.asin(Math.sqrt(a))
+
+  # console.log haversine(36.12, -86.67, 33.94, -118.40)
+
   constructor: (data = {}, @node) ->
     # keys for node["content"]
 
@@ -27,6 +39,12 @@ class ResetCoupon
     # FOOTER AND HEADER HTML
     # header_html
     # footer_html
+
+    # LOCATION BASED RESTRICTIOn
+    # available_location is "1" when enabled and "0" when disabled
+    # available_location_radius is distance in meteres
+    # available_location_latitude # self explanitory
+    # available_location_longitude # self explanitory
 
     # available_type: (when this is always it's always available)
     # available_* (all keys are copied from available_*)
@@ -43,6 +61,9 @@ class ResetCoupon
         @period = interval.prev().getStart() # get the start of the previous period
 
     @redeems = Number(data["redeems"]|| 1)
+
+    # store data for use by location restriction
+    @data = data
     # @next_period = interval.getStart() # this is the time to start the next interval
     # filter this by date number of records is the box count
     try
@@ -73,11 +94,41 @@ class ResetCoupon
 
   # is the coupon redeemable?
   # only check @available_period
-  isRedeemable: ->
+  # also check distance calculations
+  # if location disabled
+  isRedeemable: (callback) ->
     if @available_period
-      @available_period.isWithinInterval()
+      if @available_period.isWithinInterval()
+        @isInLocation callback
+      else
+        # give reason for not being able to claim
+        callback false, "Claim between #{@redeemPeriod()}"
     else
-      true
+      @isInLocation callback
+    return
+  isInLocation: (callback) ->
+    if @data['available_location'] == '1'
+      # check the current location is within location
+      navigator.geolocation.getCurrentPosition (position) =>
+          # get distance between defined point(on data) and given position
+          distance = haversine Number(@data['available_location_latitude']), Number(@data['available_location_longitude']), position.coords.latitude, position.coords.longitude
+          if distance <= (position.coords.accuracy + Number(@data['available_location_radius']))
+            callback true
+          else
+            callback false, "Current position is #{(distance/1000).toFixed(2)}km outside allowed position"
+          return
+        ,
+          (error) ->
+            callback false, error.message
+            return
+    else
+      # no location restriction just callback with true
+      callback true
+    # available_location is "1" when enabled and "0" when disabled
+    # available_location_radius is distance in meteres
+    # available_location_latitude # self explanitory
+    # available_location_longitude # self explanitory
+    return
 
   redeemPeriod: ->
     if @available_period
