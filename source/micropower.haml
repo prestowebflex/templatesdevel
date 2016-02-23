@@ -1,0 +1,13 @@
+---
+  title: Micropower api demo
+---
+-content_for :assets do
+  = stylesheet_link_tag "micropower"
+  = javascript_include_tag  "micropower"
+%p
+  Welcome
+  %span#mpName {NAME}
+%p
+  Points Balance is
+  %span#mpPointsBalance {POINTSBALANCE}
+#mpProductList
