@@ -101,24 +101,33 @@ micropower_demo = (jQuery) ->
         callback(data)
     products: (productgroupid, callback) ->
       @_cache "products#{productgroupid}", callback, (cb) =>
-        @_api GET, "data/clubs/#{@clubid}/pos/#{LOCATIONID}/#{TERMINALID}/productGroup/#{productgroupid}/product", null, cb
+        @_api GET, "data/clubs/#{@clubid}/pos/#{LOCATIONID}/#{TERMINALID}/productGroup/#{productgroupid}/product", null, (products) ->
+          cb(new Product(product) for product in products)
     pos: (callback) ->
       @_api GET, "data/clubs/#{@clubid}/accountstatementsetting", null, (data) =>
         console.log data
+    # the order format is defined by this
+    order: (products, callback) ->
+      @_api POST, "data/clubs/#{@clubid}/pos/#{LOCATIONID}/#{TERMINALID}/order/place", products, callback
     # generic async cache function
     # takes key (for categorising response)
     # data function which is only called if a result isn't used
     # callback function which is where the result from the datafn is returned
+    # also stops subsequent calls to the function and waits for single response before returning 2 callbacks
     _cache: (key, callbackfn, datafn) ->
+      # data is already returned
       if @_cachedata[key]?
         callbackfn @_cachedata[key]
       else
+        # there is a reuest in progress just add to array
         if @_cachecallbacks[key]?
           @_cachecallbacks[key].push callbackfn
         else
+          # put the first callback onto the array
           @_cachecallbacks[key] = [callbackfn]
           datafn (result) =>
             @_cachedata[key] = result
+            # call all callbacks awaiting a response
             for cb in @_cachecallbacks[key]
               cb result
             delete @_cachecallbacks[key]
@@ -134,6 +143,76 @@ micropower_demo = (jQuery) ->
       mpscallsystem GET, "application/refresh/member", {clubId:CLUBID,memberNo:username}, (data) =>
         success(new @(data))
 
+
+  class Product
+    constructor: (@data) ->
+    id: ->
+      return @data.id
+    price: (level = 1) ->
+      for level in @data.priceLevels
+        if level.level = level
+          return level.price
+      return @data.defaultPrice
+    pointsPrice: (level = 1) ->
+      return @price(level) * 100
+    name: ->
+      return @data.name
+  class Order
+    class OrderProduct
+      constructor: (@product, @qty=1, @level=1) ->
+      total: ->
+        @product.price(@level) * @qty
+      pointsTotal: ->
+        @product.pointsPrice(@level) * @qty
+      postData: ->
+#       "productId": 1,
+#       "quantity": 2,
+#       "price": 3,
+#       "categoryId": 4,
+#       "priceLevel": 5,
+#       "parentId": 6
+        productId: @product.id()
+        quantity: @qty
+        price: @product.price(@level)
+        priceLevel: @level
+    constructor: ->
+      @order = []
+    add: (product, qty=1, level=1) ->
+      @order.push new OrderProduct(product, qty, level)
+    total: ->
+      @order.reduce ((t, s) -> t + s.total()), 0
+    pointsTotal: ->
+      @order.reduce ((t, s) -> t + s.pointsTotal()), 0
+    postData: ->
+      orderItems: (order.postData() for order in @order when order.qty > 0)
+      #id: 1
+      clientID: 2
+      comments: "sample string 3"
+      date: "2016-02-24T10:04:15.094+10:00"
+      scheduledDate: "2016-02-24T10:04:15.094+10:00"
+      name: "sample string 6"
+      syncState: 0
+      syncTimestamp: "2016-02-24T10:04:15.094+10:00"
+      created: "2016-02-24T10:04:15.094+10:00"
+      modified: "2016-02-24T10:04:15.094+10:00"
+      rowVersion: "QEBA"
+      objectState: 0
+
+# Object {orderID: 1, date: "2016-02-24T11:00:51.9784+10:00", receiptId: 0}
+
+#   "id": 1,
+#   "clientID": 2,
+#
+#   "date": "2016-02-24T10:04:15.094+10:00",
+#   "scheduledDate": "2016-02-24T10:04:15.094+10:00",
+#   "name":
+#   "syncState": 0,
+#   "syncTimestamp": "2016-02-24T10:04:15.094+10:00",
+#   "created": "2016-02-24T10:04:15.094+10:00",
+#   "modified": "2016-02-24T10:04:15.094+10:00",
+#   "rowVersion": "QEBA",
+#   "objectState": 0
+# }
   # GLOBAL FUNCTIONS
 
   GET = 'GET'
@@ -182,24 +261,50 @@ micropower_demo = (jQuery) ->
     $("#mpName").text("#{model.field('Title')} #{model.field('FirstName')} #{model.field('Surname')}")
     model.points (balance) ->
       $("#mpPointsBalance").text balance
+    products_list = {}
     model.products 22, (products) ->
       ul = $('<ul data-role="listview" data-theme="c"/>')
       for product in products
+        # copy result onto list
+        products_list[product.id()] = product
         ul.append "<li>
-          #{image_tag product.id}
-          <label for='mpProduct#{product.id}'><h2>#{product.name} </h2></label>
+          #{image_tag product.id()}
+          <label for='mpProduct#{product.id()}'><h2>#{product.name()} </h2></label>
           <p class='ui-li-aside'>
-            <select data-productId='#{product.id}' data-price='' data-inline='true' name='mpProduct#{product.id}' id='mpProduct#{product.id}'>
+            <select data-productId='#{product.id()}' data-inline='true' name='mpProduct#{product.id()}' id='mpProduct#{product.id()}'>
               <option value='0'>-</option>
               #{opts 5}
             </select>
           </p>
-          <span class='ui-li-count'>$#{product.defaultPrice.toFixed(2)}</span>
+          <span class='ui-li-count'>$#{product.price().toFixed(2)}</span>
         </li>"
+
+      # add the buttons to the bottom of the list
+      ul.append "<li class='ui-body ui-body-b'>
+        <fieldset class='ui-grid-a'>
+						<div class='ui-block-a'>Total: $<span id='mpOrderTotal'>0.00</span> (<span id='mpOrderPointsTotal'>0</span> Points)</div>
+						<div class='ui-block-b'><button id='mpOrderSubmit' type='button' data-theme='a'>Purchase</button></div>
+			    </fieldset>
+      </li>"
       ul.appendTo "#mpProductList"
+      # do the footer for the list (total etc...)
+
+      # quick funciton to generate the order object
+      generateOrder = ->
+        order = new Order()
+        ul.find("select").each ->
+          $this = $(@)
+          order.add(products_list[Number($this.attr('data-productId'))], Number($this.val()))
+        order
+      ul.find('#mpOrderSubmit').on 'click', (e) ->
+        order = generateOrder()
+        model.order order.postData(), (result) ->
+          console.log result
       ul.find("select").on 'change', (e) ->
-        console.log arguments
-        console.log @
+        total = 0
+        order = generateOrder()
+        $("#mpOrderTotal").text order.total().toFixed(2)
+        $("#mpOrderPointsTotal").text order.pointsTotal()
       # refresh the page FIX FOR APP
       $("body > div:first").page('destroy').page()
 
