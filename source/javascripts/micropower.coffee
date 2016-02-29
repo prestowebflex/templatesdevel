@@ -145,7 +145,7 @@ class ClubMember extends MicropowerAPI
     data =
       "ClubId": CLUBID
       "ClubMemberId": @id
-      "Points": points * 1
+      "Points": points * -1
       "Reference": Math.round((new Date()).valueOf()/1000)
       "DateTime": (new Date()).toISOString()
       "Description": "Purchase"
@@ -155,7 +155,6 @@ class ClubMember extends MicropowerAPI
       "SaleValue":300,
       "Reversed":false
     mpscallsystem POST, "data/clubs/#{@memberdata.clubId}/members/#{@id}/accounts/loyalty/transaction", data, (result) ->
-      console.log result
       callback result
   points: (callback, refresh = false) ->
     if refresh
