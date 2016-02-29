@@ -12,191 +12,485 @@ PRODUCT_IMAGES =
   # Cafe Latte
   2512: "data:image/jpeg;base64,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"
 
+# need to set this to jQuery from the intiialisation functions to work
+$ = null
+$global = null
+
+
+# some static versions for these keywords save quoting them
+GET = 'GET'
+POST = 'POST'
+DELETE = 'DELETE'
+PUT = 'PUT'
+
 image_tag = (id) ->
   if PRODUCT_IMAGES[id]?
     "<img src='#{PRODUCT_IMAGES[id]}' />"
 
-micropower_demo = (jQuery) ->
-  $ = jQuery
-  # use browserify to get deps
-  # browserify -r node-rsa -r buffer -o ../yourapp_templatesdevel/source/javascripts/node-rsa.js
-  # RSA encryption routine
-  # SIGNATURE = "webflextechnologies"
-  # IDENTITY = "Phu2j2lYE18ePOu00YcRWcFnRgXdF0kTkhxRTPHD"
-  CLUBID = 50052
-  LOCATIONID = 120
-  TERMINALID = 121
+# ajax helpers to hide show loading screens
+# for each call to start loading you need an equilivant end loading call to cleanup
 
-  #These values must be formatted literally as:
-  #FORMATTED_STRING = "iaengineering:xHIhTqtC6eBMsNwc5RJmQ71QyAxeViUEd3IJL5mN:50052"
-  # FORMATTED_STRING = "#{SIGNATURE}:#{IDENTITY}:#{CLUBID}"
-
-  API_ENDPOINT = "http://portaltest.micropower.com.au/api/"
+loadingCounter = 0
+startLoading = ->
+  if loadingCounter == 0
+    # defer this as it isn't showing up properly
+    window.setTimeout (-> $global.mobile.showPageLoadingMsg()), 0
+  loadingCounter++
+endLoading = ->
+  if loadingCounter > 0
+    loadingCounter--
+  if loadingCounter == 0
+    window.setTimeout (-> $global.mobile.hidePageLoadingMsg()), 0
 
 
-  # The above string must then be encrypted using this Public Key:
-  # this looks like it's static and never changes
-  # MODULUS = "0gUU0AmpFmqte4Ei6jztrcnqwQzXYqkn+xRPZiAs8zoDQasx/JpL5PSLnB8wNcQMlj+l4LIAwTt7ex75pRafvfUhEndkM7fuoaVprF6q470BtddgnsxEiGjGeC0ylv/3ldRs3xRqc4henDRswoeOH6uZUVmPIyYZO02k8zsGd/c="
-  # EXPONENT = "AQAB"
+fieldvalue = (fields, name) ->
+  for f in fields
+    if f.name == name
+      return f.value
+  null
+mpscallsystem = (method, url, data, success) ->
+  mpscall method, url, data, {Authorization: "Basic #{encrypted}"}, success
+mpscalluser = (method, url, token, data, success) ->
+  mpscall method, url, data, {UserAuthToken: token}, success
+mpscall = (method, url, data, headers, success) ->
+  obj =
+    type: method
+    url: "#{API_ENDPOINT}v1/#{url}"
+    headers: headers
+    beforeSend: ->
+      #console.log arguments
+      true
+  if method == GET
+    obj.data = data
+  else
+    obj.data = JSON.stringify(data)
+    obj.contentType = 'application/json'
+    obj.processData = false
 
-  # NodeRSA = require('node-rsa')
-  # buffer = require('buffer')
-  # Buffer = buffer.Buffer
-  # key = new NodeRSA()
+  $global.ajax obj
+    .done (data, textStatus, jqXHR) ->
+      #console.log "DONE"
+      success? data
+    .fail (jqXHR, textStatus, errorThrown) ->
+      console.log "FAIL", arguments
 
-  # key.setOptions
-  #   encryptionScheme: 'pkcs1'
-  #
-  # #key.importKey '-----BEGIN PUBLIC KEY-----
-  # #MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDSBRTQCakWaq17gSLqPO2tyerB
-  # #DNdiqSf7FE9mICzzOgNBqzH8mkvk9IucHzA1xAyWP6XgsgDBO3t7HvmlFp+99SES
-  # #d2Qzt+6hpWmsXqrjvQG112CezESIaMZ4LTKW//eV1GzfFGpziF6cNGzCh44fq5lR
-  # #WY8jJhk7TaTzOwZ39wIDAQAB
-  # #-----END PUBLIC KEY-----'
-  # key.importKey
-  #   n: new Buffer MODULUS, 'base64'
-  #   e: new Buffer EXPONENT, 'base64'
-  # #console.log FORMATTED_STRING
-  # # console.log key
-  # #.keyPair.n.toString()
-  # encrypted = key.encrypt(FORMATTED_STRING, 'base64', 'binary')
 
-  #console.log encrypted
-  encrypted = "ebiN/c+pi0sbCmogcyyHPsCjuzlKW8tHiuqg7VN1rbauea41ZionKXqYkDHPITOR5yxZoPdDw93tBCBD7EHnfe/ciFW3ANVi7qOu430jc7Hf5q5anLK0iiK6qq8V+OV9uP/DALgcgC4pPd3A6NtxHMuDrtE04z2uOOHJiAJEE7U="
+# use browserify to get deps
+# browserify -r node-rsa -r buffer -o ../yourapp_templatesdevel/source/javascripts/node-rsa.js
+# RSA encryption routine
+# SIGNATURE = "webflextechnologies"
+# IDENTITY = "Phu2j2lYE18ePOu00YcRWcFnRgXdF0kTkhxRTPHD"
+CLUBID = 50052
+LOCATIONID = 120
+TERMINALID = 121
 
-  # abstract outer class
-  class MicropowerAPI
+#These values must be formatted literally as:
+#FORMATTED_STRING = "iaengineering:xHIhTqtC6eBMsNwc5RJmQ71QyAxeViUEd3IJL5mN:50052"
+# FORMATTED_STRING = "#{SIGNATURE}:#{IDENTITY}:#{CLUBID}"
 
-  # wrapper for a class member get via async method
-  class ClubMember extends MicropowerAPI
-    constructor: (@memberdata) ->
-      @id = @memberdata.clubMemberId
-      @clubid = @memberdata.clubId
-      @_cachedata = {}
-      @_cachecallbacks = {}
-    field: (name) ->
-      for f in @memberdata.fields
-        if f.name == name
-          return f.value
-      null
-    # get the members points balance
-    _api: (method, url, requestdata, cb) ->
-      @jwt (token) =>
-        mpscalluser method, url, token, requestdata, (data) ->
-          cb data
-    points: (callback) ->
+API_ENDPOINT = "http://portaltest.micropower.com.au/api/"
+
+
+# The above string must then be encrypted using this Public Key:
+# this looks like it's static and never changes
+# MODULUS = "0gUU0AmpFmqte4Ei6jztrcnqwQzXYqkn+xRPZiAs8zoDQasx/JpL5PSLnB8wNcQMlj+l4LIAwTt7ex75pRafvfUhEndkM7fuoaVprF6q470BtddgnsxEiGjGeC0ylv/3ldRs3xRqc4henDRswoeOH6uZUVmPIyYZO02k8zsGd/c="
+# EXPONENT = "AQAB"
+
+# NodeRSA = require('node-rsa')
+# buffer = require('buffer')
+# Buffer = buffer.Buffer
+# key = new NodeRSA()
+
+# key.setOptions
+#   encryptionScheme: 'pkcs1'
+#
+# #key.importKey '-----BEGIN PUBLIC KEY-----
+# #MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDSBRTQCakWaq17gSLqPO2tyerB
+# #DNdiqSf7FE9mICzzOgNBqzH8mkvk9IucHzA1xAyWP6XgsgDBO3t7HvmlFp+99SES
+# #d2Qzt+6hpWmsXqrjvQG112CezESIaMZ4LTKW//eV1GzfFGpziF6cNGzCh44fq5lR
+# #WY8jJhk7TaTzOwZ39wIDAQAB
+# #-----END PUBLIC KEY-----'
+# key.importKey
+#   n: new Buffer MODULUS, 'base64'
+#   e: new Buffer EXPONENT, 'base64'
+# #console.log FORMATTED_STRING
+# # console.log key
+# #.keyPair.n.toString()
+# encrypted = key.encrypt(FORMATTED_STRING, 'base64', 'binary')
+
+#console.log encrypted
+encrypted = "ebiN/c+pi0sbCmogcyyHPsCjuzlKW8tHiuqg7VN1rbauea41ZionKXqYkDHPITOR5yxZoPdDw93tBCBD7EHnfe/ciFW3ANVi7qOu430jc7Hf5q5anLK0iiK6qq8V+OV9uP/DALgcgC4pPd3A6NtxHMuDrtE04z2uOOHJiAJEE7U="
+
+# abstract outer class
+class MicropowerAPI
+
+# wrapper for a class member get via async method
+class ClubMember extends MicropowerAPI
+  constructor: (@memberdata) ->
+    @id = @memberdata.clubMemberId
+    @clubid = @memberdata.clubId
+    @_cachedata = {}
+    @_cachecallbacks = {}
+  field: (name) ->
+    for f in @memberdata.fields
+      if f.name == name
+        return f.value
+    null
+  # get the members points balance
+  _api: (method, url, requestdata, cb) ->
+    @jwt (token) =>
+      mpscalluser method, url, token, requestdata, (data) ->
+        cb data
+  deductPoints: (points, callback) ->
+    data =
+      "ClubId": CLUBID
+      "ClubMemberId": @id
+      "Points": points * 1
+      "Reference": Math.round((new Date()).valueOf()/1000)
+      "DateTime": (new Date()).toISOString()
+      "Description": "Purchase"
+      "ExpiryDate": "2099-01-01T00:00:00"
+      "ExternalSystemId": Math.round((new Date()).valueOf()/1000)-1
+      "LocationId": 9981,
+      "SaleValue":300,
+      "Reversed":false
+    mpscallsystem POST, "data/clubs/#{@memberdata.clubId}/members/#{@id}/accounts/loyalty/transaction", data, (result) ->
+      console.log result
+      callback result
+  points: (callback, refresh = false) ->
+    if refresh
+      @_cacheremove 'points'
+    @_cache 'points', callback, (cb) =>
       @jwt (token) =>
         mpscalluser GET, "data/clubs/#{@memberdata.clubId}/members/#{@id}/accounts/loyalty", token, null, (data) ->
-          callback data.balance
-    # get a portal url for the user
-    portalurl: (callback) ->
-      @jwt (token) =>
-        callback "http://portaltest.micropower.com.au/web/#{@memberdata.clubId}/home?token=#{token}"
-    # generate of retrive the json web token for this user
-    menuitems: (callback) ->
-      @_api GET, "data/clubs/#{@clubid}/menuitems", null, (data) =>
-        console.log data
-    productgroups: (callback) ->
-      @_api GET, "data/clubs/#{@clubid}/pos/#{LOCATIONID}/#{TERMINALID}/productGroups", null, (data) =>
-        callback(data)
-    products: (productgroupid, callback) ->
-      @_cache "products#{productgroupid}", callback, (cb) =>
-        @_api GET, "data/clubs/#{@clubid}/pos/#{LOCATIONID}/#{TERMINALID}/productGroup/#{productgroupid}/product", null, (products) ->
-          cb(new Product(product) for product in products)
-    pos: (callback) ->
-      @_api GET, "data/clubs/#{@clubid}/accountstatementsetting", null, (data) =>
-        console.log data
-    # the order format is defined by this
-    order: (products, callback) ->
-      @_api POST, "data/clubs/#{@clubid}/pos/#{LOCATIONID}/#{TERMINALID}/order/place", products, callback
-    # generic async cache function
-    # takes key (for categorising response)
-    # data function which is only called if a result isn't used
-    # callback function which is where the result from the datafn is returned
-    # also stops subsequent calls to the function and waits for single response before returning 2 callbacks
-    _cache: (key, callbackfn, datafn) ->
-      # data is already returned
-      if @_cachedata[key]?
-        callbackfn @_cachedata[key]
+          cb data.balance
+  # get a portal url for the user
+  portalurl: (callback) ->
+    @jwt (token) =>
+      callback "http://portaltest.micropower.com.au/web/#{@memberdata.clubId}/home?token=#{token}"
+  # generate of retrive the json web token for this user
+  menuitems: (callback) ->
+    @_api GET, "data/clubs/#{@clubid}/menuitems", null, (data) =>
+      console.log data
+  productgroups: (callback) ->
+    @_api GET, "data/clubs/#{@clubid}/pos/#{LOCATIONID}/#{TERMINALID}/productGroups", null, (data) =>
+      callback(data)
+  products: (productgroupid, callback) ->
+    @_cache "products#{productgroupid}", callback, (cb) =>
+      @_api GET, "data/clubs/#{@clubid}/pos/#{LOCATIONID}/#{TERMINALID}/productGroup/#{productgroupid}/product", null, (products) ->
+        cb(new Product(product) for product in products)
+  pos: (callback) ->
+    @_api GET, "data/clubs/#{@clubid}/accountstatementsetting", null, (data) =>
+      console.log data
+  # the order format is defined by this
+  order: (products, callback) ->
+    @_api POST, "data/clubs/#{@clubid}/pos/#{LOCATIONID}/#{TERMINALID}/order/place", products, callback
+  # generic async cache function
+  # takes key (for categorising response)
+  # data function which is only called if a result isn't used
+  # callback function which is where the result from the datafn is returned
+  # also stops subsequent calls to the function and waits for single response before returning 2 callbacks
+  _cacheremove: (key) ->
+    delete @_cachedata[key]
+  _cache: (key, callbackfn, datafn) ->
+    # data is already returned
+    if @_cachedata[key]?
+      callbackfn @_cachedata[key]
+    else
+      # there is a reuest in progress just add to array
+      if @_cachecallbacks[key]?
+        @_cachecallbacks[key].push callbackfn
       else
-        # there is a reuest in progress just add to array
-        if @_cachecallbacks[key]?
-          @_cachecallbacks[key].push callbackfn
-        else
-          # put the first callback onto the array
-          @_cachecallbacks[key] = [callbackfn]
-          datafn (result) =>
-            @_cachedata[key] = result
-            # call all callbacks awaiting a response
-            for cb in @_cachecallbacks[key]
-              cb result
-            delete @_cachecallbacks[key]
-    jwt: (callback) ->
-      @_cache 'jwt', callback, (cb) =>
-        mpscallsystem POST, "security/transformation/user", {userName:@field('MemberNo'),additionalClaims:[{key:"memberid", value: @id}]}, (data) =>
-          cb data.token
-      # mpscallsystem POST, "security/authorisation/user", {password:@field('WWW_Password'), userName:@field('MemberNo')}, (data) =>
-      #   callback(data.token)
-    # need to also initialise via an existing JWT token - get the member id from the token
-    # initialise this via a username
-    @init: (username, success) ->
-      mpscallsystem GET, "application/refresh/member", {clubId:CLUBID,memberNo:username}, (data) =>
-        success(new @(data))
+        # put the first callback onto the array
+        @_cachecallbacks[key] = [callbackfn]
+        datafn (result) =>
+          @_cachedata[key] = result
+          # call all callbacks awaiting a response
+          for cb in @_cachecallbacks[key]
+            cb result
+          delete @_cachecallbacks[key]
+  jwt: (callback) ->
+    @_cache 'jwt', callback, (cb) =>
+      mpscallsystem POST, "security/transformation/user", {userName:@field('MemberNo'),additionalClaims:[{key:"memberid", value: @id}]}, (data) =>
+        cb data.token
+    # mpscallsystem POST, "security/authorisation/user", {password:@field('WWW_Password'), userName:@field('MemberNo')}, (data) =>
+    #   callback(data.token)
+  # need to also initialise via an existing JWT token - get the member id from the token
+  # initialise this via a username
+  @init: (username, success) ->
+    mpscallsystem GET, "application/refresh/member", {clubId:CLUBID,memberNo:username}, (data) =>
+      success(new @(data))
 
 
-  class Product
-    constructor: (@data) ->
-    id: ->
-      return @data.id
-    price: (level = 1) ->
-      for level in @data.priceLevels
-        if level.level = level
-          return level.price
-      return @data.defaultPrice
-    pointsPrice: (level = 1) ->
-      return @price(level) * 100
-    name: ->
-      return @data.name
-  class Order
-    class OrderProduct
-      constructor: (@product, @qty=1, @level=1) ->
-      total: ->
-        @product.price(@level) * @qty
-      pointsTotal: ->
-        @product.pointsPrice(@level) * @qty
-      postData: ->
+class Product
+  constructor: (@data) ->
+  id: ->
+    return @data.id
+  price: (level = 1) ->
+    for level in @data.priceLevels
+      if level.level = level
+        return level.price
+    return @data.defaultPrice
+  pointsPrice: (level = 1) ->
+    return @price(level) * 100
+  name: ->
+    return @data.name
+class Order
+  class OrderProduct
+    constructor: (@product, @qty=1, @level=1) ->
+      throw "#{@product} is not an object!" unless typeof @product is 'object'
+    total: ->
+      @product.price(@level) * @qty
+    pointsTotal: ->
+      @product.pointsPrice(@level) * @qty
+    postData: ->
 #       "productId": 1,
 #       "quantity": 2,
 #       "price": 3,
-#       "categoryId": 4,
+      categoryId: 22,
 #       "priceLevel": 5,
-#       "parentId": 6
-        productId: @product.id()
-        quantity: @qty
-        price: @product.price(@level)
-        priceLevel: @level
-    constructor: ->
-      @order = []
-    add: (product, qty=1, level=1) ->
-      @order.push new OrderProduct(product, qty, level)
-    total: ->
-      @order.reduce ((t, s) -> t + s.total()), 0
-    pointsTotal: ->
-      @order.reduce ((t, s) -> t + s.pointsTotal()), 0
-    postData: ->
-      orderItems: (order.postData() for order in @order when order.qty > 0)
-      #id: 1
-      clientID: 2
-      comments: "sample string 3"
-      date: "2016-02-24T10:04:15.094+10:00"
-      scheduledDate: "2016-02-24T10:04:15.094+10:00"
-      name: "sample string 6"
-      syncState: 0
-      syncTimestamp: "2016-02-24T10:04:15.094+10:00"
-      created: "2016-02-24T10:04:15.094+10:00"
-      modified: "2016-02-24T10:04:15.094+10:00"
-      rowVersion: "QEBA"
-      objectState: 0
+#       "parentId": 6 // if it's attached to other items in the order
+      productId: @product.id()
+      quantity: @qty
+      price: @product.price(@level)
+      priceLevel: @level
+  constructor: (@products = []) ->
+    @order = []
+  # convert a product id/product instance to a order product instance
+  _getOrderProduct: (product, create=false) ->
+    product = @_productIdToProduct(product)
+    for op in @order
+      if op.product == product
+        return op
+    return null
+  getProductQty: (product) ->
+    @_getOrderProduct(product)?.qty || 0
+  # change a product quanity via some amount
+  _productIdToProduct: (idOrObject) ->
+    if typeof idOrObject == 'object'
+      return idOrObject
+    if typeof idOrObject == 'string'
+      idOrObject = Number(idOrObject)
+    for product in @products
+      if product.id() == idOrObject
+        return product
+    throw "product id #{idOrObject} not found!"
+  change: (product, qty=1, level=1) ->
+    # find the product first
+    #change product to product object
+    product = @_productIdToProduct(product)
+    for op in @order
+      if op.product == product
+        # found the product adjust qty and level
+        op.qty += qty
+        # make sure qty isn't less than 0
+        if op.qty < 0
+          op.qty = 0
+        op.level = level
+        return
+    # product not found
+    @add product, qty, level
+  add: (product, qty=1, level=1) ->
+    @order.push new OrderProduct(product, qty, level)
+  total: ->
+    @order.reduce ((t, s) -> t + s.total()), 0
+  pointsTotal: ->
+    @order.reduce ((t, s) -> t + s.pointsTotal()), 0
+  isEmpty: ->
+    for order in @order
+      return false if order.qty > 0
+    return true
+  postData: ->
+    orderItems: (order.postData() for order in @order when order.qty > 0)
+    #id: 1
+    # clientID: 2
+    # comments: "sample string 3"
+    date: (new Date()).toISOString()
+    scheduledDate: (new Date()).toISOString()
+    # name: "sample string 6"
+    # syncState: 0
+    # syncTimestamp: "2016-02-24T10:04:15.094+10:00"
+    # created: "2016-02-24T10:04:15.094+10:00"
+    # modified: "2016-02-24T10:04:15.094+10:00"
+    # rowVersion: "QEBA"
+    # objectState: 0
+
+
+
+window.micropower_home_demo = (userid, jQuery, jQueryGlobal) ->
+  $ = jQuery
+  $global = jQueryGlobal
+  mphomeinit = (model) ->
+    $.find("#mpName").text("#{model.field('Title')} #{model.field('FirstName')} #{model.field('Surname')}")
+
+    # portal url
+    startLoading()
+    model.portalurl (url) ->
+      $.find("#mpName").append " (<a href='#{url}'>Edit</a>)"
+      endLoading()
+
+    #profile picture
+    if model.memberdata?.profileImageUrl?
+      $.find("#mpProfilePic").append "<img style='float: left; padding-bottom: 10px; padding-right: 10px; display: block;' height='80' width='80' src='#{model.memberdata?.profileImageUrl}' />"
+
+    # points balance
+    startLoading()
+    model.points (balance) ->
+        $.find("#mpPointsBalance").text balance
+        endLoading()
+      , true # force refresh
+  # bypass init if the model is in the browser still and has the same userid
+  if window.mpmodel?.field?('MemberNo') == userid
+    mphomeinit window.mpmodel
+  else
+    startLoading()
+    ClubMember.init userid , (model) ->
+      window.mpmodel = model
+      mphomeinit model
+      endLoading()
+
+window.micropower_order_demo = (userid, jQuery, jQueryGlobal) ->
+  $ = jQuery
+  $global = jQueryGlobal
+
+  opts = (number) ->
+    result = for num in [1..number]
+      "<option value='#{num}'>#{num}</option>"
+    result.join ''
+  mppageinit = (model) ->
+    # setup name
+    $.find("#mpName").text("#{model.field('Title')} #{model.field('FirstName')} #{model.field('Surname')}")
+    model.portalurl (url) ->
+      $.find("#mpName").append " (<a href='#{url}'>Edit</a>)"
+    if model.memberdata?.profileImageUrl?
+      $.find("#mpProfilePic").append "<img style='float: left; padding-bottom: 10px; padding-right: 10px; display: block;' height='80' width='80' src='#{model.memberdata?.profileImageUrl}' />"
+    refreshPoints = (force = false) ->
+      startLoading()
+      model.points (balance) ->
+          $.find("#mpPointsBalance").text balance
+          endLoading()
+        , force # force refresh
+    refreshPoints()
+    products_list = {}
+    startLoading()
+    model.products 22, (products) ->
+      # store the products on the order - no need to convert ids's any more
+      window.order = order = new Order(products)
+      ul = $global('<ul data-role="listview" data-theme="c"/>')
+      console.log "UL CREATED", ul
+      for product in products
+        # copy result onto list
+        products_list[product.id()] = product
+        ul.append "<li>
+          #{image_tag product.id()}
+          <label for='mpProduct#{product.id()}'><h2>#{product.name()} </h2></label>
+          <div data-role='controlgroup' data-type='horizontal'>
+            <a href='#' class='mpProductChangeCount' data-productId='#{product.id()}' data-changeqty='-1' data-role='button' data-icon='minus' data-iconpos='notext'>-</a>
+            <span class='ui-btn ui-btn-up-c' data-theme='c' style='xmargin-top: -1px;'>
+              <span style='padding-top: 0; padding-bottom: 0; font-size: 10px; line-height: 23px;' class='ui-btn-inner mpProductCount' data-productId='#{product.id()}' id='mpProductCount#{product.id()}'>#{order.getProductQty(product.id())}</span>
+            </span> <!-- , ui-btn-text -->
+            <a href='#' class='mpProductChangeCount' data-productId='#{product.id()}' data-changeqty='1' data-role='button' data-icon='plus' data-iconpos='notext'>+</a>
+          </div>
+          <!-- <p class='ui-li-aside'>
+            <select data-productId='#{product.id()}' data-inline='true' name='mpProduct#{product.id()}' id='mpProduct#{product.id()}'>
+              <option value='0'>-</option>
+              #{opts 5}
+            </select>
+          </p> -->
+          <span class='ui-li-count'>$#{product.price().toFixed(2)}</span>
+        </li>"
+
+      # add the buttons to the bottom of the list
+      ul.append "<li class='ui-body ui-body-b'>
+        <fieldset class='ui-grid-a'>
+						<div class='ui-block-a'>Total: $<span id='mpOrderTotal'>0.00</span> (<span id='mpOrderPointsTotal'>0</span> Points)</div>
+						<div class='ui-block-b'><button id='mpOrderSubmit' type='button' data-theme='a'>Purchase</button></div>
+			    </fieldset>
+      </li>"
+      console.log "UL CREATED", ul
+      $.find("#mpProductList").append ul
+      # do the footer for the list (total etc...)
+
+      # quick funciton to generate the order object
+      generateOrder = ->
+        order = new Order()
+        ul.find("select").each ->
+          $this = $global(@)
+          order.add(products_list[Number($this.attr('data-productId'))], Number($this.val()))
+        order
+      # new method for changing quanties +/- buttons
+      ul.find('.mpProductChangeCount').on 'click', (e) ->
+        $this = $global @
+        order.change Number($this.attr('data-productId')), Number($this.attr('data-changeqty'))
+        refreshUi()
+      ul.find('#mpOrderSubmit').on 'click', (e) ->
+        ul.find('#mpOrderSubmit').button('disable')
+        startLoading()
+        model.deductPoints order.pointsTotal(), (pointsResult) ->
+          if pointsResult > 0
+            startLoading()
+            # points can be refreshed same time as ordering
+            refreshPoints(true)
+            model.order order.postData(), (result) ->
+              ul.empty()
+              $.find('#mpProductList').hide()
+              $.find('#mpOrder').append "<h2>Order has been placed</h2>"
+              $.find('#mpOrder').append (u = $global('<ul data-role="listview" data-theme="c"/>'))
+              for orderProduct in order.order when orderProduct.qty > 0
+                product = orderProduct.product
+                u.append "<li>
+                  #{image_tag product.id()}
+                  <h2>#{orderProduct.qty} x #{product.name()} </h2>
+                  <span class='ui-li-count'>#{orderProduct.pointsTotal()} Points</span>
+                </li>"
+              # $('#mpOrder').append u
+              u.append "<li class='ui-body ui-body-b'>
+                <fieldset class='ui-grid-a'>
+        						<div class='ui-block-a'>Total: $#{order.total().toFixed(2)} (#{order.pointsTotal()} Points)</div>
+        			    </fieldset>
+              </li>"
+
+              $global("body > div.ui-page-active:first").page('destroy').page()
+              endLoading()
+          else
+            $.mobile.hidePageLoadingMsg()
+            alert "Transaction Failed"
+          endLoading()
+
+      # refresh interface
+      refreshUi = ->
+        total = 0
+        # order = generateOrder()
+        $.find("#mpOrderTotal").text order.total().toFixed(2)
+        $.find("#mpOrderPointsTotal").text order.pointsTotal()
+        try
+          ul.find('#mpOrderSubmit').button('disable')
+        catch e
+          # nothing
+        ul.find('.mpProductCount').each ->
+          select = $global @
+          select.text order.getProductQty(select.attr('data-productId'))
+        model.points (balance) ->
+          if (balance >= order.pointsTotal()) and !order.isEmpty()
+            ul.find('#mpOrderSubmit').button('enable')
+      # ul.find("select").on 'change', (e) ->
+      #   refreshUi()
+      # refresh the ui on startup
+      window.setTimeout (-> refreshUi()), 0
+      endLoading()
+      # refresh the page FIX FOR APP
+      $global("body > div.ui-page-active:first").page('destroy').page()
+
+
+  # bypass init if the model is in the browser still and has the same userid
+  if window.mpmodel?.field?('MemberNo') == userid
+    mppageinit window.mpmodel
+  else
+    startLoading()
+    ClubMember.init userid , (model) ->
+      window.mpmodel = model
+      mppageinit model
+      endLoading()
 
 # Object {orderID: 1, date: "2016-02-24T11:00:51.9784+10:00", receiptId: 0}
 
@@ -215,121 +509,20 @@ micropower_demo = (jQuery) ->
 # }
   # GLOBAL FUNCTIONS
 
-  GET = 'GET'
-  POST = 'POST'
-  DELETE = 'DELETE'
-  PUT = 'PUT'
 
 
-  fieldvalue = (fields, name) ->
-    for f in fields
-      if f.name == name
-        return f.value
-    null
-  mpscallsystem = (method, url, data, success) ->
-    mpscall method, url, data, {Authorization: "Basic #{encrypted}"}, success
-  mpscalluser = (method, url, token, data, success) ->
-    mpscall method, url, data, {UserAuthToken: token}, success
-  mpscall = (method, url, data, headers, success) ->
-    obj =
-      type: method
-      url: "#{API_ENDPOINT}v1/#{url}"
-      headers: headers
-      beforeSend: ->
-        #console.log arguments
-        true
-    if method == GET
-      obj.data = data
-    else
-      obj.data = JSON.stringify(data)
-      obj.contentType = 'application/json'
-      obj.processData = false
 
-    $.ajax obj
-      .done (data, textStatus, jqXHR) ->
-        #console.log "DONE"
-        success? data
-      .fail (jqXHR, textStatus, errorThrown) ->
-        console.log "FAIL", arguments
-
-  opts = (number) ->
-    result = for num in [1..number]
-      "<option value='#{num}'>#{num}</option>"
-    result.join ''
-  mppageinit = (model) ->
-    # setup name
-    $("#mpName").text("#{model.field('Title')} #{model.field('FirstName')} #{model.field('Surname')}")
-    model.points (balance) ->
-      $("#mpPointsBalance").text balance
-    products_list = {}
-    model.products 22, (products) ->
-      ul = $('<ul data-role="listview" data-theme="c"/>')
-      for product in products
-        # copy result onto list
-        products_list[product.id()] = product
-        ul.append "<li>
-          #{image_tag product.id()}
-          <label for='mpProduct#{product.id()}'><h2>#{product.name()} </h2></label>
-          <p class='ui-li-aside'>
-            <select data-productId='#{product.id()}' data-inline='true' name='mpProduct#{product.id()}' id='mpProduct#{product.id()}'>
-              <option value='0'>-</option>
-              #{opts 5}
-            </select>
-          </p>
-          <span class='ui-li-count'>$#{product.price().toFixed(2)}</span>
-        </li>"
-
-      # add the buttons to the bottom of the list
-      ul.append "<li class='ui-body ui-body-b'>
-        <fieldset class='ui-grid-a'>
-						<div class='ui-block-a'>Total: $<span id='mpOrderTotal'>0.00</span> (<span id='mpOrderPointsTotal'>0</span> Points)</div>
-						<div class='ui-block-b'><button id='mpOrderSubmit' type='button' data-theme='a'>Purchase</button></div>
-			    </fieldset>
-      </li>"
-      ul.appendTo "#mpProductList"
-      # do the footer for the list (total etc...)
-
-      # quick funciton to generate the order object
-      generateOrder = ->
-        order = new Order()
-        ul.find("select").each ->
-          $this = $(@)
-          order.add(products_list[Number($this.attr('data-productId'))], Number($this.val()))
-        order
-      ul.find('#mpOrderSubmit').on 'click', (e) ->
-        order = generateOrder()
-        model.order order.postData(), (result) ->
-          console.log result
-      ul.find("select").on 'change', (e) ->
-        total = 0
-        order = generateOrder()
-        $("#mpOrderTotal").text order.total().toFixed(2)
-        $("#mpOrderPointsTotal").text order.pointsTotal()
-      # refresh the page FIX FOR APP
-      $("body > div:first").page('destroy').page()
-
-  $ ->
-    # bypass init if the model is in the browser still
-    if window.mpmodel?
-      mppageinit window.mpmodel
-    else
-      ClubMember.init "01212" , (model) ->
-        window.mpmodel = model
-        mppageinit model
-      #console.log "INITITEDDD!!!"
-      #console.log model
-      # model.portalurl (url) ->
-      #   console.log url
-      # model.points (balance) ->
-      #   console.log balance
-      # model.pos (items) ->
-      #   console.log items
-      #
-      # model.productgroups (groups) ->
-      #   console.log groups
-      #   for group in groups
-      #     model.products group.id, (products) ->
-      #       console.log JSON.stringify(products, null, 2)
-
-# start the demo
-micropower_demo jQuery
+#console.log "INITITEDDD!!!"
+#console.log model
+# model.portalurl (url) ->
+#   console.log url
+# model.points (balance) ->
+#   console.log balance
+# model.pos (items) ->
+#   console.log items
+#
+# model.productgroups (groups) ->
+#   console.log groups
+#   for group in groups
+#     model.products group.id, (products) ->
+#       console.log JSON.stringify(products, null, 2)
