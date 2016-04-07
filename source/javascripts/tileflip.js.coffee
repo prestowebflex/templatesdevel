@@ -19,7 +19,8 @@ tileflip = (node, jQuery) ->
   
   html $(".html_before"), boxes.html_before  
   html $(".html_after"), boxes.html_after  
-  html $(".try_again"), boxes.html_tryagain  
+  html $(".game_over"), boxes.html_gameover  
+
   #prizes = boxes.getPrizes 16
   
   #refresh panel based upon the state of the boxes
@@ -146,7 +147,7 @@ class TileFlip
   prize_pool: null
   html_before: ""
   html_after: ""
-  html_tryagain: "Try Again"
+  html_gameover: "Try Again"
   # number of items in the pool
   pool_size: null
   # size of the grid
@@ -155,20 +156,20 @@ class TileFlip
   draws: 0
   drawn: 0
   constructor: (data = {}, @node) ->
-    {@html_before,@html_after,@html_tryagain,@draws} = data
+    {@html_before,@html_after,@html_gameover,@draws} = data
     @pool_size = Number(data.pool_size ? 100)
     @prize_pool = for id, prize of data.prizes
       # TODO don't include prizes which fall outsize the date spec
       new Prize(id, prize)
+
     @dudPrize = new Prize("0", {html: data.html_nowin, odds: (@pool_size - @_calculatePoolSize())})
+
     # put THE dud prize into the prize pool now
     @prize_pool.push @dudPrize
+
     # predraw the prizes now
     @prizes = @getRandomPrizes()
     shuffle(@prizes)
-
-    console.log('prizes: ')
-    console.log(@prizes)
 
     @drawn_prizes = [] # store the drawn prizes somewhere
     
@@ -192,27 +193,17 @@ class TileFlip
 
   # generate N number of prizes as an array
   getRandomPrizes: (number) ->
-    # previous code
-    #number = @size unless number?
-    #@generateRandomPrize() for [1..number]
-    # end previous code
-
-    # todo: 
-    # refactor this to follow this algorithm:
 
     tempPrizes = []
     # decide which prize we are going to win
-    wonPrize = @generateRandomPrize()
+    @wonPrize = @generateRandomPrize()
 
     # put enough of the won prize in the array
-    console.log('wonPrize')
-    console.log(wonPrize)
-
-    tempPrizes.push wonPrize for [1..wonPrize.number_to_collect]
+    tempPrizes.push @wonPrize for [1..@wonPrize.number_to_collect]
 
     # fill the rest of the array with other prizes
     for prize in @prize_pool
-      if prize.id != wonPrize.id
+      if prize.id != @wonPrize.id
         # IMPORTANT that there aren't enough other prizes to win anything else
         for [1..prize.number_to_collect - 1]
           if tempPrizes.length < @size
@@ -237,14 +228,21 @@ class TileFlip
       # todo: refactor this comparison to the Prize class
       if (@prizes[number].number_to_collect == @prizes[number].number_collected)
         @node.create(_datatype:"boxshow", timedrawn: new Date())
-        @prizes[number].generateCoupons(@node)
+        coupons = @prizes[number].generateCoupons(@node)
         @drawn_prizes[number] = @prizes[number]
 
     if nCollected == nToCollect
       # todo: do this a different way! - don't force an end to the game like this
       @drawn = @draws # (temporarily) force an end the game
-      $('.tile-flip-btn .ui-btn-inner').text(nCollected + '/' + nToCollect + ' found, you win!')
-    
+
+      # show the first won coupon in the panel
+      $(".game_over").html(coupons[0].html)
+
+      # if more than one coupon won then indicate this below the first coupon
+      # todo: think of better alternatives than this approach
+      if coupons.length > 1
+        $(".game_over").append("<p>Plus " + (coupons.length-1) + " more</p>")
+
     @prizes[number]
   # is the prize revaled
   isRevealed: (boxNumber) ->
