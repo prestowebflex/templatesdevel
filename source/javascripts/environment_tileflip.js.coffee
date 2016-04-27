@@ -1,5 +1,5 @@
 node = new Node
-  content: 
+  content:
     html_before: """
       <p>Match 5 prizes to win</p>
       <img data-src="" />
@@ -21,7 +21,7 @@ node = new Node
       2:
         html: "<img src='images/tileflip/prize1.jpg' />"
         odds: "0.3"
-        number_to_collect: "5"
+        number_to_collect: "8"
         coupons:
           1:
             title: "Free drink coupon"
@@ -37,7 +37,7 @@ node = new Node
       3:
         html: "<img src='images/tileflip/prize2.jpg' />"
         odds: "0.3"
-        number_to_collect: "5"
+        number_to_collect: "8"
         coupons:
           1:
             title: "Blue drink coupon"
@@ -53,7 +53,7 @@ node = new Node
       4:
         html: "<img src='images/tileflip/prize3.jpg' />"
         odds: "0.33"
-        number_to_collect: "5"
+        number_to_collect: "8"
         coupons:
           1:
             title: "Orange drink coupon"

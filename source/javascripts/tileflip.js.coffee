@@ -1,5 +1,5 @@
 tileflip = (node, jQuery) ->
-  
+
   # process html via collection
   html = (jquery, html) ->
     # load in html
@@ -16,12 +16,12 @@ tileflip = (node, jQuery) ->
     jQuery.find selector
   # initialize tile flip
   boxes = new TileFlip node.get("content"), node
-  
-  html $(".html_before"), boxes.html_before  
-  html $(".html_after"), boxes.html_after  
-  html $(".try_again"), boxes.html_tryagain  
+
+  html $(".html_before"), boxes.html_before
+  html $(".html_after"), boxes.html_after
+  html $(".try_again"), boxes.html_tryagain
   #prizes = boxes.getPrizes 16
-  
+
   #refresh panel based upon the state of the boxes
   refreshPanel = (revealbox) ->
     pb = $(".tileflip").removeClass("available unavailable")
@@ -38,8 +38,8 @@ tileflip = (node, jQuery) ->
         p.addClass "revealed"
       else
         p.addClass "available"
-    refreshCoupons() 
-  
+    refreshCoupons()
+
   @coupons = []
   findCoupon = (id) ->
     _.find(@coupons, (c) -> c.id is id)
@@ -71,17 +71,17 @@ tileflip = (node, jQuery) ->
             </div>
                            """
     c = $('.coupons')
-    html c, couponhtml 
+    html c, couponhtml
     c.trigger "create"
   refreshPanel()
   refreshCoupons()
-  
+
   # deal with the link for tile flip and coupons
   # really only has to update coupon counts and change the box class
   $("[data-role=navbar] a").click ->
     $(".panels > div").hide()
     $(".panels > .#{$(@).data("panel")}").show()
-  
+
   # coupon claim!
   $(".coupons").on "click", ".couponclaim:not(.ui-disabled)", {}, ->
     couponid =  $(@).parents("[data-couponid]").data "couponid"
@@ -138,7 +138,7 @@ tileflip = (node, jQuery) ->
     false
   .on "touch", ->
     false
-    
+
 
 
 # tile flip pulls from a pool of prizes
@@ -162,7 +162,7 @@ class TileFlip
       new Prize(id, prize)
     @dudPrize = new Prize("0", {html: data.html_nowin, odds: (@pool_size - @_calculatePoolSize())})
     # put THE dud prize into the prize pool now
-    @prize_pool.push @dudPrize
+    # @prize_pool.push @dudPrize
     # predraw the prizes now
     @prizes = @getRandomPrizes()
     shuffle(@prizes)
@@ -171,7 +171,7 @@ class TileFlip
     console.log(@prizes)
 
     @drawn_prizes = [] # store the drawn prizes somewhere
-    
+
     # make it reset at midnight every day by default
     interval = RepeatingIntervalGenerator.generate(_.extend {type: "everyday", hour:0, minute:0}, data, {length: 0, allday: 0, times: 1})[0]
     period = interval.prev().getStart() # get the start of the previous period
@@ -197,7 +197,7 @@ class TileFlip
     #@generateRandomPrize() for [1..number]
     # end previous code
 
-    # todo: 
+    # todo:
     # refactor this to follow this algorithm:
 
     tempPrizes = []
@@ -208,28 +208,57 @@ class TileFlip
     console.log('wonPrize')
     console.log(wonPrize)
 
-    tempPrizes.push wonPrize for [1..wonPrize.number_to_collect]
+    if wonPrize?
+      tempPrizes.push wonPrize for [1..wonPrize.number_to_collect]
 
-    # fill the rest of the array with other prizes
-    for prize in @prize_pool
-      if prize.id != wonPrize.id
-        # IMPORTANT that there aren't enough other prizes to win anything else
-        for [1..prize.number_to_collect - 1]
+    # remove the won prize from the pool
+    to_fill = (prize for prize in @prize_pool when prize.id isnt wonPrize?.id)
+    # reorder the prize pool by a weighted random weight.
+    for prize in to_fill
+      prize.sort_weight = (1 / prize.odds) * Math.random()
+      prize.pieces_out = 0
+    to_fill.sort (a,b) -> b.sort_weight - a.sort_weight
+    console.log to_fill
+
+    # this puts the prizes onto the array keeping track of the number of prizes put out
+    # so this will stop these prizes hitting their limit
+    fillprize = (prize, number=1) =>
+      if prize?
+        for [1..number]
           if tempPrizes.length < @size
-            tempPrizes.push(prize) 
+            if prize.pieces_out < (prize.number_to_collect-1)
+              prize.pieces_out += 1
+              tempPrizes.push(prize)
 
-    # if the array can't be filled with other prizes without causing a win
-    # then fill the array with more of the won prize until array is full 
-    for [tempPrizes.length..@size] 
+    # 1st step is to fill 1 or 2 prizes depending if you won a prize
+    p1 = to_fill.pop()
+    fillprize(p1, p1.number_to_collect-1) if p1?
+    # if wonPrize is filled then don't do the n-1 thing twice
+    unless wonPrize?
+      p2 = to_fill.pop()
+      fillprize(p2, p2.number_to_collect-1) if p2?
+
+    for i in [0..(@size-1)]
+      # loop over the remaining prizes
+      fillprize(to_fill[i % to_fill.length])
+    # fill the rest with the dud prize if any
+    while tempPrizes.length < @size
       tempPrizes.push(@dudPrize)
+    # # fill the rest of the array with other prizes
+    # for prize in to_fill
+    #   # IMPORTANT that there aren't enough other prizes to win anything else
+    #   for [1..(prize.number_to_collect - 1)]
+    #
+    # # if the array can't be filled with other prizes without causing a win
+    # # then fill the array with more of the won prize until array is full
 
     return tempPrizes
 
   # get a prize for a boxx
   getPrize: (number) ->
-    @prizes[number].number_collected++ 
+    @prizes[number].number_collected++
 
-    if !@isRevealed(number) and @isValid() 
+    if !@isRevealed(number) and @isValid()
       @drawn++
       nToCollect = @prizes[number].number_to_collect
       nCollected = @prizes[number].number_collected
@@ -244,32 +273,34 @@ class TileFlip
       # todo: do this a different way! - don't force an end to the game like this
       @drawn = @draws # (temporarily) force an end the game
       $('.tile-flip-btn .ui-btn-inner').text(nCollected + '/' + nToCollect + ' found, you win!')
-    
+
     @prizes[number]
   # is the prize revaled
   isRevealed: (boxNumber) ->
     @drawn_prizes[boxNumber]?
-  
+
   # is the current tile flip valid to draw from
   isValid: ->
-    @drawn < @draws   
+    @drawn < @draws
   # genrate single prize
+  # it now returns null if no prize is won to let other code no no prize
   generateRandomPrize: ->
     # draw a prize based upon the pool size and odds etc...
-    number = Math.random() * @getPoolSize() # number between 
+    number = Math.random() * @getPoolSize() # number between
     # decrement number till it's -ve
     for prize in @prize_pool
       number -= prize.odds
       return prize if number < 0
+    return null # not a winner
   # prize pool size
   getPoolSize: -> @pool_size
-  
+
   _calculatePoolSize: ->
     pool_size = 0
     for prize in @prize_pool
       pool_size += prize.odds
     pool_size
-    
+
   getCoupon: (id) ->
     # get the id of a specific coupon
     # id is split into 2 parts
@@ -339,7 +370,7 @@ class Coupon
     # generate the intervals generator from the data
     # this depends if we are using the resurected json form
     if @data.intervals
-      @intervals = (new TimeInterval(interval) for interval in @data.intervals) 
+      @intervals = (new TimeInterval(interval) for interval in @data.intervals)
     else
       @intervals = RepeatingIntervalGenerator.generate @data # if intervals not set???
   # first start of interval - used to sort
@@ -377,8 +408,8 @@ class Coupon
     created: @created
 
 
-    
-RepeatingIntervalGenerator = 
+
+RepeatingIntervalGenerator =
   generate: (spec) ->
     # initialize one of the time based classes
     gen = (spec={}, kls) ->
@@ -387,12 +418,12 @@ RepeatingIntervalGenerator =
         o.setMinutes(spec.length) if spec.length?
         o.setStartTime(spec.hour, spec.minute) if spec.hour? and spec.minute?
       o
-    filterArray = (array) -> 
+    filterArray = (array) ->
       Number(x) for x in array when x isnt ""
     makeArray = (spec, generator) ->
       # generator = generator.interval()
       # # if the current start time - the leeway (rewind time) is less than current time add it in
-      # if (generator.getStart().valueOf() - (spec.leeway_before*60*1000)) < new Date().valueOf() 
+      # if (generator.getStart().valueOf() - (spec.leeway_before*60*1000)) < new Date().valueOf()
         # if spec.generate_extra=="1"
           # intervals.push generator
       # 1st interval? do checks
@@ -402,7 +433,7 @@ RepeatingIntervalGenerator =
         generator = generator.next()
         int
       # if the 1st interval falls within the leeway time
-        # and generate 
+        # and generate
       if (intervals[0].getStart().valueOf() - (spec.leeway_before*60*1000)) < new Date().valueOf()
         unless spec.generate_extra=="1"
           intervals[1...]
@@ -411,7 +442,7 @@ RepeatingIntervalGenerator =
       else
         # chop the end off
         intervals[...-1]
-        
+
     switch spec.type
       when "everyday"
         o = gen(spec, RepeatingInterval.EveryDay)
@@ -436,7 +467,7 @@ RepeatingIntervalGenerator =
         weeks = for x in spec.month_days when x isnt ""
           # day week use regexps to split out
           [day, week] = x.split ","
-          [Number(week), Number(day)] 
+          [Number(week), Number(day)]
         o.setDayWeeks weeks...
         makeArray(spec, o)
       when "duration_days"
@@ -450,7 +481,7 @@ RepeatingIntervalGenerator =
 ###
   A time interval
   Declared as a length and start forumula
-  
+
 ###
 class TimeInterval
   # has start / end
@@ -487,10 +518,10 @@ class TimeInterval
   # check if a bunch of values are the same
   valuesSame: (values...) ->
     for value in values
-      return false unless @getStart()["get#{value}"]() == @getEnd()["get#{value}"]() 
+      return false unless @getStart()["get#{value}"]() == @getEnd()["get#{value}"]()
     true
   equals: (interval) ->
-    @getStart().valueOf?()==interval?.getStart().valueOf?() and @getEnd().valueOf?()==interval?.getEnd().valueOf?()  
+    @getStart().valueOf?()==interval?.getStart().valueOf?() and @getEnd().valueOf?()==interval?.getEnd().valueOf?()
   toString: ->
     start = formatTime @getStart()
     end = formatTime @getEnd()
@@ -525,22 +556,22 @@ class TimeInterval
 
 ###
   A repeating interval generator class
-    
+
     only works on same day but the date pattern changes
-    
-    
+
+
     This generates a series of time interval object based upon
     a schedule
-    
+
     these are generated on a daily basis
-    
+
 ###
 
 
 # the repeating interval class just visualiuses a series
 # of time slots
 class RepeatingInterval extends TimeInterval
-  
+
   #utility method to get the number of days in the month given by the date passed in
   _daysInMonth = (date) ->
     # go to next month and go back 1 day (0th date)
@@ -601,24 +632,24 @@ class RepeatingInterval extends TimeInterval
       if ++counter > 120 # days
         throw Error "Infinite loop tried #{counter} times!"
     interval
-      
+
   # interval just return self
   interval: -> @
 
   isWithinStart: ->
     @isWithinInterval(@spec.startTime)
-  
+
   # these are the generator classes
   # so these are used to generate sequences of intervals
   class BaseInterval
-    
+
 
     # default is midnight
     # default is a whole day 00:00 -> 23:59:59
     # get the repeating interval method
-    
+
     _intervalNames = ['hour', 'minute', 'second', 'millisecond']
-    
+
     # default length is 1 day
     length: 60*60*1000*24 - 1 # 1 hour * milliseconds * 1 day
     hour: 0
@@ -633,12 +664,12 @@ class RepeatingInterval extends TimeInterval
       new @constructor.intervalClass(@, @startTime)
 
     # this is a delegate method to the generator
-    next: -> @interval().next()    
+    next: -> @interval().next()
     prev: -> @interval().prev()
     equals: (interval) -> @interval().equals(interval)
     getStart: -> @interval().getStart()
     getEnd: -> @interval().getEnd()
-        
+
     setMilliseconds: (ms) ->
       if ms > 7 * 24 * 60 * 60 * 1000 - 1
         throw Error "Length of interval can not be more than 1 week"
@@ -682,9 +713,9 @@ class RepeatingInterval extends TimeInterval
       newDate
   # constructor takes a mydate object
   # work out interval that falls on time or next
-    
+
   class @Daily extends BaseInterval
-    
+
     _validDays = [0..6]
 
     # this handles multiple days per week
@@ -693,17 +724,17 @@ class RepeatingInterval extends TimeInterval
     # this is a single day of month
     # from current one work out the next instance
     days: _validDays
-    
+
     # set the repeating days, By default every day
     setDays: (days...) ->
       days = _.flatten(days)
       unless _.every(days, (v) -> _.contains(_validDays, v))
         throw Error "Days must be between 0 and 6"
       if days.length == 0
-        throw Error "Must set at least 1 day" 
+        throw Error "Must set at least 1 day"
       @days = _.chain(days).uniq().sort().value()
       @
-    # this is the generator class which returns 
+    # this is the generator class which returns
     class DailyRepeatingInterval extends RepeatingInterval
       @scandays: 7
       _validDate: (date) ->
@@ -712,12 +743,12 @@ class RepeatingInterval extends TimeInterval
 
     @intervalClass: DailyRepeatingInterval
   class @EveryDay extends @Daily
-    setDays: -> # null function  
+    setDays: -> # null function
   class @MonthlyDate extends BaseInterval
     # this is the 1st of the month regarless of date
     # from current one work out next instance
     _validDates = (x for x in [-3..31] when x isnt 0)
-    
+
     # every day is valid
     dates: _validDates
     setDates: (dates...) ->
@@ -725,16 +756,16 @@ class RepeatingInterval extends TimeInterval
       unless _.every(dates, (v) -> _.contains(_validDates, v))
         throw Error "Days must be between 0 and 6"
       if dates.length == 0
-        throw Error "Must set at least 1 day" 
+        throw Error "Must set at least 1 day"
       @dates = _.chain(dates).uniq().sort().value()
       @
-    
+
     class MonthlyDateRepeatingInterval extends RepeatingInterval
       @scandays: 1
       _validDate: (date) ->
         # convert -ve dates into actual date values
         # -1 means last day of month etc...
-        daysInMonth = _daysInMonth(date) 
+        daysInMonth = _daysInMonth(date)
         # convert the dates
         dates = for v in @spec.dates
           if v < 0
@@ -743,7 +774,7 @@ class RepeatingInterval extends TimeInterval
         # is the day of this date one of our target days
         _.indexOf(dates, date.getDate()) != -1
       #next is simply myself combined with the end interval
-      
+
     # save a reference to this class on the class itself to be reused by the parent classes
     @intervalClass: MonthlyDateRepeatingInterval
 
@@ -754,7 +785,7 @@ class RepeatingInterval extends TimeInterval
     # default is 2nd last Sunday of the month
     # week number is first followed by the day number
     dayWeeks: [[_validWeeks[0], _validDays[0]]]
-    
+
     setDayWeeks: (ranges...) ->
       throw Error "Need at least 1 range" unless ranges.length > 0
       # check values
@@ -762,7 +793,7 @@ class RepeatingInterval extends TimeInterval
         throw Error "Need 2 values" unless range.length == 2
         throw Error "Week out of range -2->5 except 0 required got #{range[0]}" unless _.indexOf(_validWeeks, range[0], true) != -1
         throw Error "Day out of range 0-6 got #{range[1]}" unless _.indexOf(_validDays, range[1], true) != -1
-      @dayWeeks = ranges 
+      @dayWeeks = ranges
     # this handles day of month
     # 1st sunday of month
     # from current one work out next instance
@@ -773,11 +804,11 @@ class RepeatingInterval extends TimeInterval
         # convert -ve dates into actual date values
         # -1 means last day of month etc...
         # used for negative calculations
-        daysInMonth = _daysInMonth(date) 
+        daysInMonth = _daysInMonth(date)
         # convert the dates
         for dayWeek in @spec.dayWeeks
           # return true on first match
-          if (date.getDay() == dayWeek[1] and 
+          if (date.getDay() == dayWeek[1] and
             if dayWeek[0] < 0 # -ve value
               (daysInMonth - date.getDate())//7 == (-1 * dayWeek[0]) - 1
             else
@@ -788,13 +819,13 @@ class RepeatingInterval extends TimeInterval
         false
 
     @intervalClass: MonthlyDateRepeatingInterval
-  
+
   # simple number of days generator
   class @NumberOfDays extends BaseInterval
-    
+
     days: 1
     setDays: (@days) ->
-    
+
     class NumberOfDaysRepeatingInterval extends RepeatingInterval
       constructor: (@spec, @starttime) ->
         @setStart new Date(@starttime.valueOf())
@@ -808,7 +839,7 @@ class RepeatingInterval extends TimeInterval
       prev: ->
         throw Error "Not Implemented"
     @intervalClass: NumberOfDaysRepeatingInterval
-      
+
 
 
 @RepeatingIntervalGenerator = RepeatingIntervalGenerator
