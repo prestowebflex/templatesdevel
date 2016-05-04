@@ -153,7 +153,7 @@ class TileFlip
   # size of the grid
   size: 16
   drawn_prizes: null # the prize state as drawn
-  draws: 0
+  draws: 16
   drawn: 0
   constructor: (data = {}, @node) ->
     {@html_before,@html_after,@html_gameover,@draws} = data
@@ -194,7 +194,7 @@ class TileFlip
 
     tempPrizes = []
     # decide which prize we are going to win
-    @wonPrize = @generateRandomPrize()
+    wonPrize = @generateRandomPrize()
 
     # put enough of the won prize in the array
     console.log('wonPrize')
@@ -266,7 +266,6 @@ class TileFlip
       @drawn = @draws # (temporarily) force an end the game
       # show the first won coupon in the panel
       $(".game_over").html(coupons[0].html)
-
       # if more than one coupon won then indicate this below the first coupon
       # todo: think of better alternatives than this approach
       if coupons.length > 1
