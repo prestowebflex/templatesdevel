@@ -191,31 +191,12 @@ class TileFlip
 
   # generate N number of prizes as an array
   getRandomPrizes: (number) ->
-<<<<<<< HEAD
-=======
-    # previous code
-    #number = @size unless number?
-    #@generateRandomPrize() for [1..number]
-    # end previous code
-
-    # todo:
-    # refactor this to follow this algorithm:
->>>>>>> master
 
     tempPrizes = []
     # decide which prize we are going to win
     @wonPrize = @generateRandomPrize()
 
     # put enough of the won prize in the array
-<<<<<<< HEAD
-    tempPrizes.push @wonPrize for [1..@wonPrize.number_to_collect]
-
-    # fill the rest of the array with other prizes
-    for prize in @prize_pool
-      if prize.id != @wonPrize.id
-        # IMPORTANT that there aren't enough other prizes to win anything else
-        for [1..prize.number_to_collect - 1]
-=======
     console.log('wonPrize')
     console.log(wonPrize)
 
@@ -236,7 +217,6 @@ class TileFlip
     fillprize = (prize, number=1) =>
       if prize?
         for [1..number]
->>>>>>> master
           if tempPrizes.length < @size
             if prize.pieces_out < (prize.number_to_collect-1)
               prize.pieces_out += 1
@@ -284,8 +264,6 @@ class TileFlip
     if nCollected == nToCollect
       # todo: do this a different way! - don't force an end to the game like this
       @drawn = @draws # (temporarily) force an end the game
-<<<<<<< HEAD
-
       # show the first won coupon in the panel
       $(".game_over").html(coupons[0].html)
 
@@ -293,9 +271,7 @@ class TileFlip
       # todo: think of better alternatives than this approach
       if coupons.length > 1
         $(".game_over").append("<p>Plus " + (coupons.length-1) + " more</p>")
-=======
       $('.tile-flip-btn .ui-btn-inner').text(nCollected + '/' + nToCollect + ' found, you win!')
->>>>>>> master
 
     @prizes[number]
   # is the prize revaled
