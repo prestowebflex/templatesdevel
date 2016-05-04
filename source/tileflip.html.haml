@@ -24,13 +24,12 @@ title: Tile flip
         -(4**2).times.each do |cell|
           .panel{class: "box#{cell+1}", data: {box: cell}}
             .front
-              .boxicon
-              .openicon
+              .tileicon
             .back
               .info
               -#.buttonbar
               -#  %a{href:"#", data:{role:"button"}} CLOSE
-        .try_again
+        .game_over
     .coupons{style: "display: none;"}
   .html_after
   -# %div.ui-grid-c
