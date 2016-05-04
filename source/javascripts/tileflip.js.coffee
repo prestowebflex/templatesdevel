@@ -164,13 +164,7 @@ class TileFlip
 
     @dudPrize = new Prize("0", {html: data.html_nowin, odds: (@pool_size - @_calculatePoolSize())})
 
-    # put THE dud prize into the prize pool now
-<<<<<<< HEAD
-    @prize_pool.push @dudPrize
-
-=======
-    # @prize_pool.push @dudPrize
->>>>>>> master
+    # the dud prize is handled differently
     # predraw the prizes now
     @prizes = @getRandomPrizes()
     shuffle(@prizes)
