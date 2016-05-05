@@ -24,7 +24,8 @@ tileflip = (node, jQuery) ->
   #prizes = boxes.getPrizes 16
 
   #refresh panel based upon the state of the boxes
-  refreshPanel = (revealbox) ->
+  # reveal box is passed in on flip to set correct css for visuals
+  refreshPanel = (revealbox = null) ->
     pb = $(".tileflip").removeClass("available unavailable")
     if boxes.isValid()
       pb.addClass "available"
@@ -156,7 +157,7 @@ class TileFlip
   draws: 16
   drawn: 0
   constructor: (data = {}, @node) ->
-    {@html_before,@html_after,@html_gameover,@draws} = data
+    {@html_before,@html_after,@html_gameover} = data
     @pool_size = Number(data.pool_size ? 100)
     @prize_pool = for id, prize of data.prizes
       # TODO don't include prizes which fall outsize the date spec
@@ -176,10 +177,14 @@ class TileFlip
     period = interval.prev().getStart() # get the start of the previous period
     @next_period = interval.getStart() # this is the time to start the next interval
     # filter this by date number of records is the box count
-    @drawn = _.chain(@node.where(_datatype:"boxshow")).select((v) ->
-        d = new Date(v.get("timedrawn"))
-        d.valueOf() > period.valueOf()
-       ).value().length
+
+    # if 1 record exists then the game has been played to completion
+    if _.find( @node.where(_datatype:"tileflip") ,(v) ->
+          d = new Date(v.get("timedrawn"))
+          d.valueOf() > period.valueOf()
+       )?
+          # force end the game
+          @drawn = @draws
 
   shuffle = (arr) ->
     i = arr.length
@@ -194,7 +199,7 @@ class TileFlip
 
     tempPrizes = []
     # decide which prize we are going to win
-    wonPrize = @generateRandomPrize()
+    @wonPrize = wonPrize = @generateRandomPrize()
 
     # put enough of the won prize in the array
     console.log('wonPrize')
@@ -248,29 +253,46 @@ class TileFlip
 
   # get a prize for a boxx
   getPrize: (number) ->
-    @prizes[number].number_collected++
-
+    # if this prize has't be revealed before and the numbrer of draws hasn't been exceeded
     if !@isRevealed(number) and @isValid()
+      # increment the global counter
       @drawn++
+      # increment this prize count
+      @prizes[number].number_collected++
+      # mark off this box as revealed now (copy to 2nd array)
+      @drawn_prizes[number] = @prizes[number]
+
+    if @prizes[number] == @dudPrize
+      nToCollect = @draws
+    else
+      # these are always set
       nToCollect = @prizes[number].number_to_collect
-      nCollected = @prizes[number].number_collected
 
-      # todo: refactor this comparison to the Prize class
-      if (@prizes[number].number_to_collect == @prizes[number].number_collected)
-        @node.create(_datatype:"boxshow", timedrawn: new Date())
-        coupons = @prizes[number].generateCoupons(@node)
-        @drawn_prizes[number] = @prizes[number]
+    nCollected = @prizes[number].number_collected
 
-    if nCollected == nToCollect
+    # if the board is no longer valid or the current prize matches
+    if !@isValid() or (nCollected == nToCollect)
+      # END OF GAME CREATE 1 RECORD TO STORE FACT
+      @node.create(_datatype:"tileflip", timedrawn: new Date())
+
       # todo: do this a different way! - don't force an end to the game like this
       @drawn = @draws # (temporarily) force an end the game
-      # show the first won coupon in the panel
-      $(".game_over").html(coupons[0].html)
-      # if more than one coupon won then indicate this below the first coupon
-      # todo: think of better alternatives than this approach
-      if coupons.length > 1
-        $(".game_over").append("<p>Plus " + (coupons.length-1) + " more</p>")
-      $('.tile-flip-btn .ui-btn-inner').text(nCollected + '/' + nToCollect + ' found, you win!')
+
+      unless @wonPrize?
+        # IF WE WIN THE DUD PRIZE SHOW THAT??
+        $(".game_over").html(@html_gameover)
+      else
+        # IF WE WIN SOMETHING SHOW THAT!
+        # GERNATE ANY COUPON DATA for the won prize
+        coupons = @wonPrize.generateCoupons(@node)
+        # show the first won coupon in the panel
+        $(".game_over").html(coupons[0].html)
+        if coupons.length > 1
+          $(".game_over").append("<p>Plus " + (coupons.length-1) + " more</p>")
+        # if more than one coupon won then indicate this below the first coupon
+        # todo: think of better alternatives than this approach
+        $('.tile-flip-btn .ui-btn-inner').text(nCollected + '/' + nToCollect + ' found, you win!')
+
 
     @prizes[number]
   # is the prize revaled
