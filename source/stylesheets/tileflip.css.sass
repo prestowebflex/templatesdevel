@@ -47,7 +47,7 @@
       background-position: center center
       +background-size(cover)
       background-repeat: no-repeat
-      background-image: url("../images/tileflip/back.jpg")
+      background-image: url("http://ya.wf-res.com/images/ckeditor/pictures/13447/data/content/img_0b43eebb17285bcb7eeab61bff713a05")
       cursor: pointer
     &.revealed .tileicon
       display: none
@@ -80,11 +80,11 @@
       cursor: pointer
     &.flipped .front, &.flipped .back
       //+box-shadow(0 1px 5px rgba(0,0,0,0.9))
-  
+
     .front
       z-index: 900
       //background: #6b7077
-  
+
       // note about 180 causing an unnatural looking half flip?
       +transform(rotatey(0deg) rotatex(0deg))
     &.flipped .front
@@ -102,26 +102,26 @@
       .info
         top: 0
         bottom: 0
-        img 
+        img
           height: 100%
           width: 100%
         //50px
       // .buttonbar
         // bottom: 0
         // height: 50px
-  
+
       +transform(rotatey(-179deg) rotatex(0deg))
     &.flipped .back
       //background: #80868d
       +transform(rotatey(0deg))
-      
+
   .couponexpiry
     font-size: 75%
     font-weight: normal
     float: right
     &:before
       content: "Expires: "
-  
+
   .coupon_validility
     font-size: 80%
     margin-top: 1ex
@@ -142,7 +142,7 @@
     visibility: hidden
     +opacity(0)
     background-color: white
-    img 
+    img
       height: 90%
   .tileflip
     &.unavailable
@@ -153,7 +153,7 @@
         visibility: visible
         //display: block
         z-index: 2
-  .coupons 
+  .coupons
     img
       height: 100%
-      width: 100%      
+      width: 100%

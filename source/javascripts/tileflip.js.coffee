@@ -19,7 +19,7 @@ tileflip = (node, jQuery) ->
 
   html $(".html_before"), boxes.html_before
   html $(".html_after"), boxes.html_after
-  html $(".try_again"), boxes.html_tryagain
+  html $(".game_over"), boxes.html_gameover
 
   #prizes = boxes.getPrizes 16
 

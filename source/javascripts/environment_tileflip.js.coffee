@@ -10,7 +10,6 @@ node = new Node
     html_gameover: "
       <p>Try again tomorrow</p>
     "
-    draws: "16"
     # use thse to rework out the pool size and try again etc...
     pool_size: "2"
     html_nowin: "<img src='images/tileflip/dud.jpg' />"
