@@ -155,7 +155,7 @@ class TileFlip
   draws: 0
   drawn: 0
   constructor: (data = {}, @node) ->
-    {@html_before,@html_after,@html_tryagain,@draws} = data
+    {@html_before,@html_after,@html_tryagain,@draws,@dailyDraws} = data
     @pool_size = Number(data.pool_size ? 100)
     @prize_pool = for id, prize of data.prizes
       # TODO don't include prizes which fall outsize the date spec
@@ -177,10 +177,10 @@ class TileFlip
     period = interval.prev().getStart() # get the start of the previous period
     @next_period = interval.getStart() # this is the time to start the next interval
     # filter this by date number of records is the box count
-    @drawn = _.chain(@node.where(_datatype:"boxshow")).select((v) ->
-        d = new Date(v.get("timedrawn"))
-        d.valueOf() > period.valueOf()
-       ).value().length
+    @drawn = 0; #_.chain(@node.where(_datatype:"boxshow")).select((v) ->
+#        d = new Date(v.get("timedrawn"))
+#        d.valueOf() > period.valueOf()
+#       ).value().length
 
   shuffle = (arr) ->
     i = arr.length
@@ -281,7 +281,7 @@ class TileFlip
 
   # is the current tile flip valid to draw from
   isValid: ->
-    @drawn < @draws
+    @drawn < @dailyDraws 
   # genrate single prize
   # it now returns null if no prize is won to let other code no no prize
   generateRandomPrize: ->
