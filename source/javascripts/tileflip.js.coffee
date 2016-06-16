@@ -266,7 +266,7 @@ class TileFlip
 
       # todo: refactor this comparison to the Prize class
       if (@prizes[number].number_to_collect == @prizes[number].number_collected)
-        @node.create(_datatype:"boxshow", timedrawn: new Date())
+        @node.create(_datatype:"tileflip", timedrawn: new Date())
         @prizes[number].generateCoupons(@node)
         @drawn_prizes[number] = @prizes[number]
 
