@@ -1,5 +1,8 @@
 tileflip = (node, jQuery) ->
 
+  # use this key to save localstorage game progress
+  saveGameDataKey = '_tileflip_game_data'
+
   # process html via collection
   html = (jquery, html) ->
     # load in html
@@ -11,11 +14,52 @@ tileflip = (node, jQuery) ->
         image.geturl (href) ->
           img.attr "src", href
 
+  saveGameData = () -> 
+    boxes.node.attributes.panels = []
+    for panel, i in $('.panel')
+      panel = $(panel)
+      panelData = { "isFlipped": panel.hasClass('flipped'), "panelData": panel.html() }
+      boxes.node.attributes.panels.push(panelData)
+
+    localStorage.setItem(saveGameDataKey, JSON.stringify(boxes.node.attributes))
+
+  loadGameData = () -> 
+    tmpGameData = JSON.parse localStorage.getItem(saveGameDataKey)
+    if tmpGameData && tmpGameData != "undefined"
+      return tmpGameData
+    return null
+
+  resetGameData = () -> 
+    localStorage.setItem(saveGameDataKey, null)
+
+#  resetGameData()
+
   # quick mockup around jquery
   $ = (selector) ->
     jQuery.find selector
+
+  # check for saved game data
+  loadedGameData = loadGameData()
+
+  if loadedGameData && loadedGameData != 'undefined'
+
+    # init game data as node data 
+    node = new Node loadedGameData
+
+    for panel, i in $('.panel')
+
+      # replace the prizes on each tile
+      $(panel).html(loadedGameData.panels[i].panelData)
+
+      if loadedGameData.panels[i].isFlipped
+
+        # flip the panels that were already flipped
+        $(panel).addClass('flipped').addClass('locked')
+  
   # initialize tile flip
-  boxes = new TileFlip node.get("content"), node
+  nodeContent = node.get("content")
+
+  boxes = new TileFlip nodeContent, node
 
   html $(".html_before"), boxes.html_before
   html $(".html_after"), boxes.html_after
@@ -37,8 +81,10 @@ tileflip = (node, jQuery) ->
       if boxes.isRevealed(box) and revealbox != box
         p.addClass "revealed"
       else
-        p.addClass "available"
-    refreshCoupons()
+        if !p.hasClass("locked")
+          p.addClass "available"
+    refreshCoupons()    
+
 
   @coupons = []
   findCoupon = (id) ->
@@ -163,12 +209,11 @@ class TileFlip
     @dudPrize = new Prize("0", {html: data.html_nowin, odds: (@pool_size - @_calculatePoolSize())})
     # put THE dud prize into the prize pool now
     # @prize_pool.push @dudPrize
+
+
     # predraw the prizes now
     @prizes = @getRandomPrizes()
     shuffle(@prizes)
-
-    console.log('prizes: ')
-    console.log(@prizes)
 
     @drawn_prizes = [] # store the drawn prizes somewhere
 
@@ -273,15 +318,22 @@ class TileFlip
       # todo: do this a different way! - don't force an end to the game like this
       @drawn = @draws # (temporarily) force an end the game
       $('.tile-flip-btn .ui-btn-inner').text(nCollected + '/' + nToCollect + ' found, you win!')
+      resetGameData() 
 
     @prizes[number]
   # is the prize revaled
   isRevealed: (boxNumber) ->
+    # realise that this should be saved / loaded with game data
     @drawn_prizes[boxNumber]?
 
   # is the current tile flip valid to draw from
   isValid: ->
-    @drawn < @draws
+    # need to decide when to stop the flips: 
+    # .. when the prize is won?
+    # .. when all panels are revealed?
+    # .. when daily draws are exceeded?
+    @drawn < $('.panel').length && @drawn < @max_daily_draws
+
   # genrate single prize
   # it now returns null if no prize is won to let other code no no prize
   generateRandomPrize: ->
