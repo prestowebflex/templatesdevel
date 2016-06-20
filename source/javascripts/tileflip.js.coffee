@@ -177,7 +177,7 @@ tileflip = (node, jQuery) ->
     # # put back to front of card #mark as revealed
     $(@).parent().find(".panel").removeClass "hidden"
 
-    window.setTimeout( saveGameData, 1000 )
+    window.setTimeout( saveGameData, 750 )
 
   # else
     # $(@).removeClass "flipped"
