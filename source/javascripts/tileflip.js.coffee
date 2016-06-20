@@ -1,7 +1,7 @@
 tileflip = (node, jQuery) ->
 
   # use this key to save localstorage game progress
-  saveGameDataKey = '_tileflip_game_data'
+  saveGameDataKey = null
 
   # process html via collection
   html = (jquery, html) ->
@@ -15,6 +15,7 @@ tileflip = (node, jQuery) ->
           img.attr "src", href
 
   saveGameData = () -> 
+    console.log('saving to ' + saveGameDataKey)
     boxes.node.attributes.panels = []
     for panel, i in $('.panel')
       panel = $(panel)
@@ -24,6 +25,7 @@ tileflip = (node, jQuery) ->
     localStorage.setItem(saveGameDataKey, JSON.stringify(boxes.node.attributes))
 
   loadGameData = () -> 
+    console.log('loading from ' + saveGameDataKey)
     tmpGameData = JSON.parse localStorage.getItem(saveGameDataKey)
     if tmpGameData && tmpGameData != "undefined"
       return tmpGameData
@@ -32,11 +34,11 @@ tileflip = (node, jQuery) ->
   resetGameData = () -> 
     localStorage.setItem(saveGameDataKey, null)
 
-#  resetGameData()
-
   # quick mockup around jquery
   $ = (selector) ->
     jQuery.find selector
+
+  saveGameDataKey = '_tileflip_' + node.id + '_game_data'
 
   # check for saved game data
   loadedGameData = loadGameData()
@@ -174,6 +176,9 @@ tileflip = (node, jQuery) ->
     # viewing backside of card
     # # put back to front of card #mark as revealed
     $(@).parent().find(".panel").removeClass "hidden"
+
+    window.setTimeout( saveGameData, 1000 )
+
   # else
     # $(@).removeClass "flipped"
     # # determine if the panel has been viewed before
