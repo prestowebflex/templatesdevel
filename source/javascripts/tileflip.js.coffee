@@ -38,7 +38,7 @@ tileflip = (node, jQuery) ->
   $ = (selector) ->
     jQuery.find selector
 
-  saveGameDataKey = '_tileflip_' + node.id + '_game_data'
+  saveGameDataKey = '_tileflip_' + node.getRawId() + '_game_data'
 
   # check for saved game data
   loadedGameData = loadGameData()
