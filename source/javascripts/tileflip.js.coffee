@@ -206,7 +206,7 @@ class TileFlip
   draws: 0
   drawn: 0
   constructor: (data = {}, @node) ->
-    {@html_before,@html_after,@html_tryagain,@draws} = data
+    {@html_before,@html_after,@html_tryagain,@draws,@max_daily_draws} = data
     @pool_size = Number(data.pool_size ? 100)
     @prize_pool = for id, prize of data.prizes
       # TODO don't include prizes which fall outsize the date spec
