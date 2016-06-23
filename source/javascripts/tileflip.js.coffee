@@ -16,7 +16,10 @@ tileflip = (node, jQuery) ->
 
   saveGameData = () -> 
     console.log('saving to ' + saveGameDataKey)
+    console.log(boxes)
     boxes.node.attributes.panels = []
+    boxes.node.attributes.content.flipped = String(boxes.flipped)
+    boxes.node.attributes.is_game_complete = boxes.is_game_complete
     for panel, i in $('.panel')
       panel = $(panel)
       panelData = { "isFlipped": panel.hasClass('flipped'), "panelData": panel.html() }
@@ -46,17 +49,21 @@ tileflip = (node, jQuery) ->
   if loadedGameData && loadedGameData != 'undefined'
 
     # init game data as node data 
-    node = new Node loadedGameData
+    tmpnode = new Node loadedGameData
 
-    for panel, i in $('.panel')
 
-      # replace the prizes on each tile
-      $(panel).html(loadedGameData.panels[i].panelData)
+    if !tmpnode.attributes.is_game_complete
+      node = tmpnode
 
-      if loadedGameData.panels[i].isFlipped
+      for panel, i in $('.panel')
 
-        # flip the panels that were already flipped
-        $(panel).addClass('flipped').addClass('locked')
+        # replace the prizes on each tile
+        $(panel).html(loadedGameData.panels[i].panelData)
+
+        if loadedGameData.panels[i].isFlipped
+
+          # flip the panels that were already flipped
+          $(panel).addClass('flipped').addClass('locked')
   
   # initialize tile flip
   nodeContent = node.get("content")
@@ -205,16 +212,22 @@ class TileFlip
   drawn_prizes: null # the prize state as drawn
   draws: 0
   drawn: 0
+  flips: 0
+  flipped: 0
   constructor: (data = {}, @node) ->
-    {@html_before,@html_after,@html_tryagain,@draws,@max_daily_draws} = data
+    {@html_before,@html_after,@html_tryagain,@flips,@flipped,@max_daily_draws,@prizes} = data
     @pool_size = Number(data.pool_size ? 100)
-    @prize_pool = for id, prize of data.prizes
-      # TODO don't include prizes which fall outsize the date spec
-      new Prize(id, prize)
-    @dudPrize = new Prize("0", {html: data.html_nowin, odds: (@pool_size - @_calculatePoolSize())})
-    # put THE dud prize into the prize pool now
-    # @prize_pool.push @dudPrize
 
+    if !@prize_pool
+      @prize_pool = for id, prize of data.prizes
+        # TODO don't include prizes which fall outsize the date spec
+        new Prize(id, prize)
+    @dudPrize = new Prize("0", {html: data.html_nowin, odds: (@pool_size - @_calculatePoolSize())})
+
+    @is_game_complete = false
+
+    if (isNaN(@flipped))
+      @flipped = 0
 
     # predraw the prizes now
     @prizes = @getRandomPrizes()
@@ -309,7 +322,7 @@ class TileFlip
     @prizes[number].number_collected++
 
     if !@isRevealed(number) and @isValid()
-      @drawn++
+      @flipped++
       nToCollect = @prizes[number].number_to_collect
       nCollected = @prizes[number].number_collected
 
@@ -321,9 +334,9 @@ class TileFlip
 
     if nCollected == nToCollect
       # todo: do this a different way! - don't force an end to the game like this
-      @drawn = @draws # (temporarily) force an end the game
+      #@drawn = @draws # (temporarily) force an end the game
       $('.tile-flip-btn .ui-btn-inner').text(nCollected + '/' + nToCollect + ' found, you win!')
-      resetGameData() 
+      @is_game_complete = true
 
     @prizes[number]
   # is the prize revaled
@@ -337,7 +350,11 @@ class TileFlip
     # .. when the prize is won?
     # .. when all panels are revealed?
     # .. when daily draws are exceeded?
-    @drawn < $('.panel').length && @drawn < @max_daily_draws
+    if @is_game_complete
+      return false
+    @drawn < @max_daily_draws
+    @is_game_complete = Number(@flips) <= Number(@flipped)
+    !@is_game_complete
 
   # genrate single prize
   # it now returns null if no prize is won to let other code no no prize

@@ -10,7 +10,7 @@ node = new Node
     html_tryagain: "
       <p>Try again tomorrow</p>
     "
-    draws: "3"
+    flips: "3"
     max_daily_draws: "9999"
     # use thse to rework out the pool size and try again etc...
     pool_size: "2"
