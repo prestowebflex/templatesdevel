@@ -156,8 +156,9 @@ class TileFlip
   drawn_prizes: null # the prize state as drawn
   draws: 16
   drawn: 0
+  max_daily_draws: 0
   constructor: (data = {}, @node) ->
-    {@html_before,@html_after,@html_gameover} = data
+    {@html_before,@html_after,@html_tryagain,@draws,@max_daily_draws} = data
     @pool_size = Number(data.pool_size ? 100)
     @prize_pool = for id, prize of data.prizes
       # TODO don't include prizes which fall outsize the date spec
@@ -177,14 +178,10 @@ class TileFlip
     period = interval.prev().getStart() # get the start of the previous period
     @next_period = interval.getStart() # this is the time to start the next interval
     # filter this by date number of records is the box count
-
-    # if 1 record exists then the game has been played to completion
-    if _.find( @node.where(_datatype:"tileflip") ,(v) ->
-          d = new Date(v.get("timedrawn"))
-          d.valueOf() > period.valueOf()
-       )?
-          # force end the game
-          @drawn = @draws
+    @drawn = _.chain(@node.where(_datatype:"tileflip")).select((v) ->
+        d = new Date(v.get("timedrawn"))
+        d.valueOf() > period.valueOf()
+       ).value().length
 
   shuffle = (arr) ->
     i = arr.length
@@ -268,12 +265,11 @@ class TileFlip
       # these are always set
       nToCollect = @prizes[number].number_to_collect
 
-    nCollected = @prizes[number].number_collected
-
-    # if the board is no longer valid or the current prize matches
-    if !@isValid() or (nCollected == nToCollect)
-      # END OF GAME CREATE 1 RECORD TO STORE FACT
-      @node.create(_datatype:"tileflip", timedrawn: new Date())
+      # todo: refactor this comparison to the Prize class
+      if (@prizes[number].number_to_collect == @prizes[number].number_collected)
+        @node.create(_datatype:"tileflip", timedrawn: new Date())
+        @prizes[number].generateCoupons(@node)
+        @drawn_prizes[number] = @prizes[number]
 
       # todo: do this a different way! - don't force an end to the game like this
       @drawn = @draws # (temporarily) force an end the game
@@ -301,7 +297,7 @@ class TileFlip
 
   # is the current tile flip valid to draw from
   isValid: ->
-    @drawn < @draws
+    @drawn < @max_daily_draws 
   # genrate single prize
   # it now returns null if no prize is won to let other code no no prize
   generateRandomPrize: ->
