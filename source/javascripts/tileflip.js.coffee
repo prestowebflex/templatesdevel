@@ -1,5 +1,8 @@
+DEBUG = true
+log = (msg) ->
+  if DEBUG
+    console.log msg
 tileflip = (node, jQuery) ->
-
   # use this key to save localstorage game progress
   saveGameDataKey = null
 
@@ -28,7 +31,7 @@ tileflip = (node, jQuery) ->
     localStorage.setItem(saveGameDataKey, JSON.stringify(boxes.node.attributes))
 
   loadGameData = () -> 
-    console.log('loading from ' + saveGameDataKey)
+    log('loading from ' + saveGameDataKey)
     tmpGameData = JSON.parse localStorage.getItem(saveGameDataKey)
     if tmpGameData && tmpGameData != "undefined"
       return tmpGameData
@@ -242,8 +245,10 @@ class TileFlip
     # filter this by date number of records is the box count
     @drawn = _.chain(@node.where(_datatype:"boxshow")).select((v) ->
         d = new Date(v.get("timedrawn"))
+        log "Comparing #{d} > #{period}"
         d.valueOf() > period.valueOf()
        ).value().length
+    log "Found #{@drawn} previous instances"
 
   shuffle = (arr) ->
     i = arr.length
