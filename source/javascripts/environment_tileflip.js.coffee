@@ -10,8 +10,8 @@ node = new Node
     html_gameover: "
       <p>Try again tomorrow</p>
     "
-    draws: "16"
-    max_daily_draws: "9999"
+    flips: "16"
+    max_daily_draws: "1"
     # use thse to rework out the pool size and try again etc...
     pool_size: "2"
     html_nowin: "<img src='images/tileflip/dud.jpg' />"
@@ -22,7 +22,7 @@ node = new Node
       2:
         html: "<img src='images/tileflip/prize1.jpg' />"
         odds: "0.3"
-        number_to_collect: "8"
+        number_to_collect: "3"
         coupons:
           1:
             title: "Free drink coupon"
@@ -49,7 +49,7 @@ node = new Node
       3:
         html: "<img src='images/tileflip/prize2.jpg' />"
         odds: "0.3"
-        number_to_collect: "8"
+        number_to_collect: "3"
         coupons:
           1:
             title: "Blue drink coupon"
@@ -102,4 +102,15 @@ node = new Node
             generate_extra: 1
 
 $ ->
+  # create some node data before starting.
+  node.create(_datatype:"boxshow", timedrawn: new Date()) for num in [1..2]
+  # console.log node.nodedata
+  # console.log node.getNodeData()
+  # console.log node.where _datatype:"boxshow"
+  # console.log _.chain(node.where(_datatype:"boxshow")).select((v) ->
+  #     d = new Date(v.get("timedrawn"))
+  #     console.log "Comparing #{d}"
+  #     true
+  #    ).value().length
+
   tileflip node, $("div[data-role=content]")

@@ -39,6 +39,8 @@ class @Node extends Obj
   getNodeData: ->
     # FAKE STUB
     @nodedata
+  getRawId: -> 
+    3
   collection:
     # only mock up for images
     getAsync: (obj, id, callback) ->

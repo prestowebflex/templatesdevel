@@ -1,4 +1,10 @@
+DEBUG = true
+log = (msg) ->
+  if DEBUG
+    console.log msg
 tileflip = (node, jQuery) ->
+  # use this key to save localstorage game progress
+  saveGameDataKey = null
 
   # process html via collection
   html = (jquery, html) ->
@@ -11,11 +17,61 @@ tileflip = (node, jQuery) ->
         image.geturl (href) ->
           img.attr "src", href
 
+  saveGameData = () -> 
+    console.log('saving to ' + saveGameDataKey)
+    console.log(boxes)
+    boxes.node.attributes.panels = []
+    boxes.node.attributes.content.flipped = String(boxes.flipped)
+    boxes.node.attributes.is_game_complete = boxes.is_game_complete
+    for panel, i in $('.panel')
+      panel = $(panel)
+      panelData = { "isFlipped": panel.hasClass('flipped'), "panelData": panel.html() }
+      boxes.node.attributes.panels.push(panelData)
+
+    localStorage.setItem(saveGameDataKey, JSON.stringify(boxes.node.attributes))
+
+  loadGameData = () -> 
+    log('loading from ' + saveGameDataKey)
+    tmpGameData = JSON.parse localStorage.getItem(saveGameDataKey)
+    if tmpGameData && tmpGameData != "undefined"
+      return tmpGameData
+    return null
+
+  resetGameData = () -> 
+    localStorage.setItem(saveGameDataKey, null)
+
   # quick mockup around jquery
   $ = (selector) ->
     jQuery.find selector
+
+  saveGameDataKey = '_tileflip_' + node.getRawId() + '_game_data'
+
+  # check for saved game data
+  loadedGameData = loadGameData()
+
+  if loadedGameData && loadedGameData != 'undefined'
+
+    # init game data as node data 
+    tmpnode = new Node loadedGameData
+
+
+    if !tmpnode.attributes.is_game_complete
+      node = tmpnode
+
+      for panel, i in $('.panel')
+
+        # replace the prizes on each tile
+        $(panel).html(loadedGameData.panels[i].panelData)
+
+        if loadedGameData.panels[i].isFlipped
+
+          # flip the panels that were already flipped
+          $(panel).addClass('flipped').addClass('locked')
+  
   # initialize tile flip
-  boxes = new TileFlip node.get("content"), node
+  nodeContent = node.get("content")
+
+  boxes = new TileFlip nodeContent, node
 
   html $(".html_before"), boxes.html_before
   html $(".html_after"), boxes.html_after
@@ -39,8 +95,10 @@ tileflip = (node, jQuery) ->
       if boxes.isRevealed(box) and revealbox != box
         p.addClass "revealed"
       else
-        p.addClass "available"
-    refreshCoupons()
+        if !p.hasClass("locked")
+          p.addClass "available"
+    refreshCoupons()    
+
 
   @coupons = []
   findCoupon = (id) ->
@@ -130,6 +188,9 @@ tileflip = (node, jQuery) ->
     # viewing backside of card
     # # put back to front of card #mark as revealed
     $(@).parent().find(".panel").removeClass "hidden"
+
+    window.setTimeout( saveGameData, 750 )
+
   # else
     # $(@).removeClass "flipped"
     # # determine if the panel has been viewed before
@@ -156,17 +217,23 @@ class TileFlip
   drawn_prizes: null # the prize state as drawn
   draws: 16
   drawn: 0
-  max_daily_draws: 0
+  flips: 0
+  flipped: 0
   constructor: (data = {}, @node) ->
-    {@html_before,@html_after,@html_tryagain,@draws,@max_daily_draws} = data
+    {@html_before,@html_after,@html_tryagain,@flips,@flipped,@max_daily_draws,@prizes} = data
     @pool_size = Number(data.pool_size ? 100)
-    @prize_pool = for id, prize of data.prizes
-      # TODO don't include prizes which fall outsize the date spec
-      new Prize(id, prize)
 
+    if !@prize_pool
+      @prize_pool = for id, prize of data.prizes
+        # TODO don't include prizes which fall outsize the date spec
+        new Prize(id, prize)
     @dudPrize = new Prize("0", {html: data.html_nowin, odds: (@pool_size - @_calculatePoolSize())})
 
-    # the dud prize is handled differently
+    @is_game_complete = false
+
+    if (isNaN(@flipped))
+      @flipped = 0
+
     # predraw the prizes now
     @prizes = @getRandomPrizes()
     shuffle(@prizes)
@@ -180,8 +247,10 @@ class TileFlip
     # filter this by date number of records is the box count
     @drawn = _.chain(@node.where(_datatype:"tileflip")).select((v) ->
         d = new Date(v.get("timedrawn"))
+        log "Comparing #{d} > #{period}"
         d.valueOf() > period.valueOf()
        ).value().length
+    log "Found #{@drawn} previous instances"
 
   shuffle = (arr) ->
     i = arr.length
@@ -293,6 +362,7 @@ class TileFlip
     @prizes[number]
   # is the prize revaled
   isRevealed: (boxNumber) ->
+    # realise that this should be saved / loaded with game data
     @drawn_prizes[boxNumber]?
 
   # is the current tile flip valid to draw from
