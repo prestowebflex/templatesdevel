@@ -10,7 +10,7 @@ node = new Node
     html_gameover: "
       <p>Try again tomorrow</p>
     "
-    draws: "16"
+    flips: "16"
     max_daily_draws: "9999"
     # use thse to rework out the pool size and try again etc...
     pool_size: "2"
@@ -22,7 +22,7 @@ node = new Node
       2:
         html: "<img src='images/tileflip/prize1.jpg' />"
         odds: "0.3"
-        number_to_collect: "8"
+        number_to_collect: "3"
         coupons:
           1:
             title: "Free drink coupon"
@@ -49,7 +49,7 @@ node = new Node
       3:
         html: "<img src='images/tileflip/prize2.jpg' />"
         odds: "0.3"
-        number_to_collect: "8"
+        number_to_collect: "3"
         coupons:
           1:
             title: "Blue drink coupon"
