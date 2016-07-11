@@ -1,4 +1,5 @@
 node = new Node
+  updated_at: "some string"
   content:
     html_before: """
       <p>Match 3, 3 or 8 prizes to win</p>
