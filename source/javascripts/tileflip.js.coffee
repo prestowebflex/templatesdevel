@@ -189,7 +189,16 @@ tileflip = (node, jQuery) ->
   .on "touch", ->
     false
 
-
+class TileFlipState
+  constructor: JSONDATA() {
+    
+  }
+  node_id:
+  updated_at:
+  array_of_tiles_backsides: []
+  array_of_tiles_flipped: []
+  prize_selected_id: 123452345
+  toJson()
 
 # tile flip pulls from a pool of prizes
 class TileFlip
@@ -227,8 +236,12 @@ class TileFlip
       @flipped = 0
 
     # predraw the prizes now
-    @prizes = @getRandomPrizes()
-    shuffle(@prizes)
+    if gamestate 
+      restore prizes
+    else        
+      @prizes = @getRandomPrizes()
+      shuffle(@prizes)
+      save prizes
 
     @drawn_prizes = [] # store the drawn prizes somewhere
 
@@ -250,7 +263,14 @@ class TileFlip
       j = Math.floor(Math.random() * (i+1))
       [arr[i], arr[j]] = [arr[j], arr[i]] # use pattern matching to swap
 
+  getPrizeIds: ->
+    # return array of prizes by id
+    
+  setPrizeIds: (ids) ->
+    # set @prizes by the inputted ids
+    
   # generate N number of prizes as an array
+  
   getRandomPrizes: (number) ->
 
     tempPrizes = []
