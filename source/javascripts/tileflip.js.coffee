@@ -15,11 +15,21 @@ tileflip = (node, jQuery) ->
           img.attr "src", href
 
   saveGameData = () -> 
-    console.log('saving to ' + saveGameDataKey)
+
+    console.log('attempting to save: ')
     console.log(boxes)
+
+    if boxes.is_game_complete
+      resetGameData()
+      return
+
     boxes.node.attributes.panels = []
     boxes.node.attributes.content.flipped = String(boxes.flipped)
+    boxes.node.attributes.content.won_prize = boxes.wonPrize
+    boxes.node.attributes.content.prizes = boxes.prizes
+    boxes.node.attributes.content.prize_pool = boxes.prize_pool
     boxes.node.attributes.is_game_complete = boxes.is_game_complete
+    
     for panel, i in $('.panel')
       panel = $(panel)
       panelData = { "isFlipped": panel.hasClass('flipped'), "panelData": panel.html() }
@@ -27,46 +37,26 @@ tileflip = (node, jQuery) ->
 
     localStorage.setItem(saveGameDataKey, JSON.stringify(boxes.node.attributes))
 
-  loadGameData = () -> 
-    console.log('loading from ' + saveGameDataKey)
-    tmpGameData = JSON.parse localStorage.getItem(saveGameDataKey)
-    if tmpGameData && tmpGameData != "undefined"
-      return tmpGameData
-    return null
-
   resetGameData = () -> 
-    localStorage.setItem(saveGameDataKey, null)
+    localStorage.removeItem(saveGameDataKey)
 
   # quick mockup around jquery
   $ = (selector) ->
     jQuery.find selector
 
   saveGameDataKey = '_tileflip_' + node.getRawId() + '_game_data'
-
-  # check for saved game data
-  loadedGameData = loadGameData()
-
-  if loadedGameData && loadedGameData != 'undefined'
-
-    # init game data as node data 
-    tmpnode = new Node loadedGameData
-
-
-    if !tmpnode.attributes.is_game_complete
-      node = tmpnode
-
-      for panel, i in $('.panel')
-
-        # replace the prizes on each tile
-        $(panel).html(loadedGameData.panels[i].panelData)
-
-        if loadedGameData.panels[i].isFlipped
-
-          # flip the panels that were already flipped
-          $(panel).addClass('flipped').addClass('locked')
   
   # initialize tile flip
   nodeContent = node.get("content")
+
+  if !node.attributes.is_game_complete
+    if node.attributes.panels
+      for panel, i in $('.panel')
+        # replace the prizes on each tile
+        if node.attributes.panels[i].isFlipped
+          $(panel).html(node.attributes.panels[i].panelData)
+          # flip the panels that were already flipped
+          $(panel).addClass('flipped').addClass('locked')
 
   boxes = new TileFlip nodeContent, node
 
@@ -217,13 +207,18 @@ class TileFlip
   flips: 0
   flipped: 0
   constructor: (data = {}, @node) ->
-    {@html_before,@html_after,@html_tryagain,@flips,@flipped,@max_daily_draws,@prizes} = data
+    {@html_before,@html_after,@html_tryagain,@flips,@flipped,@max_daily_draws,@prizes,@prize_pool,@won_prize} = data
     @pool_size = Number(data.pool_size ? 100)
 
     if !@prize_pool
       @prize_pool = for id, prize of data.prizes
         # TODO don't include prizes which fall outsize the date spec
         new Prize(id, prize)
+    else 
+      @prize_pool = for id, prize of @prize_pool
+        # TODO don't include prizes which fall outsize the date spec
+        new Prize(id, prize)
+
     @dudPrize = new Prize("0", {html: data.html_nowin, odds: (@pool_size - @_calculatePoolSize())})
 
     @is_game_complete = false
@@ -260,8 +255,10 @@ class TileFlip
 
     tempPrizes = []
     # decide which prize we are going to win
-    @wonPrize = wonPrize = @generateRandomPrize()
-
+    if !@won_prize
+      @wonPrize = wonPrize = @generateRandomPrize()
+    else 
+      wonPrize = @won_prize
     # put enough of the won prize in the array
     console.log('wonPrize')
     console.log(wonPrize)

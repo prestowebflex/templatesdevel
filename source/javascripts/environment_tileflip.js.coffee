@@ -1,7 +1,7 @@
 node = new Node
   content:
     html_before: """
-      <p>Match 5 prizes to win</p>
+      <p>Match 3, 3 or 8 prizes to win</p>
       <img data-src="" />
       """
     html_after: "
@@ -11,7 +11,7 @@ node = new Node
       <p>Try again tomorrow</p>
     "
     flips: "16"
-    max_daily_draws: "9999"
+    max_daily_draws: "1"
     # use thse to rework out the pool size and try again etc...
     pool_size: "2"
     html_nowin: "<img src='images/tileflip/dud.jpg' />"
@@ -26,7 +26,7 @@ node = new Node
         coupons:
           1:
             title: "Free drink coupon"
-            html: "You won a free drink by matching 5 tiles <img src='images/tileflip/prize1.jpg' />"
+            html: "You won a free drink by matching 3 tiles <img src='images/tileflip/prize1.jpg' />"
             type: "weekly"
             week_days: [0,1,2,3,4,5,6]
             hour: 17
@@ -37,7 +37,7 @@ node = new Node
             generate_extra: 1
           2:
             title: "Free drink coupon 2"
-            html: "You won a free drink by matching 5 tiles <img src='images/tileflip/prize1.jpg' />"
+            html: "You won a free drink by matching 3 tiles <img src='images/tileflip/prize1.jpg' />"
             type: "weekly"
             week_days: [0,1,2,3,4,5,6]
             hour: 17
@@ -53,7 +53,7 @@ node = new Node
         coupons:
           1:
             title: "Blue drink coupon"
-            html: "You won a free drink by matching 5 tiles <img src='images/tileflip/prize2.jpg' />"
+            html: "You won a free drink by matching 3 tiles <img src='images/tileflip/prize2.jpg' />"
             type: "weekly"
             week_days: [0,1,2,3,4,5,6]
             hour: 17
@@ -64,7 +64,7 @@ node = new Node
             generate_extra: 1
           2:
             title: "Free drink coupon 2"
-            html: "You won a free drink by matching 5 tiles <img src='images/tileflip/prize1.jpg' />"
+            html: "You won a free drink by matching 3 tiles <img src='images/tileflip/prize1.jpg' />"
             type: "weekly"
             week_days: [0,1,2,3,4,5,6]
             hour: 17
@@ -80,7 +80,7 @@ node = new Node
         coupons:
           1:
             title: "Orange drink coupon"
-            html: "You won a free drink by matching 5 tiles <img src='images/tileflip/prize3.jpg' />"
+            html: "You won a free drink by matching 8 tiles <img src='images/tileflip/prize3.jpg' />"
             type: "weekly"
             week_days: [0,1,2,3,4,5,6]
             hour: 17
@@ -91,7 +91,7 @@ node = new Node
             generate_extra: 1
           2:
             title: "Free drink coupon 2"
-            html: "You won a free drink by matching 5 tiles <img src='images/tileflip/prize1.jpg' />"
+            html: "You won a free drink by matching 8 tiles <img src='images/tileflip/prize1.jpg' />"
             type: "weekly"
             week_days: [0,1,2,3,4,5,6]
             hour: 17
@@ -102,4 +102,29 @@ node = new Node
             generate_extra: 1
 
 $ ->
+  # create some node data before starting
+  saveGameDataKey = '_tileflip_' + node.getRawId() + '_game_data'
+  gameData = localStorage.getItem(saveGameDataKey)
+  tmpNode = new Node JSON.parse(gameData)
+
+  console.log('>>>  tmpNode')
+  console.log(tmpNode)
+
+  if gameData and tmpNode
+    node = new Node tmpNode.attributes
+  else 
+    node.create(_datatype:"boxshow", timedrawn: new Date()) for num in [1..2]
+
+  console.log('>>>  node')
+  console.log(node)
+
+  # console.log node.nodedata
+  # console.log node.getNodeData()
+  # console.log node.where _datatype:"boxshow"
+  # console.log _.chain(node.where(_datatype:"boxshow")).select((v) ->
+  #     d = new Date(v.get("timedrawn"))
+  #     console.log "Comparing #{d}"
+  #     true
+  #    ).value().length
+
   tileflip node, $("div[data-role=content]")
