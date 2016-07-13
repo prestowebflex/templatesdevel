@@ -104,21 +104,7 @@ node = new Node
 
 $ ->
   # create some node data before starting
-  saveGameDataKey = '_tileflip_' + node.getRawId() + '_game_data'
-  gameData = localStorage.getItem(saveGameDataKey)
-  tmpNode = new Node JSON.parse(gameData)
-
-  console.log('>>>  tmpNode')
-  console.log(tmpNode)
-
-  if gameData and tmpNode
-    node = new Node tmpNode.attributes
-  else 
-    node.create(_datatype:"boxshow", timedrawn: new Date()) for num in [1..2]
-
-  console.log('>>>  node')
-  console.log(node)
-
+  node.create(_datatype:"boxshow", timedrawn: new Date()) for num in [1..2]
   # console.log node.nodedata
   # console.log node.getNodeData()
   # console.log node.where _datatype:"boxshow"
