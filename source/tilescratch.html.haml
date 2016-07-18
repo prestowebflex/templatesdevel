@@ -1,0 +1,33 @@
+---
+title: Tile scratch
+---
+-content_for :assets do
+  = stylesheet_link_tag "tilescratch"
+  = javascript_include_tag  "underscore"
+  = javascript_include_tag  "node"
+  = javascript_include_tag  "environment_tilescratch"
+  = javascript_include_tag  "tilescratch"
+.tilescratchcontainer
+  / .html_before
+  %div{data:{role:"navbar"},style:"margin-left: -15px; margin-right: -15px;"}
+    %ul
+      %li
+        %a.tile-flip-btn.ui-btn-active{data:{panel:"tilescratch"},href:"#"} Tile scratch
+      %li
+        %a{data:{panel:"coupons"},href:"#"}
+          Coupons
+          =surround '(', ')' do
+            %span.couponcount 0
+  .panels
+    %canvas#scratchcanvas
+    .tilescratch
+      .grid.grid4
+        -(4**2).times.each do |cell|
+          .panel.flipped{class: "box#{cell+1}", data: {box: cell}}
+            .front
+              .tileicon
+            .back
+              .info
+        .game_over
+    .coupons{style: "display: none;"}
+  .html_after
