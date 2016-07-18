@@ -212,8 +212,11 @@ class TileFlip
 
     doLoadGameData = @game_state.didLoad()
 
-    if @game_state.updated_at != @node.updated_at
+    nodeUpdatedAt = @node.get('updated_at')
+    if @game_state.updated_at != nodeUpdatedAt
       doLoadGameData = false
+      @game_state.updated_at = nodeUpdatedAt
+
 
     # assemble the prize pool
     if doLoadGameData
