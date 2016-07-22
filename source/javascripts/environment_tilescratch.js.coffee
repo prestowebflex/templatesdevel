@@ -10,7 +10,9 @@ node = new Node
     html_gameover: "
       <p>Try again tomorrow</p>
     "
-    flips: "16"
+    rows: "4"
+    cols: "3"
+    flips: "12"
     max_daily_draws: "1"
     # use thse to rework out the pool size and try again etc...
     pool_size: "2"
@@ -18,7 +20,9 @@ node = new Node
     type: "everyday" # just midnight every day 0 length only using start of interval
     hour: 0
     minute: 0
-    backgroundImage: "images/tilescratch/background.png"
+    background_image: 'images/tilescratch/background.png'
+    scratch_image: 'images/tilescratch/scratcharea.jpg'
+    blank_image: 'images/tilescratch/blank.jpg'
     prizes:
       2:
         html: "<img src='images/tilescratch/prize1.jpg' />"

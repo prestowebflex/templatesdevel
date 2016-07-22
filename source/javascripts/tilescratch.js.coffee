@@ -118,10 +118,10 @@ tilescratch = (node, jQuery) ->
   # should take these image paths from the node
   image = 
     'front':
-      'url': 'images/tilescratch/back.jpg'
+      'url': nodeContent.scratch_image
       'img': null
     'clear':
-      'url': 'images/tilescratch/blank.jpg'
+      'url': nodeContent.blank_image
       'img': null
   canvas = 
     'draw': null
@@ -226,8 +226,8 @@ tilescratch = (node, jQuery) ->
       hit = 0
       imageData = drawContext.getImageData(0, 0, drawWidth, drawHeight)
       data = imageData.data
-      rows = 4
-      cols = 4
+      rows = Number(nodeContent.rows)
+      cols = Number(nodeContent.cols)
       tileW = drawWidth / cols
       tileH = drawHeight / rows
       offsetY = tileH / 2
@@ -354,7 +354,7 @@ tilescratch = (node, jQuery) ->
 
   window.addEventListener 'load', (->
     loadImages()
-    $('.panels').css('background', 'transparent url(' + node.get('content').backgroundImage + ') center top no-repeat')
+    $('.panels').css('background', 'transparent url(' + nodeContent.background_image + ') center top no-repeat')
       .css('background-size', 'cover')
       .css('padding-top', '220px')
     return
@@ -415,7 +415,7 @@ class TileScratch
   # number of items in the pool
   pool_size: null
   # size of the grid
-  size: 16
+  size: 0
   drawn_prizes: null # the prize state as drawn
   drawn: 0
   flips: 0
@@ -425,6 +425,8 @@ class TileScratch
   constructor: (data = {}, @node) ->
     {@html_before,@html_after,@html_tryagain,@flips,@max_daily_draws,@prizes,@prize_pool,@won_prize} = data
     @pool_size = Number(data.pool_size ? 100)
+
+    @size = Number(@node.get('content').rows) * Number(@node.get('content').cols)
 
     @game_state = new TileScratchState( @node.getRawId() )
 
@@ -469,6 +471,8 @@ class TileScratch
     @drawn_prizes = [] # store the drawn prizes somewhere
 
     for panel, i in $('.panel')
+      console.log i
+      console.log @game_state.prizes[i]
       htmlContent = @game_state.prizes[i].html
       $(panel).find('.back .info').html(htmlContent)
 

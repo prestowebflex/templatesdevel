@@ -21,8 +21,8 @@ title: Tile scratch
   .panels
     %canvas#scratchcanvas
     .tilescratch
-      .grid.grid4
-        -(4**2).times.each do |cell|
+      .grid.grid4x3
+        -(4*3).times.each do |cell|
           .panel.flipped{class: "box#{cell+1}", data: {box: cell}}
             .front
               .tileicon
