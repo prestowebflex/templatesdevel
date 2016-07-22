@@ -27,7 +27,8 @@ tileflip = (node, jQuery) ->
   gridHeight = $('.tileflip').innerHeight()
   boxHeight = gridHeight/4
   $('.panel').css('height', boxHeight+'px')
-  $('.panel').css('width', boxHeight*nodeContent.box_image_aspect*0.95)
+  boxAspect = nodeContent.box_image_aspect || 1
+  $('.panel').css('width', boxHeight*boxAspect*0.95)
 
   #refresh panel based upon the state of the boxes
   # reveal box is passed in on flip to set correct css for visuals
