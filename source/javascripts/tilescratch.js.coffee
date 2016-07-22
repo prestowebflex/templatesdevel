@@ -218,11 +218,13 @@ tilescratch = (node, jQuery) ->
     * return true if the pixel value is sampleValue
     ###      
     sampleXYinRGBA = (data, xPx, yPx, rowW, sampleValue) -> 
-      dataOffset = ( (yPx * rowW) + xPx ) * 4 - 1 #4 bytes RGBA
+      dataOffset = Math.round((((yPx * rowW) + xPx ) * 4) + 1 ) #4 bytes RGBA
       data[ dataOffset ] == sampleValue
 
     sampleScratch = ->
-      return if scratchgame.is_game_complete 
+      if scratchgame.is_game_complete
+        refreshCoupons()
+        return  
       hit = 0
       imageData = drawContext.getImageData(0, 0, drawWidth, drawHeight)
       data = imageData.data
@@ -241,17 +243,34 @@ tilescratch = (node, jQuery) ->
         yPos = ( rowIter * tileH ) + offsetY
         while colIter < cols
           xPos = ( colIter * tileW ) + offsetX 
-          if sampleXYinRGBA(data, xPos, yPos, drawWidth, 255, 2)
+          if sampleXYinRGBA(data, xPos, yPos, imageData.width, 255)
             hit++
+
+            tCol = colIter
+            # desktop safari is crap and needs this - check ios
+            # columns reported as: 
+            # 1 2 3 0
+            # 2 3 0 1
+            # 3 0 1 2
+            if rowIter == 0
+              tCol = ( colIter + cols + 1 ) % cols
+            if rowIter == 1
+              tCol = ( colIter + cols + 2 ) % cols
+            if rowIter == 2
+              tCol = ( colIter + cols + 3 ) % cols
+            # desktop chrome does something crap differently 
+            # columns reported as: 
+            # 2 3 0 1
+            # 2 3 0 1
+            # 2 3 0 1
+            
+            # console.log 'hit: ' + (tCol) + ' ' + rowIter
+            scratchgame.getPrize(rowIter*cols + tCol)
           colIter++
         rowIter++
 
-      if hit >= rows * cols * 0.95 # 95% of samples are hit
-        tw = $('.tilescratch').width() 
-        th = $('.tilescratch').height()
-        $('canvas').fadeOut()
+      if hit >= rows * cols * 0.95 # failsafe, 95% of samples are hit
         scratchgame.checkGameOver(true)
-        refreshCoupons()
 
     ###*
     # On mouse down, draw a line starting fresh
@@ -401,6 +420,8 @@ class TileScratchState
 
   revealTile: (tile_id) ->
     @tile_ids_revealed.push(tile_id) if @tile_ids_revealed.indexOf(tile_id) is -1
+    console.log 'revealed: '
+    console.log @tile_ids_revealed
 
   prizeId: () -> 
     @prize_selected_id
@@ -561,7 +582,12 @@ class TileScratch
   # get a prize for a boxx
   getPrize: (number) ->
 
+    return if @isRevealed(number)
+
+    console.log 'getPrize ' + number
+
     prize = @prizes[number]
+
     foundPrize = _.find(@prize_pool, (o) -> o.id == prize.id)
     poolIndex = @prize_pool.indexOf(foundPrize)
 
@@ -578,17 +604,18 @@ class TileScratch
       # save the updated prize pool data (number_collected)
       @game_state.prize_pool = @prize_pool
 
-    @prizes_to_collect = @prizes[number].number_to_collect
+    @prizes_to_collect = prize.number_to_collect
     @prizes_to_collect = -1 if !@prizes_to_collect
 
     @game_state.revealTile(number)
 
-    console.log(@prizes_to_collect + ' <= ' + @collected_prize_count)
-    console.log(@wonPrize)
+    console.log(@game_state.tile_ids_revealed)
+
+    return if isNaN(prize.number_to_collect)
 
     @.checkGameOver()
 
-    @prizes[number]
+    prize
 
   isRevealed: (boxNumber) ->
     # realise that this should be saved / loaded with game data
@@ -653,6 +680,7 @@ class TileScratch
     if @is_game_complete or forceGameOver
       console.log('reset')
       @game_state.reset()
+      $('canvas').fadeOut()
     else 
       @game_state.save()
 
@@ -1199,3 +1227,4 @@ class RepeatingInterval extends TimeInterval
 @TimeInterval = TimeInterval
 @tilescratch = tilescratch
 @TileScratch = TileScratch
+

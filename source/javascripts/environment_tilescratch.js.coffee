@@ -10,8 +10,8 @@ node = new Node
     html_gameover: "
       <p>Try again tomorrow</p>
     "
-    rows: "4"
-    cols: "3"
+    rows: "3"
+    cols: "4"
     flips: "12"
     max_daily_draws: "1"
     # use thse to rework out the pool size and try again etc...
