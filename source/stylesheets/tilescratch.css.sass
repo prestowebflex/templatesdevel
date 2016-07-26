@@ -21,7 +21,7 @@
     margin: 0 auto
     position: absolute
     z-index: 100
-  // the pick a box grids
+  // square grids
   @for $i from 1 through 5
     .grid#{$i}
       padding-bottom: 100%
@@ -38,6 +38,22 @@
         .box#{$j}
           top: (100% / $i) * $row
           left: (100% / $i) * $col
+  // non-square grids
+  .grid4x3
+    padding-bottom: 100%
+    position: relative
+    @for $j from 1 through 12
+      // row and col are 0 indexed
+      $row: floor(($j - 1) / 4)
+      $col: ($j - 1) % 4
+      > div
+        width: (100% / 4)
+        height: (100% / 3)
+        //border: solid 1px black
+        position: absolute
+      .box#{$j}
+        top: (100% / 3) * $row
+        left: (100% / 4) * $col
   //.flipped
   //  +transform(rotatey(-180deg))
   .panels
