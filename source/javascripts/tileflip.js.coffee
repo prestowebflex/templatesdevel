@@ -24,12 +24,18 @@ tileflip = (node, jQuery) ->
   html $(".html_after"), boxes.html_after
   html $(".game_over"), boxes.html_gameover
 
-  gridHeight = $('.tileflip').innerHeight()
-  boxHeight = gridHeight/4
-  $('.panel').css('height', boxHeight+'px')
-  boxAspect = nodeContent.box_image_aspect || 1
-  $('.panel').css('width', boxHeight*boxAspect*0.95)
-
+  # delay this until the grid height isn't 0
+  adjustHeight = ->
+    gridHeight = $('.tileflip').innerHeight()
+    if gridHeight > 0
+      boxHeight = gridHeight/4
+      $('.panel').css('height', boxHeight+'px')
+      boxAspect = nodeContent.box_image_aspect || 1
+      $('.panel').css('width', boxHeight*boxAspect*0.95)
+    else
+      window.setTimeout adjustHeight, 50
+  adjustHeight()
+  
   #refresh panel based upon the state of the boxes
   # reveal box is passed in on flip to set correct css for visuals
   refreshPanel = (revealbox = null) ->
