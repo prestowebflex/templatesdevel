@@ -24,11 +24,20 @@ tileflip = (node, jQuery) ->
   html $(".html_after"), boxes.html_after
   html $(".game_over"), boxes.html_gameover
 
-  gridHeight = $('.tileflip').innerHeight()
-  boxHeight = gridHeight/4
-  $('.panel').css('height', boxHeight+'px')
+
   boxAspect = nodeContent.box_image_aspect || 1
-  $('.panel').css('width', boxHeight*boxAspect*0.95)
+
+  if boxAspect > 1
+    gridHeight = $('.tileflip').innerHeight()
+    boxHeight = gridHeight/4
+    $('.panel').css('height', boxHeight+'px')
+    $('.panel').css('width', boxHeight*boxAspect*0.95)
+  else 
+    gridWidth = $('.tileflip').innerWidth()
+    boxWidth = gridWidth/4
+    $('.panel').css('width', boxWidth+'px')
+    $('.panel').css('height', boxWidth/boxAspect*0.95)
+
 
   #refresh panel based upon the state of the boxes
   # reveal box is passed in on flip to set correct css for visuals
@@ -222,7 +231,6 @@ class TileFlip
     if @game_state.updated_at != nodeUpdatedAt
       doLoadGameData = false
       @game_state.updated_at = nodeUpdatedAt
-
 
     # assemble the prize pool
     if doLoadGameData
