@@ -235,6 +235,9 @@ class TileFlip
     nodeUpdatedAt = @node.get('updated_at')
     if @game_state.updated_at != nodeUpdatedAt
       doLoadGameData = false
+      @game_state.reset()
+      @game_state.tile_ids_flipped = []
+      @game_state.save()
       @game_state.updated_at = nodeUpdatedAt
 
     # assemble the prize pool
@@ -252,6 +255,8 @@ class TileFlip
     # calculate the odds of the dud prize from the prize pool
     @dudPrize = new Prize("0", {html: data.html_nowin, odds: (@pool_size - @_calculatePoolSize())})
 
+    @drawn_prizes = [] # store the drawn prizes somewhere
+
     # predraw the prizes now
     loadedPrizeId = @game_state.prizeId()
     if doLoadGameData
@@ -260,23 +265,21 @@ class TileFlip
         @prizes.push(new Prize(prize.id, prize.data))
       tempPrize = _.find @prize_pool, (prize) -> prize.id is loadedPrizeId
       @wonPrize = wonPrize = new Prize(tempPrize.id, {html: tempPrize.data.html, odds: tempPrize.data.odds, coupons: tempPrize.data.coupons, number_to_collect: tempPrize.data.number_to_collect, number_collected: tempPrize.data.number_collected }) if tempPrize
+
+      for panel, i in $('.panel')
+        htmlContent = @game_state.prizes[i].html
+        $(panel).find('.back .info').html(htmlContent)
+
+      #restore the panels flipped state 
+      for flippedId in @game_state.tile_ids_flipped
+        panel = $('.panel[data-box="'+flippedId+'"]')
+        panel.addClass('flipped').addClass('locked')
     else        
       @prizes = @getRandomPrizes()
       shuffle(@prizes)
       @game_state.prizes = @prizes
 
     @game_state.save()
-
-    @drawn_prizes = [] # store the drawn prizes somewhere
-
-    for panel, i in $('.panel')
-      htmlContent = @game_state.prizes[i].html
-      $(panel).find('.back .info').html(htmlContent)
-
-    #restore the panels flipped state 
-    for flippedId in @game_state.tile_ids_flipped
-      panel = $('.panel[data-box="'+flippedId+'"]')
-      panel.addClass('flipped').addClass('locked')
 
     # make it reset at midnight every day by default
     interval = RepeatingIntervalGenerator.generate(_.extend {type: "everyday", hour:0, minute:0}, data, {length: 0, allday: 0, times: 1})[0]
