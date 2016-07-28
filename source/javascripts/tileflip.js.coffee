@@ -1,16 +1,17 @@
+thisnode = null
+# process html via collection
+html = (jquery, html) ->
+  # load in html
+  jquery.html html
+  # proces each image
+  jquery.find("img").not("[src]").each (i) ->
+    img = $ @
+    thisnode.collection.getAsync "image", img.data("image"), (image) ->
+      image.geturl (href) ->
+        img.attr "src", href
+
 tileflip = (node, jQuery) ->
-
-  # process html via collection
-  html = (jquery, html) ->
-    # load in html
-    jquery.html html
-    # proces each image
-    jquery.find("img").not("[src]").each (i) ->
-      img = $ @
-      node.collection.getAsync "image", img.data("image"), (image) ->
-        image.geturl (href) ->
-          img.attr "src", href
-
+  thisnode = node
   # quick mockup around jquery
   $ = (selector) ->
     jQuery.find selector
