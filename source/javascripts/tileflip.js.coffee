@@ -266,9 +266,10 @@ class TileFlip
       tempPrize = _.find @prize_pool, (prize) -> prize.id is loadedPrizeId
       @wonPrize = wonPrize = new Prize(tempPrize.id, {html: tempPrize.data.html, odds: tempPrize.data.odds, coupons: tempPrize.data.coupons, number_to_collect: tempPrize.data.number_to_collect, number_collected: tempPrize.data.number_collected }) if tempPrize
 
-      for panel, i in $('.panel')
+      $('.panel').each (i, panel) =>
         htmlContent = @game_state.prizes[i].html
-        $(panel).find('.back .info').html(htmlContent)
+        html $(panel).find('.back .info'), htmlContent
+        return
 
       #restore the panels flipped state 
       for flippedId in @game_state.tile_ids_flipped
