@@ -1,16 +1,17 @@
+thisnode = null
+# process html via collection
+html = (jquery, html) ->
+  # load in html
+  jquery.html html
+  # proces each image
+  jquery.find("img").not("[src]").each (i) ->
+    img = $ @
+    thisnode.collection.getAsync "image", img.data("image"), (image) ->
+      image.geturl (href) ->
+        img.attr "src", href
+
 tileflip = (node, jQuery) ->
-
-  # process html via collection
-  html = (jquery, html) ->
-    # load in html
-    jquery.html html
-    # proces each image
-    jquery.find("img").not("[src]").each (i) ->
-      img = $ @
-      node.collection.getAsync "image", img.data("image"), (image) ->
-        image.geturl (href) ->
-          img.attr "src", href
-
+  thisnode = node
   # quick mockup around jquery
   $ = (selector) ->
     jQuery.find selector
@@ -266,9 +267,10 @@ class TileFlip
       tempPrize = _.find @prize_pool, (prize) -> prize.id is loadedPrizeId
       @wonPrize = wonPrize = new Prize(tempPrize.id, {html: tempPrize.data.html, odds: tempPrize.data.odds, coupons: tempPrize.data.coupons, number_to_collect: tempPrize.data.number_to_collect, number_collected: tempPrize.data.number_collected }) if tempPrize
 
-      for panel, i in $('.panel')
+      $('.panel').each (i, panel) =>
         htmlContent = @game_state.prizes[i].html
-        $(panel).find('.back .info').html(htmlContent)
+        html $(panel).find('.back .info'), htmlContent
+        return
 
       #restore the panels flipped state 
       for flippedId in @game_state.tile_ids_flipped
