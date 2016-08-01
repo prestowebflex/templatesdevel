@@ -1,4 +1,5 @@
 node = new Node
+  updated_at: "3"
   content:
     html_before: """
       <p>Match 3 cards to win</p>
@@ -15,7 +16,7 @@ node = new Node
     # use thse to rework out the pool size and try again etc...
     pool_size: "2"
     html_nowin: "<img src='images/tileflip/dud.png' />"
-    card_backgroundImage: "images/tileflip/back.jpg"
+    card_back_html: "<div style='background-image:url(images/tileflip/back.jpg);background-size:contain'></div>"
     type: "everyday" # just midnight every day 0 length only using start of interval
     hour: 0
     minute: 0
