@@ -98,6 +98,9 @@ tileflip = (node, jQuery) ->
     c = $('.coupons')
     html c, couponhtml
     c.trigger "create"
+
+  $('.tileicon').css('background-image', 'url(' + nodeContent.card_backgroundImage + ')');
+
   refreshPanel()
   refreshCoupons()
 
