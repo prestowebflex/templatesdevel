@@ -331,6 +331,7 @@ tilescratch = (node, jQuery) ->
     window.addEventListener 'touchmove', mousemove_handler, false
     window.addEventListener 'mouseup', mouseup_handler, false
     window.addEventListener 'touchend', mouseup_handler, false
+    $('.grid4x3').css('visibility', 'visible')
     return
 
   ###*
