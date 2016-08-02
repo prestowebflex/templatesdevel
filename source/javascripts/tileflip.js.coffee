@@ -11,6 +11,7 @@ html = (jquery, html) ->
     if thisImg.hasClass('backgroundImage')
       thisEl.css 'background-image', 'url(' + thisImg.attr('src') + ')'
         .css('background-size', 'contain')
+
       thisImg.remove()
 
     $(@).find("img").not("[src]").each (i) ->
@@ -110,7 +111,8 @@ tileflip = (node, jQuery) ->
     html c, couponhtml
     c.trigger "create"
 
-  $('.tileicon').html(nodeContent.card_back_html);
+  $('.tileicon').html(nodeContent.card_back_html)
+  $('.tileicon div').css('background-color', nodeContent.card_back_color)
 
   refreshPanel()
   refreshCoupons()

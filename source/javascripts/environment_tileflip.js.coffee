@@ -17,6 +17,7 @@ node = new Node
     pool_size: "2"
     html_nowin: "<img src='images/tileflip/dud.png' />"
     card_back_html: "<div style='background-image:url(images/tileflip/back.jpg);background-size:contain'></div>"
+    card_back_color: "#111"
     type: "everyday" # just midnight every day 0 length only using start of interval
     hour: 0
     minute: 0
