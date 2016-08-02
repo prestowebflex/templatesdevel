@@ -183,10 +183,10 @@ tilescratch = (node, jQuery) ->
       ox += elem.offsetLeft
       oy += elem.offsetTop
       elem = elem.offsetParent
-    if ev.hasOwnProperty('changedTouches')
+    if ev.changedTouches
       first = ev.changedTouches[0]
-      pageX = first.pageX
-      pageY = first.pageY
+      pageX = first.clientX + window.pageXOffset
+      pageY = first.clientY + window.pageYOffset
     else
       pageX = ev.pageX
       pageY = ev.pageY
@@ -308,6 +308,9 @@ tilescratch = (node, jQuery) ->
     ###
     mousedown_handler = (e) ->
       local = getLocalCoords(c, e)
+      imageData = drawContext.getImageData(0, 0, drawWidth, drawHeight)
+      data = imageData.data
+      return true if sampleXYinRGBA(data, local.x, local.y, imageData.width, 255)
       mouseDown = true
       scratchLine canvas.draw, local.x, local.y, true
       recompositeCanvases()
