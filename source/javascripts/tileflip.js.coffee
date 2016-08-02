@@ -237,7 +237,13 @@ class TileFlip
     doLoadGameData = @game_state.didLoad()
 
     nodeUpdatedAt = @node.get('updated_at')
-    if @game_state.updated_at != nodeUpdatedAt
+
+    # make like we don't load game data until the 
+    # case of the disappearing tiles is solved
+
+    # if @game_state.updated_at != nodeUpdatedAt
+
+    if true 
       doLoadGameData = false
       @game_state.reset()
       @game_state.tile_ids_flipped = []
