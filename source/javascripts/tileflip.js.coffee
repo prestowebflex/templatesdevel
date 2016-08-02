@@ -16,7 +16,8 @@ html = (jquery, html) ->
 getimagefromhtml = (html, cb) ->
   thisEl = $(html)
   img = thisEl.find("img").not("[src]")
-  getimageurl img.data("image"), cb
+  if img.length > 0
+    getimageurl img.data("image"), cb
         
         
         
