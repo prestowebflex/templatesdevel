@@ -2,13 +2,23 @@ thisnode = null
 # process html via collection
 html = (jquery, html) ->
   # load in html
-  jquery.html html
-  # proces each image
-  jquery.find("img").not("[src]").each (i) ->
-    img = $ @
-    thisnode.collection.getAsync "image", img.data("image"), (image) ->
-      image.geturl (href) ->
-        img.attr "src", href
+  jquery.each( (i) =>
+    thisEl = $(jquery[i])
+    thisEl.html(html)
+
+    thisImg = thisEl.find('img')
+
+    if thisImg.hasClass('backgroundImage')
+      thisEl.css 'background-image', 'url(' + thisImg.attr('src') + ')'
+        .css('background-size', 'contain')
+      thisImg.remove()
+
+    $(@).find("img").not("[src]").each (i) ->
+      img = $ @
+      thisnode.collection.getAsync "image", img.data("image"), (image) ->
+        image.geturl (href) ->
+          img.attr "src", href
+  )
 
 tileflip = (node, jQuery) ->
   thisnode = node
@@ -24,6 +34,7 @@ tileflip = (node, jQuery) ->
   html $(".html_before"), boxes.html_before
   html $(".html_after"), boxes.html_after
   html $(".game_over"), boxes.html_gameover
+  html $(".tileicon"), boxes.html_card_back
 
   # delay this until the grid height isn't 0
   adjustHeight = ->
@@ -220,6 +231,7 @@ class TileFlip
   html_before: ""
   html_after: ""
   html_gameover: "Try Again"
+  html_card_back: ""
   # number of items in the pool
   pool_size: null
   # size of the grid
@@ -229,13 +241,13 @@ class TileFlip
   flips: 0
   is_game_complete: false
   constructor: (data = {}, @node) ->
-    {@html_before,@html_after,@html_tryagain,@flips,@max_daily_draws,@prizes,@prize_pool,@won_prize} = data
+    {@html_before,@html_after,@html_tryagain,@html_card_back,@flips,@max_daily_draws,@prizes,@prize_pool,@won_prize} = data
     @pool_size = Number(data.pool_size ? 100)
 
     @game_state = new TileFlipState( @node.getRawId() )
 
     doLoadGameData = @game_state.didLoad()
-
+    
     nodeUpdatedAt = @node.get('updated_at')
 
     # make like we don't load game data until the 
