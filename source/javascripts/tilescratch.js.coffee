@@ -116,7 +116,7 @@ tilescratch = (node, jQuery) ->
     if isGamePanel
       $('canvas').show()
       $(".panels").css('background-size', 'cover')
-      .css('padding-top', $('.panels').height() * (1029/1559) + 'px')
+      repositionTiles()
     else
       $('canvas').hide()
       $(".panels").css('background-size', '0% 0%')
@@ -241,8 +241,6 @@ tilescratch = (node, jQuery) ->
 
   setupCanvases = ->
     c = document.getElementById('scratchcanvas')
-    c.height = $(window).height()
-    c.width = $(window).width()
 
     ###*
     * sampleXYinRGBA
@@ -345,27 +343,37 @@ tilescratch = (node, jQuery) ->
           e.preventDefault()
         return false
       true
+  
+    resizeScratchCanvas = -> 
+      c = document.getElementById('scratchcanvas')
+      c.width = $('.tilescratch').width() 
+      c.height = $('.tilescratch').height()
+      canvas.draw.width = c.width
+      canvas.draw.height = c.height
+      drawWidth = c.width
+      drawHeight = c.height
+      # draw the stuff to start
+      recompositeCanvases()
+      repositionTiles()
 
-    c.width = $('.tilescratch').width() 
-    c.height = $('.tilescratch').height()
+
     # create the temp and draw canvases, and set their dimensions
     # to the same as the main canvas:
     canvas.draw = document.createElement('canvas')
     drawContext = canvas.draw.getContext('2d')
-    canvas.draw.width = c.width
-    canvas.draw.height = c.height
-    drawWidth = c.width
-    drawHeight = c.height
-    # draw the stuff to start
-    recompositeCanvases()
+    resizeScratchCanvas()
     c.addEventListener 'mousedown', mousedown_handler, false
     c.addEventListener 'touchstart', mousedown_handler, false
     window.addEventListener 'mousemove', mousemove_handler, false
     window.addEventListener 'touchmove', mousemove_handler, false
     window.addEventListener 'mouseup', mouseup_handler, false
     window.addEventListener 'touchend', mouseup_handler, false
+    window.addEventListener 'resize', resizeScratchCanvas, false
     $('.grid4x3').css('visibility', 'visible')
     return
+
+
+
 
   ###*
   # Set up the DOM when loading is complete
@@ -374,8 +382,7 @@ tilescratch = (node, jQuery) ->
   loadingComplete = ->
     loading = document.getElementById('loading')
     main = document.getElementById('main')
-    loading.className = 'hidden'
-    main.className = ''
+    
     return
 
   ###*
@@ -409,11 +416,13 @@ tilescratch = (node, jQuery) ->
     loadImages()
     $('.panels').css('background', 'transparent url(' + nodeContent.background_image + ') center top no-repeat')
       .css('background-size', 'cover')
-      .css('padding-top', $('.panels').height() * (1029/1559) + 'px')
+    repositionTiles();
     return
   ), false
   return
 
+repositionTiles = -> 
+  $('.panels').css('padding-top', $('.panels').height() * (1029/1559) + 'px')
 
 
 # TilescratchState: information about a flip game for storage / retrieval
@@ -488,7 +497,11 @@ class TileScratch
     doLoadGameData = @game_state.didLoad()
 
     nodeUpdatedAt = @node.get('updated_at')
-    if @game_state.updated_at != nodeUpdatedAt
+
+    # don't load game data for now
+    #if @game_state.updated_at != nodeUpdatedAt
+
+    if true
       doLoadGameData = false
       @game_state.updated_at = nodeUpdatedAt
 
