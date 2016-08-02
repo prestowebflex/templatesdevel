@@ -1,25 +1,38 @@
 thisnode = null
 # process html via collection
+# this function just converts an image id to a href
+getimageurl = (id, cb) ->
+  thisnode.collection.getAsync "image", id, (image) ->
+    image.geturl (href) ->
+      cb?(href)
+# this processes images without src attributes and sets the href
 html = (jquery, html) ->
-  # load in html
-  jquery.each( (i) =>
-    thisEl = $(jquery[i])
-    thisEl.html(html)
+  jquery.html html
+  jquery.find("img").not("[src]").each (i) ->
+    img = $ @
+    getimageurl img.data("image"), (href) ->
+      img.attr "src", href
+# extract the first image from a html snippet for use in custom css or whatever
+getimagefromhtml = (html, cb) ->
+  thisEl = $(html)
+  img = thisEl.find("img").not("[src]")
+  getimageurl img.data("image"), cb
+        
+        
+        
+  # # load in html
+  # jquery.each( (i) =>
+  #   thisEl = $(jquery[i])
+  #   thisEl.html(html)
+  #
+  #   thisImg = thisEl.find('img')
+  #
+  #   if thisImg.hasClass('backgroundImage')
+  #     thisEl.css 'background-image', 'url(' + thisImg.attr('src') + ')'
+  #       .css('background-size', 'contain')
+  #
+  #     thisImg.remove()
 
-    thisImg = thisEl.find('img')
-
-    if thisImg.hasClass('backgroundImage')
-      thisEl.css 'background-image', 'url(' + thisImg.attr('src') + ')'
-        .css('background-size', 'contain')
-
-      thisImg.remove()
-
-    $(@).find("img").not("[src]").each (i) ->
-      img = $ @
-      thisnode.collection.getAsync "image", img.data("image"), (image) ->
-        image.geturl (href) ->
-          img.attr "src", href
-  )
 
 tileflip = (node, jQuery) ->
   thisnode = node
@@ -35,8 +48,15 @@ tileflip = (node, jQuery) ->
   html $(".html_before"), boxes.html_before
   html $(".html_after"), boxes.html_after
   html $(".game_over"), boxes.html_gameover
-  html $(".tileicon"), boxes.html_card_back
-
+  # get the actual url for the background image out of the html
+  getimagefromhtml boxes.html_card_back, (url) ->
+    tileicon = $(".tileicon")
+    tileicon.html "<div></div>"
+    tileicon.find("div").css
+      "background-image": "url('#{url}')"
+      "background-color": nodeContent.card_back_color
+      "background-size": "contain"
+      
   # delay this until the grid height isn't 0
   adjustHeight = ->
     gridHeight = $('.tileflip').innerHeight()
@@ -45,14 +65,14 @@ tileflip = (node, jQuery) ->
 
       if boxAspect > 1
         gridHeight = $('.tileflip').innerHeight()
-        boxHeight = gridHeight/4
+        boxHeight = gridHeight / 4
         $('.panel').css('height', boxHeight+'px')
         $('.panel').css('width', boxHeight*boxAspect*0.95)
       else 
         gridWidth = $('.tileflip').innerWidth()
-        boxWidth = gridWidth/4
+        boxWidth = gridWidth / 4
         $('.panel').css('width', boxWidth+'px')
-        $('.panel').css('height', boxWidth/boxAspect*0.95)
+        $('.panel').css('height', boxWidth / boxAspect*0.95)
     else
       window.setTimeout adjustHeight, 50
   adjustHeight()
@@ -111,8 +131,6 @@ tileflip = (node, jQuery) ->
     html c, couponhtml
     c.trigger "create"
 
-  $('.tileicon').html(nodeContent.card_back_html)
-  $('.tileicon div').css('background-color', nodeContent.card_back_color)
 
   refreshPanel()
   refreshCoupons()
