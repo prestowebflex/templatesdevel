@@ -90,6 +90,17 @@ tilescratch = (node, jQuery) ->
     $(".panels > div").hide()
     $(".panels > .#{$(@).data("panel")}").show()
 
+    isGamePanel = $(@).data("panel") == 'tilescratch'
+    if isGamePanel
+      $('canvas').show()
+      $(".panels").css('background-size', 'cover')
+      .css('padding-top', $('.panels').height() * (1029/1559) + 'px')
+    else
+      $('canvas').hide()
+      $(".panels").css('background-size', '0% 0%')
+      .css('padding-top', '0px')
+
+
   # coupon claim!
   $(".coupons").on "click", ".couponclaim:not(.ui-disabled)", {}, ->
     couponid =  $(@).parents("[data-couponid]").data "couponid"
