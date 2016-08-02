@@ -1,4 +1,26 @@
 scratchgame = null
+# process html via collection
+html = (jquery, html) ->
+  # load in html
+  jquery.each( (i) =>
+    thisEl = $(jquery[i])
+    thisEl.html(html)
+
+    thisImg = thisEl.find('img')
+
+    if thisImg.hasClass('backgroundImage')
+      thisEl.css 'background-image', 'url(' + thisImg.attr('src') + ')'
+        .css('background-size', 'contain')
+
+      thisImg.remove()
+
+    $(@).find("img").not("[src]").each (i) ->
+      img = $ @
+      thisnode.collection.getAsync "image", img.data("image"), (image) ->
+        image.geturl (href) ->
+          img.attr "src", href
+  )
+
 tilescratch = (node, jQuery) ->
 
   # process html via collection
@@ -678,7 +700,11 @@ class TileScratch
       @node.create(_datatype:"tilescratch", timedrawn: new Date())
       coupons = @wonPrize.generateCoupons(@node)
       # show the first won coupon in the panel
-      $(".game_over").html(coupons[0].html)
+      html $(".game_over"), coupons[0].html
+      window.setTimeout( () -> 
+        $("[data-role=navbar] a[data-panel='coupons']").trigger('click')
+      , 2000)
+
       if coupons.length > 1
         $(".game_over").append("<p>Plus " + (coupons.length-1) + " more</p>")
       # if more than one coupon won then indicate this below the first coupon
