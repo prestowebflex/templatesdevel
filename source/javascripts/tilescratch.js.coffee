@@ -375,7 +375,7 @@ tilescratch = (node, jQuery) ->
     loadImages()
     $('.panels').css('background', 'transparent url(' + nodeContent.background_image + ') center top no-repeat')
       .css('background-size', 'cover')
-      .css('padding-top', '220px')
+      .css('padding-top', $('.panels').height() * (1029/1559) + 'px')
     return
   ), false
   return

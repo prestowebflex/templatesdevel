@@ -20,7 +20,7 @@ node = new Node
     type: "everyday" # just midnight every day 0 length only using start of interval
     hour: 0
     minute: 0
-    background_image: 'images/tilescratch/background.png'
+    background_image: 'images/tilescratch/background.jpg'
     scratch_image: 'images/tilescratch/scratcharea.jpg'
     blank_image: 'images/tilescratch/blank.jpg'
     prizes:
