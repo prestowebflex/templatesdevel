@@ -1,4 +1,5 @@
 thisnode = null
+jQuery = null
 # process html via collection
 # this function just converts an image id to a href
 getimageurl = (id, cb) ->
@@ -9,15 +10,19 @@ getimageurl = (id, cb) ->
 html = (jquery, html) ->
   jquery.html html
   jquery.find("img").not("[src]").each (i) ->
-    img = $ @
+    img = window.jQuery @
     getimageurl img.data("image"), (href) ->
       img.attr "src", href
 # extract the first image from a html snippet for use in custom css or whatever
 getimagefromhtml = (html, cb) ->
-  thisEl = $(html)
+  thisEl = window.jQuery("<div />").html html 
   img = thisEl.find("img").not("[src]")
   if img.length > 0
     getimageurl img.data("image"), cb
+
+# quick mockup around jquery
+$ = (selector) ->
+  jQuery.find selector
         
         
         
@@ -35,11 +40,9 @@ getimagefromhtml = (html, cb) ->
   #     thisImg.remove()
 
 
-tileflip = (node, jQuery) ->
+tileflip = (node, jq) ->
   thisnode = node
-  # quick mockup around jquery
-  $ = (selector) ->
-    jQuery.find selector
+  jQuery = jq
   
   # initialize tile flip
   nodeContent = node.get("content")
@@ -50,7 +53,7 @@ tileflip = (node, jQuery) ->
   html $(".html_after"), boxes.html_after
   html $(".game_over"), boxes.html_gameover
   # get the actual url for the background image out of the html
-  getimagefromhtml boxes.html_card_back, (url) ->
+  getimagefromhtml nodeContent.card_back_html, (url) ->
     tileicon = $(".tileicon")
     tileicon.html "<div></div>"
     tileicon.find("div").css
