@@ -263,6 +263,7 @@ class TileFlip
   drawn_prizes: null # the prize state as drawn
   drawn: 0
   flips: 0
+  prize_counts: []
   is_game_complete: false
   constructor: (data = {}, @node) ->
     {@html_before,@html_after,@html_tryagain,@html_card_back,@flips,@max_daily_draws,@prizes,@prize_pool,@won_prize} = data
@@ -295,6 +296,8 @@ class TileFlip
       @prize_pool = for id, prize of data.prizes
         # TODO don't include prizes which fall outsize the date spec
         new Prize(id, prize)
+
+    @prize_counts = [0..@prize_pool.length].map -> 0
 
     @game_state.prize_pool = @prize_pool
 
@@ -413,17 +416,13 @@ class TileFlip
     poolIndex = @prize_pool.indexOf(foundPrize)
 
     if !@isRevealed(number) and @isValid() and poolIndex > -1
-      @prize_pool[poolIndex].data.number_collected = Number(@prize_pool[poolIndex].data.number_collected)
-
-      if !@prize_pool[poolIndex].data.number_collected
-        @prize_pool[poolIndex].data.number_collected = 0
-
+      
       # increment this prize count
-      @prize_pool[poolIndex].data.number_collected++
-      nCollected = @prize_pool[poolIndex].data.number_collected
+      nCollected = ++@prize_counts[poolIndex]
 
       # save the updated prize pool data (number_collected)
-      @game_state.prize_pool = @prize_pool
+      # not
+      #@game_state.prize_pool = @prize_pool
 
     nToCollect = @prizes[number].number_to_collect
     nToCollect = -1 if !nToCollect
