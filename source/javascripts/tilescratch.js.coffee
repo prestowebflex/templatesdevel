@@ -1,38 +1,21 @@
 scratchgame = null
+thisnode = null
+thisjquery = null
+
 # process html via collection
 html = (jquery, html) ->
   # load in html
-  jquery.each( (i) =>
-    thisEl = $(jquery[i])
-    thisEl.html(html)
-
-    thisImg = thisEl.find('img')
-
-    if thisImg.hasClass('backgroundImage')
-      thisEl.css 'background-image', 'url(' + thisImg.attr('src') + ')'
-        .css('background-size', 'contain')
-
-      thisImg.remove()
-
-    $(@).find("img").not("[src]").each (i) ->
-      img = $ @
-      thisnode.collection.getAsync "image", img.data("image"), (image) ->
-        image.geturl (href) ->
-          img.attr "src", href
-  )
+  jquery.html html
+  # proces each image
+  jquery.find("img").not("[src]").each (i) ->
+    img = $ @
+    thisnode.collection.getAsync "image", img.data("image"), (image) ->
+      image.geturl (href) ->
+        img.attr "src", href
 
 tilescratch = (node, jQuery) ->
-
-  # process html via collection
-  html = (jquery, html) ->
-    # load in html
-    jquery.html html
-    # proces each image
-    jquery.find("img").not("[src]").each (i) ->
-      img = $ @
-      node.collection.getAsync "image", img.data("image"), (image) ->
-        image.geturl (href) ->
-          img.attr "src", href
+  thisnode = node
+  thisjquery = jQuery
 
   # quick mockup around jquery
   $ = (selector) ->
@@ -259,8 +242,8 @@ tilescratch = (node, jQuery) ->
       hit = 0
       imageData = drawContext.getImageData(0, 0, drawWidth, drawHeight)
       data = imageData.data
-      rows = Number(nodeContent.rows)
-      cols = Number(nodeContent.cols)
+      rows = Number(nodeContent.rows || 3)
+      cols = Number(nodeContent.cols || 4)
       tileW = drawWidth / cols
       tileH = drawHeight / rows
       offsetY = tileH / 2
@@ -349,7 +332,8 @@ tilescratch = (node, jQuery) ->
   
     resizeScratchCanvas = -> 
       c = document.getElementById('scratchcanvas')
-      c.width = $('.tilescratch').width() 
+      c.width = $('.tilescratch').width()
+      console.log "TILESCRATCH WIDTH IS = #{$('.tilescratch').width()}"
       c.height = $('.tilescratch').height()
       canvas.draw.width = c.width
       canvas.draw.height = c.height
@@ -415,13 +399,14 @@ tilescratch = (node, jQuery) ->
         image[k].img.src = image[k].url
     return
 
-  window.addEventListener 'load', (->
-    loadImages()
-    $('.panels').css('background', 'transparent url(' + nodeContent.background_image + ') center top no-repeat')
-      .css('background-size', 'cover')
-    repositionTiles();
-    return
-  ), false
+  # window.addEventListener 'load', (->
+    # console.log "LOAD EVENT!"
+  loadImages()
+  $('.panels').css('background', 'transparent url(' + nodeContent.background_image + ') center top no-repeat')
+    .css('background-size', 'cover')
+  repositionTiles();
+    # return
+  # ), false
   return
 
 repositionTiles = -> 
@@ -485,15 +470,16 @@ class TileScratch
   size: 0
   drawn_prizes: null # the prize state as drawn
   drawn: 0
-  flips: 0
+  flips: 12
   collected_prize_count: 0
   prizes_to_collect: 0
   is_game_complete: false
   constructor: (data = {}, @node) ->
     {@html_before,@html_after,@html_tryagain,@flips,@max_daily_draws,@prizes,@prize_pool,@won_prize} = data
     @pool_size = Number(data.pool_size ? 100)
-
-    @size = Number(@node.get('content').rows) * Number(@node.get('content').cols)
+    @size = Number(@node.get('content').rows || 3) * Number(@node.get('content').cols || 4)
+    
+    @flips = @size unless @flips?
 
     @game_state = new TileScratchState( @node.getRawId() )
 
@@ -545,7 +531,7 @@ class TileScratch
       console.log i
       console.log @game_state.prizes[i]
       htmlContent = @game_state.prizes[i].html
-      $(panel).find('.back .info').html(htmlContent)
+      html $(panel).find('.back .info'), htmlContent
 
     #restore the panels flipped state 
     for flippedId in @game_state.tile_ids_revealed
