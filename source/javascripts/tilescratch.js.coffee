@@ -474,6 +474,7 @@ class TileScratch
   collected_prize_count: 0
   prizes_to_collect: 0
   is_game_complete: false
+  prize_counts: []
   constructor: (data = {}, @node) ->
     {@html_before,@html_after,@html_tryagain,@flips,@max_daily_draws,@prizes,@prize_pool,@won_prize} = data
     @pool_size = Number(data.pool_size ? 100)
@@ -504,6 +505,8 @@ class TileScratch
       @prize_pool = for id, prize of data.prizes
         # TODO don't include prizes which fall outsize the date spec
         new Prize(id, prize)
+
+    @prize_counts = [0..@prize_pool.length].map -> 0
 
     @game_state.prize_pool = @prize_pool
 
@@ -620,28 +623,21 @@ class TileScratch
 
     return if @isRevealed(number)
 
-    console.log 'getPrize ' + number
-
     prize = @prizes[number]
-
     foundPrize = _.find(@prize_pool, (o) -> o.id == prize.id)
     poolIndex = @prize_pool.indexOf(foundPrize)
 
     if !@isRevealed(number) and @isValid() and poolIndex > -1
-      @prize_pool[poolIndex].data.number_collected = Number(@prize_pool[poolIndex].data.number_collected)
-
-      if !@prize_pool[poolIndex].data.number_collected
-        @prize_pool[poolIndex].data.number_collected = 0
-
+      
       # increment this prize count
-      @prize_pool[poolIndex].data.number_collected++
-      @collected_prize_count = @prize_pool[poolIndex].data.number_collected
+      nCollected = ++@prize_counts[poolIndex]
 
       # save the updated prize pool data (number_collected)
-      @game_state.prize_pool = @prize_pool
+      # not
+      #@game_state.prize_pool = @prize_pool
 
-    @prizes_to_collect = prize.number_to_collect
-    @prizes_to_collect = -1 if !@prizes_to_collect
+    nToCollect = @prizes[number].number_to_collect
+    nToCollect = -1 if !nToCollect
 
     @game_state.revealTile(number)
 
