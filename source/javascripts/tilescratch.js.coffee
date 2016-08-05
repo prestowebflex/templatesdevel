@@ -296,7 +296,7 @@ tilescratch = (node, jQuery) ->
             # 2 3 0 1
             
             # console.log 'hit: ' + (tCol) + ' ' + rowIter
-            scratchgame.getPrize(rowIter*cols + tCol)
+            # scratchgame.getPrize(rowIter*cols + tCol)
           colIter++
         rowIter++
 
