@@ -1,0 +1,20 @@
+---
+title: Zone Events
+---
+-csv = csv "data/zone-events-list-2015.csv"
+-data = csv.map do |row|
+  -row[:date_sort] = Date.strptime(row[:date_sort], "%d/%m/%y")
+  -row
+-data = data.sort_by do |row|
+  - row[:date_sort]
+-data = data.group_by do |row|
+  - Date.new row[:date_sort].year, row[:date_sort].month
+- data.each do |month, events|
+  %h2= month.strftime("%B %Y")
+  %ul{data:{role:"listview"}}
+    %li{data:{role:"list-divider"}}= month.strftime("%B %Y")
+    - events.each do |event|
+      %li{class: "cmaa-#{event[:type_of_meeting].to_s.parameterize}"}
+        %h2= event[:zone]
+        %p #{event[:type_of_meeting].to_s.titlecase} @ #{event[:venue]}
+        %p #{event[:day]} #{event[:date_display]} #{event[:time]}

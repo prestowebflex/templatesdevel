@@ -16,7 +16,7 @@ class ResetCoupon
 
   haversine = (args...) ->
     R = 6371000; # m
-    radians = args.map (deg) -> deg/180.0 * Math.PI
+    radians = args.map (deg) -> deg / 180.0 * Math.PI
     lat1 = radians[0]; lon1 = radians[1]; lat2 = radians[2]; lon2 = radians[3]
     dLat = lat2 - lat1
     dLon = lon2 - lon1
@@ -115,7 +115,7 @@ class ResetCoupon
           if distance <= (position.coords.accuracy + Number(@data['available_location_radius']))
             callback true
           else
-            callback false, "Current position is #{(distance/1000).toFixed(2)}km outside allowed position"
+            callback false, "Current position is #{(distance / 1000).toFixed(2)}km outside allowed position"
           return
         ,
           (error) ->

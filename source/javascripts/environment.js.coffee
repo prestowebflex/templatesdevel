@@ -38,6 +38,11 @@ node = new Node
             html: "Free Something always <img />"
             type: "duration_days"
             days: 5
+            claim_code: "demo"
+            available_location: "1"
+            available_location_radius: "21.30494666472023"
+            available_location_latitude: "-32.83611403622155"
+            available_location_longitude: "151.34505584836006"
 
 $ ->
   pickabox node, $("div[data-role=content]")
