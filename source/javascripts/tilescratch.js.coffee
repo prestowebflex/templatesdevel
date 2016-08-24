@@ -1,90 +1,39 @@
+scratchgame = null
 thisnode = null
-jQuery = null
+thisjquery = null
+
 # process html via collection
-# this function just converts an image id to a href
-getimageurl = (id, cb) ->
-  thisnode.collection.getAsync "image", id, (image) ->
-    image.geturl (href) ->
-      cb?(href)
-# this processes images without src attributes and sets the href
 html = (jquery, html) ->
+  # load in html
   jquery.html html
+  # proces each image
   jquery.find("img").not("[src]").each (i) ->
-    img = window.jQuery @
-    getimageurl img.data("image"), (href) ->
-      img.attr "src", href
-# extract the first image from a html snippet for use in custom css or whatever
-getimagefromhtml = (html, cb) ->
-  thisEl = window.jQuery("<div />").html html 
-  img = thisEl.find("img").not("[src]")
-  if img.length > 0
-    getimageurl img.data("image"), cb
+    img = $ @
+    thisnode.collection.getAsync "image", img.data("image"), (image) ->
+      image.geturl (href) ->
+        img.attr "src", href
 
-# quick mockup around jquery
-$ = (selector) ->
-  jQuery.find selector
-        
-        
-        
-  # # load in html
-  # jquery.each( (i) =>
-  #   thisEl = $(jquery[i])
-  #   thisEl.html(html)
-  #
-  #   thisImg = thisEl.find('img')
-  #
-  #   if thisImg.hasClass('backgroundImage')
-  #     thisEl.css 'background-image', 'url(' + thisImg.attr('src') + ')'
-  #       .css('background-size', 'contain')
-  #
-  #     thisImg.remove()
-
-
-tileflip = (node, jq) ->
+tilescratch = (node, jQuery) ->
   thisnode = node
-  jQuery = jq
+  thisjquery = jQuery
+
+  # quick mockup around jquery
+  $ = (selector) ->
+    jQuery.find selector
   
   # initialize tile flip
   nodeContent = node.get("content")
 
-  boxes = new TileFlip nodeContent, node
+  scratchgame = boxes = new TileScratch nodeContent, node
 
   html $(".html_before"), boxes.html_before
   html $(".html_after"), boxes.html_after
   html $(".game_over"), boxes.html_gameover
-  # get the actual url for the background image out of the html
-  getimagefromhtml nodeContent.card_back_html, (url) ->
-    tileicon = $(".tileicon")
-    tileicon.html "<div></div>"
-    tileicon.find("div").css
-      "background-image": "url('#{url}')"
-      "background-color": nodeContent.card_back_color
-      "background-size": "contain"
-      
-  # delay this until the grid height isn't 0
-  adjustHeight = ->
-    gridHeight = $('.tileflip').innerHeight()
-    if gridHeight > 0
-      boxAspect = nodeContent.box_image_aspect || 1
 
-      if boxAspect > 1
-        gridHeight = $('.tileflip').innerHeight()
-        boxHeight = gridHeight / 4
-        $('.panel').css('height', boxHeight+'px')
-        $('.panel').css('width', boxHeight*boxAspect*0.95)
-      else 
-        gridWidth = $('.tileflip').innerWidth()
-        boxWidth = gridWidth / 4
-        $('.panel').css('width', boxWidth+'px')
-        $('.panel').css('height', boxWidth / boxAspect*0.95)
-    else
-      window.setTimeout adjustHeight, 50
-  adjustHeight()
-  
   #refresh panel based upon the state of the boxes
   # reveal box is passed in on flip to set correct css for visuals
   refreshPanel = (revealbox = null) ->
-    pb = $(".tileflip").removeClass("available unavailable")
+    pb = $(".tilescratch").removeClass("available unavailable")
     if boxes.isValid()
       pb.addClass "available"
     else
@@ -102,8 +51,10 @@ tileflip = (node, jq) ->
     refreshCoupons()    
 
   @coupons = []
+  
   findCoupon = (id) ->
     _.find(@coupons, (c) -> c.id is id)
+
   refreshCoupons = ->
     # this is the same as the panel, create node data's to represent the coupons
     @coupons = Coupon.generate node.where(_datatype:"coupon", claimed:null), boxes
@@ -135,7 +86,6 @@ tileflip = (node, jq) ->
     html c, couponhtml
     c.trigger "create"
 
-
   refreshPanel()
   refreshCoupons()
 
@@ -144,6 +94,17 @@ tileflip = (node, jq) ->
   $("[data-role=navbar] a").click ->
     $(".panels > div").hide()
     $(".panels > .#{$(@).data("panel")}").show()
+
+    isGamePanel = $(@).data("panel") == 'tilescratch'
+    if isGamePanel
+      $('canvas').show()
+      $(".panels").css('background-size', 'cover')
+      repositionTiles()
+    else
+      $('canvas').hide()
+      $(".panels").css('background-size', '0% 0%')
+      .css('padding-top', '0px')
+
 
   # coupon claim!
   $(".coupons").on "click", ".couponclaim:not(.ui-disabled)", {}, ->
@@ -162,71 +123,317 @@ tileflip = (node, jq) ->
     #console.log coupon
     #alert "claim! #{couponid}"
     false
-  # this is just to flip panel bits only.
-  # trigger the update of grabbing a prize and initialize it.
-  $(".tileflip").on "click", ".flipped", {}, ->
-    refreshPanel()
-    false
-    #panel = $(@).parents(".panel")
-    #console.log panel.parent().find(".panel")
-    #.removeClass "hidden flipped"
 
-  # any front available facing box can be clicked
-  # while nothing is flipped
-  .on "click", ".available", {}, ->
-    return false unless boxes.isValid()
-    $_  = $(@)
-    #return if $_.parent().find(".flipped").length
-    #unless $_.hasClass("flipped") or $_.hasClass("revealed")
-    prize = boxes.getPrize($_.data("box"), $_.attr("data-box"))
-    console.log('boxes.game_state')
-    console.log(boxes.game_state)
 
-    #console.log
-    html $_.find(".back > .info"), prize.html
-    #console.log prize
-     # setup the dada
-    refreshPanel($(@).data("box"))
-    # setup the visuals
-    $_.addClass "flipped"
-    #$_.parent().find(".panel").not(@).addClass "hidden"
+  #############################
+  # SCRATCH INTERACTIVITY START
+  #############################
 
-    # viewing backside of card
-    # # put back to front of card #mark as revealed
-    $(@).parent().find(".panel").removeClass "hidden"
+  lineWidth = 33
 
-  # else
-    # $(@).removeClass "flipped"
-    # # determine if the panel has been viewed before
-    # # How is this to be done
-    # $(@).removeClass "selectable"
-    # $(@).parent().find(".panel").not(@).addClass "hidden"
-    # $(@).addClass "flipped"
-    false
-  .on "touch", ->
-    false
+  # should take these image paths from the node
+  image = 
+    'front':
+      'url': nodeContent.scratch_image
+      'img': null
+    'clear':
+      'url': nodeContent.blank_image
+      'img': null
+  canvas = 
+    'draw': null
 
-# TileFlipState: information about a flip game for storage / retrieval
-class TileFlipState
+  # temp and draw canvases
+  drawContext = null
+  drawWidth = $('.tiles').width()
+  drawHeight = $('.tiles').height()
+  mouseDown = false
+  sampleInterval = null
+
+  ###*
+  # Helper function to get the local coords of an event in an element,
+  # since offsetX/offsetY are apparently not entirely supported, but
+  # offsetLeft/offsetTop/pageX/pageY are!
+  ###
+
+  getLocalCoords = (elem, ev) ->
+    ox = 0
+    oy = 0
+    first = undefined
+    pageX = undefined
+    pageY = undefined
+    # Walk back up the tree to calculate the total page offset of the
+    while elem != null
+      ox += elem.offsetLeft
+      oy += elem.offsetTop
+      elem = elem.offsetParent
+    if ev.changedTouches
+      first = ev.changedTouches[0]
+      pageX = first.clientX + window.pageXOffset
+      pageY = first.clientY + window.pageYOffset
+    else
+      pageX = ev.pageX
+      pageY = ev.pageY
+    {
+      'x': pageX - ox
+      'y': pageY - oy
+    }
+
+  ###*
+  # Recomposite the canvases onto the screen
+  ###
+
+  recompositeCanvases = ->
+    main = document.getElementById('scratchcanvas')
+    mainctx = main.getContext('2d')
+
+    # trigger redraw
+    main.width = main.width
+
+    mainctx.drawImage image.front.img, 0, 0, drawWidth, drawHeight
+    mainctx.globalCompositeOperation = 'destination-out'
+    mainctx.drawImage canvas.draw, 0, 0, drawWidth, drawHeight
+    return
+
+  ###*
+  # Draw a scratch line
+  # 
+  # @param can the canvas
+  # @param x,y the coordinates
+  # @param fresh start a new line if true
+  ###
+
+  scratchLine = (can, x, y, fresh) ->
+    ctx = can.getContext('2d')
+    ctx.lineWidth = lineWidth
+    ctx.lineCap = ctx.lineJoin = 'round'
+    ctx.strokeStyle = '#fff'
+    # can be any opaque color
+    if fresh
+      ctx.beginPath()
+      # this +0.01 hackishly causes Linux Chrome to draw a
+      # "zero"-length line (a single point), otherwise it doesn't
+      # draw when the mouse is clicked but not moved:
+      ctx.moveTo x + 0.01, y
+    ctx.lineTo x, y
+    ctx.stroke()
+    return
+
+  ###*
+  # Set up the main canvas and listeners
+  ###
+
+  setupCanvases = ->
+    c = document.getElementById('scratchcanvas')
+
+    ###*
+    * sampleXYinRGBA
+    * sample the ImageData in data at pixel coords (x,y)
+    * pixel width of each row width is rowW
+    * return true if the pixel value is sampleValue
+    ###      
+    sampleXYinRGBA = (data, xPx, yPx, rowW, sampleValue) -> 
+      dataOffset = Math.round((((yPx * rowW) + xPx ) * 4) + 1 ) #4 bytes RGBA
+      data[ dataOffset ] == sampleValue
+
+    sampleScratch = ->
+      if scratchgame.is_game_complete
+        refreshCoupons()
+        return  
+      hit = 0
+      imageData = drawContext.getImageData(0, 0, drawWidth, drawHeight)
+      data = imageData.data
+      rows = Number(nodeContent.rows || 3)
+      cols = Number(nodeContent.cols || 4)
+      tileW = drawWidth / cols
+      tileH = drawHeight / rows
+      offsetY = tileH / 2
+      offsetX = tileW / 2
+      colIter = 0
+      rowIter = 0
+      scaleFactor = data.length / (drawHeight * drawWidth)
+
+      while rowIter < rows
+        colIter = 0
+        yPos = ( rowIter * tileH ) + offsetY
+        while colIter < cols
+          xPos = ( colIter * tileW ) + offsetX 
+          if sampleXYinRGBA(data, xPos, yPos, imageData.width, 255)
+            hit++
+
+            tCol = colIter
+            # desktop safari is crap and needs this - check ios
+            # columns reported as: 
+            # 1 2 3 0
+            # 2 3 0 1
+            # 3 0 1 2
+            if rowIter == 0
+              tCol = ( colIter + cols + 1 ) % cols
+            if rowIter == 1
+              tCol = ( colIter + cols + 2 ) % cols
+            if rowIter == 2
+              tCol = ( colIter + cols + 3 ) % cols
+            # desktop chrome does something crap differently 
+            # columns reported as: 
+            # 2 3 0 1
+            # 2 3 0 1
+            # 2 3 0 1
+            
+            # console.log 'hit: ' + (tCol) + ' ' + rowIter
+            # scratchgame.getPrize(rowIter*cols + tCol)
+          colIter++
+        rowIter++
+
+      if hit >= rows * cols * 0.95 # failsafe, 95% of samples are hit
+        scratchgame.checkGameOver(true)
+
+    ###*
+    # On mouse down, draw a line starting fresh
+    ###
+    mousedown_handler = (e) ->
+      local = getLocalCoords(c, e)
+      imageData = drawContext.getImageData(0, 0, drawWidth, drawHeight)
+      data = imageData.data
+      return true if sampleXYinRGBA(data, local.x, local.y, imageData.width, 255)
+      mouseDown = true
+      scratchLine canvas.draw, local.x, local.y, true
+      recompositeCanvases()
+      if e.cancelable
+        e.preventDefault()
+      sampleInterval = window.setInterval(sampleScratch, 250)
+      false
+
+    ###*
+    # On mouse move, if mouse down, draw a line
+    #
+    # Do this on the window to smoothly handle mousing outside
+    # the canvas
+    ###
+    mousemove_handler = (e) ->
+      if !mouseDown
+        return true
+      local = getLocalCoords(c, e)
+      scratchLine canvas.draw, local.x, local.y, false
+      recompositeCanvases()
+      if e.cancelable
+        e.preventDefault()
+      false
+
+    ###*
+    # On mouseup.  (Listens on window to catch out-of-canvas events.)
+    ###
+    mouseup_handler = (e) ->
+      window.clearInterval sampleInterval
+      if mouseDown
+        mouseDown = false
+        if e.cancelable
+          e.preventDefault()
+        return false
+      true
+  
+    resizeScratchCanvas = -> 
+      c = document.getElementById('scratchcanvas')
+      c.width = $('.tilescratch').width()
+      console.log "TILESCRATCH WIDTH IS = #{$('.tilescratch').width()}"
+      c.height = $('.tilescratch').height()
+      canvas.draw.width = c.width
+      canvas.draw.height = c.height
+      drawWidth = c.width
+      drawHeight = c.height
+      # draw the stuff to start
+      recompositeCanvases()
+      repositionTiles()
+
+
+    # create the temp and draw canvases, and set their dimensions
+    # to the same as the main canvas:
+    canvas.draw = document.createElement('canvas')
+    drawContext = canvas.draw.getContext('2d')
+    resizeScratchCanvas()
+    c.addEventListener 'mousedown', mousedown_handler, false
+    c.addEventListener 'touchstart', mousedown_handler, false
+    window.addEventListener 'mousemove', mousemove_handler, false
+    window.addEventListener 'touchmove', mousemove_handler, false
+    window.addEventListener 'mouseup', mouseup_handler, false
+    window.addEventListener 'touchend', mouseup_handler, false
+    window.addEventListener 'resize', resizeScratchCanvas, false
+    $('.grid4x3').css('visibility', 'visible')
+    return
+
+
+
+
+  ###*
+  # Set up the DOM when loading is complete
+  ###
+
+  loadingComplete = ->
+    loading = document.getElementById('loading')
+    main = document.getElementById('main')
+    
+    return
+
+  ###*
+  # Handle loading of needed image resources
+  ###
+
+  loadImages = ->
+    loadCount = 0
+    loadTotal = 0
+    loadingIndicator = undefined
+
+    imageLoaded = (e) ->
+      loadCount++
+      if loadCount >= loadTotal
+        setupCanvases()
+        loadingComplete()
+      return
+
+    for k of image
+      if image.hasOwnProperty(k)
+        loadTotal++
+    for k of image
+      if image.hasOwnProperty(k)
+        image[k].img = document.createElement('img')
+        # image is global
+        image[k].img.addEventListener 'load', imageLoaded, false
+        image[k].img.src = image[k].url
+    return
+
+  # window.addEventListener 'load', (->
+    # console.log "LOAD EVENT!"
+  loadImages()
+  $('.panels').css('background', 'transparent url(' + nodeContent.background_image + ') center top no-repeat')
+    .css('background-size', 'cover')
+  repositionTiles();
+    # return
+  # ), false
+  return
+
+repositionTiles = -> 
+  $('.panels').css('padding-top', $('.panels').height() * (1029/1559) + 'px')
+
+
+# TilescratchState: information about a flip game for storage / retrieval
+class TileScratchState
   node_id: null
   did_load: false
   updated_at: null
-  tile_ids_flipped: []
+  tile_ids_revealed: []
   prizes: []
   prize_selected_id: null
   constructor: ( node_id ) -> 
     @node_id = node_id
-    @tile_ids_flipped = []
+    @tile_ids_revealed = []
     @.load()
     
   getStorageKey: () ->
-    '_tileflip_node_id_' + @node_id
+    '_tilescratch_node_id_' + @node_id
 
   load: () ->
     dataString = localStorage.getItem(@.getStorageKey()) if @.getStorageKey()
     dataObj = JSON.parse dataString if dataString
 
-    {@updated_at, @tile_ids_flipped, @prize_selected_id, @prizes, @prize_pool} = dataObj if dataObj
+    {@updated_at, @tile_ids_revealed, @prize_selected_id, @prizes, @prize_pool} = dataObj if dataObj
 
     @did_load = true if dataObj
 
@@ -242,50 +449,52 @@ class TileFlipState
   didLoad: () -> 
     @did_load
 
-  flipTile: (tile_id) ->
-    @tile_ids_flipped.push(tile_id) if @tile_ids_flipped.indexOf(tile_id) is -1
+  revealTile: (tile_id) ->
+    @tile_ids_revealed.push(tile_id) if @tile_ids_revealed.indexOf(tile_id) is -1
+    console.log 'revealed: '
+    console.log @tile_ids_revealed
 
   prizeId: () -> 
     @prize_selected_id
 
 # tile flip pulls from a pool of prizes
-class TileFlip
+class TileScratch
   game_state: null 
   prize_pool: null
   html_before: ""
   html_after: ""
   html_gameover: "Try Again"
-  html_card_back: ""
   # number of items in the pool
   pool_size: null
   # size of the grid
-  size: 16
+  size: 0
   drawn_prizes: null # the prize state as drawn
   drawn: 0
-  flips: 0
-  prize_counts: []
+  flips: 12
+  collected_prize_count: 0
+  prizes_to_collect: 0
   is_game_complete: false
+  prize_counts: []
   constructor: (data = {}, @node) ->
-    {@html_before,@html_after,@html_tryagain,@html_card_back,@flips,@max_daily_draws,@prizes,@prize_pool,@won_prize} = data
+    {@html_before,@html_after,@html_tryagain,@flips,@max_daily_draws,@prizes,@prize_pool,@won_prize} = data
     @pool_size = Number(data.pool_size ? 100)
+    @size = Number(@node.get('content').rows || 3) * Number(@node.get('content').cols || 4)
+    
+    @flips = @size unless @flips?
 
-    @game_state = new TileFlipState( @node.getRawId() )
+    @game_state = new TileScratchState( @node.getRawId() )
 
     doLoadGameData = @game_state.didLoad()
-    
+
     nodeUpdatedAt = @node.get('updated_at')
 
-    # make like we don't load game data until the 
-    # case of the disappearing tiles is solved
+    # don't load game data for now
+    #if @game_state.updated_at != nodeUpdatedAt
 
-    # if @game_state.updated_at != nodeUpdatedAt
-
-    if true 
+    if true
       doLoadGameData = false
-      @game_state.reset()
-      @game_state.tile_ids_flipped = []
-      @game_state.save()
       @game_state.updated_at = nodeUpdatedAt
+
 
     # assemble the prize pool
     if doLoadGameData
@@ -304,8 +513,6 @@ class TileFlip
     # calculate the odds of the dud prize from the prize pool
     @dudPrize = new Prize("0", {html: data.html_nowin, odds: (@pool_size - @_calculatePoolSize())})
 
-    @drawn_prizes = [] # store the drawn prizes somewhere
-
     # predraw the prizes now
     loadedPrizeId = @game_state.prizeId()
     if doLoadGameData
@@ -314,16 +521,6 @@ class TileFlip
         @prizes.push(new Prize(prize.id, prize.data))
       tempPrize = _.find @prize_pool, (prize) -> prize.id is loadedPrizeId
       @wonPrize = wonPrize = new Prize(tempPrize.id, {html: tempPrize.data.html, odds: tempPrize.data.odds, coupons: tempPrize.data.coupons, number_to_collect: tempPrize.data.number_to_collect, number_collected: tempPrize.data.number_collected }) if tempPrize
-
-      $('.panel').each (i, panel) =>
-        htmlContent = @game_state.prizes[i].html
-        html $(panel).find('.back .info'), htmlContent
-        return
-
-      #restore the panels flipped state 
-      for flippedId in @game_state.tile_ids_flipped
-        panel = $('.panel[data-box="'+flippedId+'"]')
-        panel.addClass('flipped').addClass('locked')
     else        
       @prizes = @getRandomPrizes()
       shuffle(@prizes)
@@ -331,12 +528,25 @@ class TileFlip
 
     @game_state.save()
 
+    @drawn_prizes = [] # store the drawn prizes somewhere
+
+    for panel, i in $('.panel')
+      console.log i
+      console.log @game_state.prizes[i]
+      htmlContent = @game_state.prizes[i].html
+      html $(panel).find('.back .info'), htmlContent
+
+    #restore the panels flipped state 
+    for flippedId in @game_state.tile_ids_revealed
+      panel = $('.panel[data-box="'+flippedId+'"]')
+      panel.addClass('flipped').addClass('locked')
+
     # make it reset at midnight every day by default
     interval = RepeatingIntervalGenerator.generate(_.extend {type: "everyday", hour:0, minute:0}, data, {length: 0, allday: 0, times: 1})[0]
     period = interval.prev().getStart() # get the start of the previous period
     @next_period = interval.getStart() # this is the time to start the next interval
     # filter this by date number of records is the box count
-    @drawn = _.chain(@node.where(_datatype:"tileflip")).select((v) ->
+    @drawn = _.chain(@node.where(_datatype:"tilescratch")).select((v) ->
         d = new Date(v.get("timedrawn"))
         d.valueOf() > period.valueOf()
        ).value().length
@@ -411,6 +621,8 @@ class TileFlip
   # get a prize for a boxx
   getPrize: (number) ->
 
+    return if @isRevealed(number)
+
     prize = @prizes[number]
     foundPrize = _.find(@prize_pool, (o) -> o.id == prize.id)
     poolIndex = @prize_pool.indexOf(foundPrize)
@@ -427,40 +639,19 @@ class TileFlip
     nToCollect = @prizes[number].number_to_collect
     nToCollect = -1 if !nToCollect
 
-    @game_state.flipTile(number)
+    @game_state.revealTile(number)
 
-    console.log(nToCollect + ' <= ' + nCollected)
-    console.log(@wonPrize)
+    console.log(@game_state.tile_ids_revealed)
 
-    if (nToCollect <= nCollected)
-      @node.create(_datatype:"tileflip", timedrawn: new Date())
+    return if isNaN(prize.number_to_collect)
 
-      if @wonPrize?
-        # IF WE WIN SOMETHING SHOW THAT!
-        # GERNATE ANY COUPON DATA for the won prize
-        coupons = @wonPrize.generateCoupons(@node)
-        # show the first won coupon in the panel
-        html $(".game_over"), coupons[0].html
-        if coupons.length > 1
-          $(".game_over").append("<p>Plus " + (coupons.length-1) + " more</p>")
-        # if more than one coupon won then indicate this below the first coupon
-        # todo: think of better alternatives than this approach
-        $('.tile-flip-btn .ui-btn-inner').text(nCollected + ' found, you win!')
-        @is_game_complete = true
+    @.checkGameOver()
 
-    if (Number(@game_state.tile_ids_flipped.length) == Number(@flips))
-      @is_game_complete = true
-
-    if @is_game_complete
-      @game_state.reset()
-    else 
-      @game_state.save()
-
-    @prizes[number]
+    prize
 
   isRevealed: (boxNumber) ->
     # realise that this should be saved / loaded with game data
-    @game_state.tile_ids_flipped.indexOf(boxNumber) isnt -1
+    @game_state.tile_ids_revealed.indexOf(boxNumber) isnt -1
 
   # is the current tile flip valid to draw from
   isValid: ->
@@ -501,6 +692,36 @@ class TileFlip
     prize = _.find(@prize_pool, (o) -> o.id == prizeId)
     prize?.getCoupon couponId
 
+  checkGameOver: (forceGameOver) ->
+    console.log(@wonPrize)
+    if @wonPrize && (@prizes_to_collect <= @collected_prize_count)
+      @node.create(_datatype:"tilescratch", timedrawn: new Date())
+      coupons = @wonPrize.generateCoupons(@node)
+      # show the first won coupon in the panel
+      html $(".game_over"), coupons[0].html
+      window.setTimeout( () -> 
+        $("[data-role=navbar] a[data-panel='coupons']").trigger('click')
+      , 2000)
+
+      if coupons.length > 1
+        $(".game_over").append("<p>Plus " + (coupons.length-1) + " more</p>")
+      # if more than one coupon won then indicate this below the first coupon
+      # todo: think of better alternatives than this approach
+      $('.tile-flip-btn .ui-btn-inner').text(@wonPrize.number_to_collect + ' found, you win!')
+      @is_game_complete = true
+
+    if (Number(@game_state.tile_ids_revealed.length) == Number(@flips))
+      @is_game_complete = true
+
+    if @is_game_complete or forceGameOver
+      console.log('reset')
+      @game_state.reset()
+      $('canvas').fadeOut()
+    else 
+      @game_state.save()
+
+
+
 # a prize includes 1 or more coupons
 class Prize
   coupons: null
@@ -540,11 +761,11 @@ class Coupon
   intervals: null
   claimed: null
   # generate the coupons given the JSON data
-  @generate: (nodedatas, tileflip) ->
+  @generate: (nodedatas, tilescratch) ->
     _.chain(
         for nd in nodedatas
           data = nd.attributes
-          coupondata = tileflip.getCoupon data.couponid
+          coupondata = tilescratch.getCoupon data.couponid
           # extend off an empty object as we don't want to copy intervals onto coupon data
           new @(data.couponid, _.extend({},coupondata,data), nd) if coupondata?
       )
@@ -1040,5 +1261,6 @@ class RepeatingInterval extends TimeInterval
 @RepeatingIntervalGenerator = RepeatingIntervalGenerator
 @RepeatingInterval = RepeatingInterval
 @TimeInterval = TimeInterval
-@tileflip = tileflip
-@TileFlip = TileFlip
+@tilescratch = tilescratch
+@TileScratch = TileScratch
+

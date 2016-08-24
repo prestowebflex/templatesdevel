@@ -1,33 +1,63 @@
 @import compass/css3
 
 ::-webkit-scrollbar 
-  display: none 
+  display: none
 
-.tileflipcontainer
-  // the pick a box grids
+.tilescratchcontainer
+  .cell
+    display: table-cell
+    vertical-align: middle
+    text-align: center
+    canvas
+      vertical-align: middle
+
+  .canthumb
+    border: 0px solid #222
+
+  #main
+    margin: 0 auto
+    width: 600px
+
+  #scratchcanvas
+    border: 0px solid #222
+    cursor: pointer
+    margin: 0 auto
+    position: absolute
+    z-index: 100
+  // square grids
   @for $i from 1 through 5
     .grid#{$i}
+      padding-bottom: 100%
       position: relative
       @for $j from 1 through $i*$i
         // row and col are 0 indexed
         $row: floor(($j - 1) / $i)
         $col: ($j - 1) % $i
-        .panel
+        > div
           width: (100% / $i)
           height: (100% / $i)
           //border: solid 1px black
-          display: block
-          float: left
+          position: absolute
         .box#{$j}
           top: (100% / $i) * $row
-          @if $col == 0
-            clear: left
-          @if $col == 3 
-            clear: right
-  .panel-container
-    display: inline-block
-  .grid 
-    text-align: center
+          left: (100% / $i) * $col
+  // non-square grids
+  .grid4x3
+    visibility: hidden
+    padding-bottom: 100%
+    position: relative
+    @for $j from 1 through 12
+      // row and col are 0 indexed
+      $row: floor(($j - 1) / 4)
+      $col: ($j - 1) % 4
+      > div
+        width: (100% / 4)
+        height: (100% / 3)
+        //border: solid 1px black
+        position: absolute
+      .box#{$j}
+        top: (100% / 3) * $row
+        left: (100% / 4) * $col
   //.flipped
   //  +transform(rotatey(-180deg))
   .panels
@@ -54,16 +84,11 @@
       bottom: 0
       //height: 100%
       //width: 100%
-      background-color: #1E1D1D
       background-position: center center
-      +background-size(contain)
+      +background-size(cover)
       background-repeat: no-repeat
-      //background-image: url("/")
+      background-image: url("http://ya.wf-res.com/images/ckeditor/pictures/13447/data/content/img_0b43eebb17285bcb7eeab61bff713a05")
       cursor: pointer
-      & > div
-        height: 100%
-        background-position: center center
-        background-repeat: no-repeat
     &.revealed .tileicon
       display: none
     &.hidden
@@ -117,8 +142,6 @@
       .info
         top: 0
         bottom: 0
-        p 
-          margin: 0
         img
           height: 100%
           width: 100%
@@ -144,7 +167,7 @@
     margin-top: 1ex
     ul,li,h4
       margin: 0
-  .tileflip .game_over
+  .tilescratch .game_over
     //border: solid 1px black
     //background-color: blue
     position: absolute
@@ -160,8 +183,8 @@
     +opacity(0)
     background-color: white
     img
-      width: 100%
-  .tileflip
+      height: 90%
+  .tilescratch
     &.unavailable
       .game_over
         //+transform-style(preserve-3d)

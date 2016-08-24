@@ -21,14 +21,15 @@ title: Tile flip
   .panels
     .tileflip
       .grid.grid4
-        -(4**2).times.each do |cell|
-          .panel{class: "box#{cell+1}", data: {box: cell}}
-            .front
-              .tileicon
-            .back
-              .info
-              -#.buttonbar
-              -#  %a{href:"#", data:{role:"button"}} CLOSE
+        .panel-container
+          -(4**2).times.each do |cell|
+            .panel{class: "box#{cell+1}", data: {box: cell}}
+              .front
+                .tileicon
+              .back
+                .info
+                -#.buttonbar
+                -#  %a{href:"#", data:{role:"button"}} CLOSE
         .game_over
     .coupons{style: "display: none;"}
   .html_after
