@@ -4,10 +4,14 @@
 -content_for :assets do
   = stylesheet_link_tag "micropower"
   = javascript_include_tag  "micropower"
+  = javascript_include_tag  "micropower/order"
+#mpProfilePic
 %p
   Welcome
-  %span#mpName {NAME}
+  %span#mpName
 %p
-  Points Balance is
-  %span#mpPointsBalance {POINTSBALANCE}
+  Points available
+  %span#mpPointsBalance
+%div{style: 'clear: both;'}
 #mpProductList
+#mpOrder

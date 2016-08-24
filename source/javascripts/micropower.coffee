@@ -48,11 +48,11 @@ fieldvalue = (fields, name) ->
     if f.name == name
       return f.value
   null
-mpscallsystem = (method, url, data, success) ->
-  mpscall method, url, data, {Authorization: "Basic #{encrypted}"}, success
-mpscalluser = (method, url, token, data, success) ->
-  mpscall method, url, data, {UserAuthToken: token}, success
-mpscall = (method, url, data, headers, success) ->
+mpscallsystem = (method, url, data, success, failure = (->)) ->
+  mpscall method, url, data, {Authorization: "Basic #{encrypted}"}, success, failure
+mpscalluser = (method, url, token, data, success, failure = (->)) ->
+  mpscall method, url, data, {UserAuthToken: token}, success, failure
+mpscall = (method, url, data, headers, success, failure = (->)) ->
   obj =
     type: method
     url: "#{API_ENDPOINT}v1/#{url}"
@@ -72,7 +72,7 @@ mpscall = (method, url, data, headers, success) ->
       #console.log "DONE"
       success? data
     .fail (jqXHR, textStatus, errorThrown) ->
-      console.log "FAIL", arguments
+      failure jqXHR, textStatus, errorThrown
 
 
 # use browserify to get deps
@@ -146,11 +146,11 @@ class ClubMember extends MicropowerAPI
       "ClubId": CLUBID
       "ClubMemberId": @id
       "Points": points * -1
-      "Reference": Math.round((new Date()).valueOf()/1000)
+      "Reference": Math.round((new Date()).valueOf() / 1000)
       "DateTime": (new Date()).toISOString()
       "Description": "Purchase"
       "ExpiryDate": "2099-01-01T00:00:00"
-      "ExternalSystemId": Math.round((new Date()).valueOf()/1000)-1
+      "ExternalSystemId": Math.round((new Date()).valueOf() / 1000)-1
       "LocationId": 9981,
       "SaleValue":300,
       "Reversed":false
@@ -216,10 +216,15 @@ class ClubMember extends MicropowerAPI
     #   callback(data.token)
   # need to also initialise via an existing JWT token - get the member id from the token
   # initialise this via a username
-  @init: (username, success) ->
+  @init: (username, success, failure = (->)) ->
     mpscallsystem GET, "application/refresh/member", {clubId:CLUBID,memberNo:username}, (data) =>
-      success(new @(data))
-
+        success(new @(data))
+      , (xhr) ->
+        # error probrably a 404
+        if xhr?.status == 404
+          failure "Username #{username} not found"
+        else
+          failre "Unknown error"
 
 class Product
   constructor: (@data) ->
@@ -303,10 +308,10 @@ class Order
     orderItems: (order.postData() for order in @order when order.qty > 0)
     #id: 1
     # clientID: 2
-    # comments: "sample string 3"
+    comments: "sample string 3"
     date: (new Date()).toISOString()
     scheduledDate: (new Date()).toISOString()
-    # name: "sample string 6"
+    name: "sample string 6"
     # syncState: 0
     # syncTimestamp: "2016-02-24T10:04:15.094+10:00"
     # created: "2016-02-24T10:04:15.094+10:00"
@@ -325,7 +330,7 @@ window.micropower_home_demo = (userid, jQuery, jQueryGlobal) ->
     # portal url
     startLoading()
     model.portalurl (url) ->
-      $.find("#mpName").append " (<a href='#{url}'>Edit</a>)"
+      $.find("#mpName").append " (<a href='#' onclick=\"window.open(\'#{url}\', \'_blank\', \'location=yes\'); return false;\">Edit</a>)"
       endLoading()
 
     #profile picture
@@ -344,9 +349,13 @@ window.micropower_home_demo = (userid, jQuery, jQueryGlobal) ->
   else
     startLoading()
     ClubMember.init userid , (model) ->
-      window.mpmodel = model
-      mphomeinit model
-      endLoading()
+        window.mpmodel = model
+        mphomeinit model
+        endLoading()
+      , (reason) ->
+        # request Failed
+        $.find("#mpPointsBalance").text reason
+        endLoading()
 
 window.micropower_order_demo = (userid, jQuery, jQueryGlobal) ->
   $ = jQuery
@@ -360,7 +369,7 @@ window.micropower_order_demo = (userid, jQuery, jQueryGlobal) ->
     # setup name
     $.find("#mpName").text("#{model.field('Title')} #{model.field('FirstName')} #{model.field('Surname')}")
     model.portalurl (url) ->
-      $.find("#mpName").append " (<a href='#{url}'>Edit</a>)"
+      $.find("#mpName").append " (<a href='#' onclick=\"window.open(\'#{url}\', \'_blank\', \'location=yes\'); return false;\">Edit</a>)"
     if model.memberdata?.profileImageUrl?
       $.find("#mpProfilePic").append "<img style='float: left; padding-bottom: 10px; padding-right: 10px; display: block;' height='80' width='80' src='#{model.memberdata?.profileImageUrl}' />"
     refreshPoints = (force = false) ->
@@ -372,11 +381,13 @@ window.micropower_order_demo = (userid, jQuery, jQueryGlobal) ->
     refreshPoints()
     products_list = {}
     startLoading()
+    model.productgroups (groups) ->
+      console.log "PRODUCT GROUPS"
+      console.log groups
     model.products 22, (products) ->
       # store the products on the order - no need to convert ids's any more
       window.order = order = new Order(products)
       ul = $global('<ul data-role="listview" data-theme="c"/>')
-      console.log "UL CREATED", ul
       for product in products
         # copy result onto list
         products_list[product.id()] = product
@@ -406,7 +417,6 @@ window.micropower_order_demo = (userid, jQuery, jQueryGlobal) ->
 						<div class='ui-block-b'><button id='mpOrderSubmit' type='button' data-theme='a'>Purchase</button></div>
 			    </fieldset>
       </li>"
-      console.log "UL CREATED", ul
       $.find("#mpProductList").append ul
       # do the footer for the list (total etc...)
 
@@ -487,9 +497,14 @@ window.micropower_order_demo = (userid, jQuery, jQueryGlobal) ->
   else
     startLoading()
     ClubMember.init userid , (model) ->
-      window.mpmodel = model
-      mppageinit model
-      endLoading()
+        window.mpmodel = model
+        mppageinit model
+        endLoading()
+      , (reason) ->
+        # request Failed
+        $.find("#mpPointsBalance").text reason
+        endLoading()
+
 
 # Object {orderID: 1, date: "2016-02-24T11:00:51.9784+10:00", receiptId: 0}
 
