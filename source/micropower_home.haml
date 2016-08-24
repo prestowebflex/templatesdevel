@@ -1,0 +1,16 @@
+---
+  title: Micropower api demo
+---
+-content_for :assets do
+  = stylesheet_link_tag "micropower"
+  = javascript_include_tag  "micropower"
+  = javascript_include_tag  "micropower/home"
+#mpProfilePic
+%p
+  Welcome
+  %span#mpName
+%p
+  Points available
+  %span#mpPointsBalance
+%div{style: 'clear: both;'}
+%p This is normal page content
