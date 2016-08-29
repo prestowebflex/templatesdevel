@@ -261,25 +261,14 @@ tilescratch = (node, jQuery) ->
             hit++
 
             tCol = colIter
-            # desktop safari is crap and needs this - check ios
-            # columns reported as: 
-            # 1 2 3 0
-            # 2 3 0 1
-            # 3 0 1 2
-            if rowIter == 0
-              tCol = ( colIter + cols + 1 ) % cols
-            if rowIter == 1
-              tCol = ( colIter + cols + 2 ) % cols
-            if rowIter == 2
-              tCol = ( colIter + cols + 3 ) % cols
-            # desktop chrome does something crap differently 
+            # desktop does something differently 
             # columns reported as: 
             # 2 3 0 1
             # 2 3 0 1
             # 2 3 0 1
-            
-            # console.log 'hit: ' + (tCol) + ' ' + rowIter
-            # scratchgame.getPrize(rowIter*cols + tCol)
+
+            # tCol = ( colIter + cols + 2 ) % cols
+            scratchgame.getPrize(rowIter*cols + tCol)
           colIter++
         rowIter++
 
@@ -488,13 +477,10 @@ class TileScratch
 
     nodeUpdatedAt = @node.get('updated_at')
 
-    # don't load game data for now
-    #if @game_state.updated_at != nodeUpdatedAt
+    # don't load game data for scratch
+    doLoadGameData = false
 
-    if true
-      doLoadGameData = false
-      @game_state.updated_at = nodeUpdatedAt
-
+    @game_state.updated_at = nodeUpdatedAt
 
     # assemble the prize pool
     if doLoadGameData
@@ -531,8 +517,6 @@ class TileScratch
     @drawn_prizes = [] # store the drawn prizes somewhere
 
     for panel, i in $('.panel')
-      console.log i
-      console.log @game_state.prizes[i]
       htmlContent = @game_state.prizes[i].html
       html $(panel).find('.back .info'), htmlContent
 
@@ -572,7 +556,9 @@ class TileScratch
     console.log('wonPrize')
     console.log(wonPrize)
 
+
     if wonPrize?
+      @prizes_to_collect = @wonPrize.number_to_collect
       tempPrizes.push wonPrize for [1..wonPrize.number_to_collect]
 
     # remove the won prize from the pool
@@ -628,13 +614,9 @@ class TileScratch
     poolIndex = @prize_pool.indexOf(foundPrize)
 
     if !@isRevealed(number) and @isValid() and poolIndex > -1
-      
       # increment this prize count
       nCollected = ++@prize_counts[poolIndex]
-
-      # save the updated prize pool data (number_collected)
-      # not
-      #@game_state.prize_pool = @prize_pool
+      @collected_prize_count = nCollected
 
     nToCollect = @prizes[number].number_to_collect
     nToCollect = -1 if !nToCollect
