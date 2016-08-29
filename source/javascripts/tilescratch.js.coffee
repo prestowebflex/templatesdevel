@@ -272,7 +272,7 @@ tilescratch = (node, jQuery) ->
           colIter++
         rowIter++
 
-      if hit >= rows * cols * 0.95 # failsafe, 95% of samples are hit
+      if hit >= rows * cols * 0.7 # failsafe, 7% of samples are hit
         scratchgame.checkGameOver(true)
 
     ###*
