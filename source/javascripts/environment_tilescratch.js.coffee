@@ -10,6 +10,7 @@ node = new Node
     html_gameover: "
       <p>Try again tomorrow</p>
     "
+    top_panel_height_px: "180"
     rows: "3"
     cols: "4"
     flips: "12"

@@ -99,7 +99,6 @@ tilescratch = (node, jQuery) ->
     if isGamePanel
       $('canvas').show()
       $(".panels").css('background-size', 'cover')
-      repositionTiles()
     else
       $('canvas').hide()
       $(".panels").css('background-size', '0% 0%')
@@ -272,7 +271,7 @@ tilescratch = (node, jQuery) ->
           colIter++
         rowIter++
 
-      if hit >= rows * cols * 0.7 # failsafe, 7% of samples are hit
+      if hit >= rows * cols * 0.7 # failsafe, 70% of samples are hit
         scratchgame.checkGameOver(true)
 
     ###*
@@ -330,7 +329,6 @@ tilescratch = (node, jQuery) ->
       drawHeight = c.height
       # draw the stuff to start
       recompositeCanvases()
-      repositionTiles()
 
 
     # create the temp and draw canvases, and set their dimensions
@@ -391,15 +389,13 @@ tilescratch = (node, jQuery) ->
   # window.addEventListener 'load', (->
     # console.log "LOAD EVENT!"
   loadImages()
-  $('.panels').css('background', 'transparent url(' + nodeContent.background_image + ') center top no-repeat')
+  $('.top-panel').height( nodeContent.top_panel_height_px + 'px')
+    .css('background', 'transparent url(' + nodeContent.background_image + ') center top no-repeat')
     .css('background-size', 'cover')
-  repositionTiles();
     # return
   # ), false
   return
 
-repositionTiles = -> 
-  $('.panels').css('padding-top', $('.panels').height() * (1029/1559) + 'px')
 
 
 # TilescratchState: information about a flip game for storage / retrieval
