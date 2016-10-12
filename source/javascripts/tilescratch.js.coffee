@@ -266,13 +266,13 @@ tilescratch = (node, jQuery) ->
             # 2 3 0 1
             # 2 3 0 1
 
-            # tCol = ( colIter + cols + 2 ) % cols
+            tCol = ( colIter + cols + 2 ) % cols
             scratchgame.getPrize(rowIter*cols + tCol)
           colIter++
         rowIter++
 
-      if hit >= rows * cols * 0.7 # failsafe, 70% of samples are hit
-        scratchgame.checkGameOver(true)
+      # if hit >= rows * cols * 0.9 # failsafe, 90% of samples are hit
+      #   scratchgame.checkGameOver(true)
 
     ###*
     # On mouse down, draw a line starting fresh
@@ -671,8 +671,13 @@ class TileScratch
     prize?.getCoupon couponId
 
   checkGameOver: (forceGameOver) ->
-    console.log(@wonPrize)
+    console.log('checkGameOver');
+    console.log(@wonPrize);
+    return if @is_game_complete
+    console.log('checkGameOver continuing');
+    
     if @wonPrize && (@prizes_to_collect <= @collected_prize_count)
+      console.log('about to generate coupons');
       @node.create(_datatype:"tilescratch", timedrawn: new Date())
       coupons = @wonPrize.generateCoupons(@node)
       # show the first won coupon in the panel
@@ -689,10 +694,13 @@ class TileScratch
       @is_game_complete = true
 
     if (Number(@game_state.tile_ids_revealed.length) == Number(@flips))
+      console.log('gameOver on flips')
       @is_game_complete = true
 
     if @is_game_complete or forceGameOver
       console.log('reset')
+      console.log('forceGameover: ' + forceGameOver)
+      @is_game_complete = true
       @game_state.reset()
       $('canvas').fadeOut()
     else 
