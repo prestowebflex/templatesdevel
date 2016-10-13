@@ -110,6 +110,14 @@ node = new Node
 $ ->
   # create some node data before starting
   node.create(_datatype:"tilescratch", timedrawn: 'abc') for num in [1..2]
+  
+  # override node data with something else
+  
+  $.ajax 'javascripts/scratchie/page_2.json',
+    success: (data) ->
+      console.log data
+      node.set 'content', data
+      tilescratch node, $("div[data-role=content]")
   # console.log node.nodedata
   # console.log node.getNodeData()
   # console.log node.where _datatype:"boxshow"
@@ -119,4 +127,4 @@ $ ->
   #     true
   #    ).value().length
 
-  tilescratch node, $("div[data-role=content]")
+  #tilescratch node, $("div[data-role=content]")
