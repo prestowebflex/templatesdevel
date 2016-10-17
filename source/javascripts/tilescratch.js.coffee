@@ -239,16 +239,14 @@ tilescratch = (node, jQuery) ->
 
   setupCanvases = ->
     c = document.getElementById('scratchcanvas')
+    local = null
 
-    ###*
-    * sampleXYinRGBA
-    * sample the ImageData in data at pixel coords (x,y)
-    * pixel width of each row width is rowW
-    * return true if the pixel value is sampleValue
-    ###      
-    sampleXYinRGBA = (data, xPx, yPx, rowW, sampleValue) -> 
-      dataOffset = Math.round((((yPx * rowW) + xPx ) * 4) + 1 ) #4 bytes RGBA
-      data[ dataOffset ] == sampleValue
+    checkTileScratched = (xTap, yTap, xTarget, yTarget, xToler, yToler) -> 
+      hitX = Math.abs(xTap - xTarget) < xToler
+      hitY = Math.abs(yTap - yTarget) < yToler
+      if hitX && hitY    
+        return true
+      false
 
     sampleScratch = ->
       if scratchgame.is_game_complete
@@ -256,6 +254,7 @@ tilescratch = (node, jQuery) ->
         return  
       hit = 0
       imageData = drawContext.getImageData(0, 0, drawWidth, drawHeight)
+
       data = imageData.data
       rows = Number(nodeContent.rows || 3)
       cols = Number(nodeContent.cols || 4)
@@ -266,26 +265,18 @@ tilescratch = (node, jQuery) ->
       colIter = 0
       rowIter = 0
       scaleFactor = data.length / (drawHeight * drawWidth)
+      xTap = local.x
+      yTap = local.y
 
       while rowIter < rows
         colIter = 0
-        yPos = ( rowIter * tileH ) + offsetY
+        yTarget = ( rowIter * tileH ) + offsetY / scaleFactor
         while colIter < cols
-          xPos = ( colIter * tileW ) + offsetX 
-          if sampleXYinRGBA(data, xPos, yPos, imageData.width, 255)
+          xTarget = ( colIter * tileW ) + offsetX / scaleFactor
+          if checkTileScratched(xTap, yTap, xTarget, yTarget, offsetX, offsetY)
             hit++
 
             tCol = colIter
-            # desktop does something differently 
-            # columns reported as: 
-            # 2 3 0 1
-            # 2 3 0 1
-            # 2 3 0 1
-
-            isSafari = navigator.userAgent.indexOf("Safari") > -1;
-            # only do this check/conversion for Safari:
-            if isSafari
-              tCol = ( colIter + cols + 2 ) % cols
 
             # debug out the column number to be sure
             console.log('tCol: ' + tCol)
@@ -304,7 +295,6 @@ tilescratch = (node, jQuery) ->
       local = getLocalCoords(c, e)
       imageData = drawContext.getImageData(0, 0, drawWidth, drawHeight)
       data = imageData.data
-      return true if sampleXYinRGBA(data, local.x, local.y, imageData.width, 255)
       mouseDown = true
       scratchLine canvas.draw, local.x, local.y, true
       recompositeCanvases()
