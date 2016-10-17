@@ -109,19 +109,35 @@ tilescratch = (node, jQuery) ->
   $(".coupons").on "click", ".couponclaim:not(.ui-disabled)", {}, ->
     couponid =  $(@).parents("[data-couponid]").data "couponid"
     coupon = findCoupon couponid
-    if window.navigator?.notification?.confirm?
-      window.navigator.notification.confirm "Would you like to redeem the coupon now?", (buttonIndex) ->
-        if buttonIndex==1
-          coupon.claim()
-          refreshCoupons()
-      , "Redeem #{coupon.title}", "Yes,Dismiss"
-    else
-      if confirm("Would you like to redeem the coupon now?")
-        coupon.claim()
-        refreshCoupons()
+    # coupon object coupon.data["OPTIONS"]
+    # do a 2nd check if the coupon is claimable 11
+    coupon.isRedeemable (result, msg) ->
+      if result
+        if coupon.data["claim_code"]?.length > 0
+          navigator.notification.prompt 'Please enter the code to claim this coupon', (results) ->
+            if results.buttonIndex == 1
+              # clicked claim button
+              if results.input1 == coupon.data["claim_code"]
+                coupon.claim()
+                refreshCoupons()
+              else
+                navigator.notification.alert "Incorrect code entered",(->), "Unable to claim", "OK"
+            return
+          , 'Coupon Redeem', ['Claim','Dismiss']
+        else
+          # just prompt to claim
+          window.navigator.notification.confirm "Would you like to redeem the coupon now?", (buttonIndex) ->
+            if buttonIndex==1
+              coupon.claim()
+              refreshCoupons()
+            return
+          , "Redeem #{coupon.title}", "Yes,Dismiss"
+      else
+        navigator.notification.alert "Unable to claim coupon right now. (#{msg})", (->), 'Unable to Claim'
+      return
     #console.log coupon
     #alert "claim! #{couponid}"
-    false
+    return
 
 
   #############################
@@ -706,6 +722,9 @@ class TileScratch
       @is_game_complete = true
       @game_state.reset()
       $('canvas').fadeOut()
+      window.setTimeout -> 
+        $('canvas').remove()
+      , 500
     else 
       @game_state.save()
 
@@ -743,6 +762,7 @@ class Prize
 
 # if initialized with node data the intervals are set etc...
 # if initialised from prize then intervals set themselves
+
 class Coupon
   id: null # needs an identifier
   html: "" # no html
@@ -750,11 +770,11 @@ class Coupon
   intervals: null
   claimed: null
   # generate the coupons given the JSON data
-  @generate: (nodedatas, tilescratch) ->
+  @generate: (nodedatas, pickabox) ->
     _.chain(
         for nd in nodedatas
           data = nd.attributes
-          coupondata = tilescratch.getCoupon data.couponid
+          coupondata = pickabox.getCoupon data.couponid
           # extend off an empty object as we don't want to copy intervals onto coupon data
           new @(data.couponid, _.extend({},coupondata,data), nd) if coupondata?
       )
@@ -775,10 +795,42 @@ class Coupon
     # generate the intervals generator from the data
     # this depends if we are using the resurected json form
     if @data.intervals
-      @intervals = (new TimeInterval(interval) for interval in @data.intervals)
+      @intervals = (new TimeInterval(interval) for interval in @data.intervals) 
     else
       @intervals = RepeatingIntervalGenerator.generate @data # if intervals not set???
   # first start of interval - used to sort
+  haversine = (args...) ->
+    R = 6371000; # m
+    radians = args.map (deg) -> deg / 180.0 * Math.PI
+    lat1 = radians[0]; lon1 = radians[1]; lat2 = radians[2]; lon2 = radians[3]
+    dLat = lat2 - lat1
+    dLon = lon2 - lon1
+    a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.sin(dLon / 2) * Math.sin(dLon / 2) * Math.cos(lat1) * Math.cos(lat2)
+    R * 2 * Math.asin(Math.sqrt(a))
+  
+  isInLocation: (callback) ->
+    if @data['available_location'] == '1'
+      # check the current location is within location
+      navigator.geolocation.getCurrentPosition (position) =>
+          # get distance between defined point(on data) and given position
+          distance = haversine Number(@data['available_location_latitude']), Number(@data['available_location_longitude']), position.coords.latitude, position.coords.longitude
+          if distance <= (position.coords.accuracy + Number(@data['available_location_radius']))
+            callback true
+          else
+            callback false, "Current position is #{(distance / 1000).toFixed(2)}km outside allowed position"
+          return
+        ,
+          (error) ->
+            callback false, error.message
+            return
+    else
+      # no location restriction just callback with true
+      callback true
+    # available_location is "1" when enabled and "0" when disabled
+    # available_location_radius is distance in meteres
+    # available_location_latitude # self explanitory
+    # available_location_longitude # self explanitory
+    return
   earliestDate: ->
     # used to order coupons
     _.min(_.map @intervals, (o) -> o.getStart())
@@ -797,6 +849,15 @@ class Coupon
   # coupon is currently claimable
   isClaimable: ->
     _.some @intervals, (o) -> o.isWithinInterval()
+  # same as isClaimable but it's an async version to allow for the GPS stuff!
+  isRedeemable: (callback) ->
+    if @isClaimable()
+      # check location (if it's enabled)
+      @isInLocation callback
+    else
+      # this shouldn't really come up.
+      callback false, "Unable to claim check the times on the coupon."
+    return
   claim: ->
     unless @isClaimed()
       # set claimed to current date
