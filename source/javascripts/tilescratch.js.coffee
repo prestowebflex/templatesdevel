@@ -266,7 +266,10 @@ tilescratch = (node, jQuery) ->
             # 2 3 0 1
             # 2 3 0 1
 
-            tCol = ( colIter + cols + 2 ) % cols
+            # don't do this check/conversion now, log out the column to be sure:
+            #tCol = ( colIter + cols + 2 ) % cols
+            console.log('tCol: ' + tCol)
+
             scratchgame.getPrize(rowIter*cols + tCol)
           colIter++
         rowIter++
