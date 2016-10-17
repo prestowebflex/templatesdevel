@@ -240,6 +240,12 @@ tilescratch = (node, jQuery) ->
   setupCanvases = ->
     c = document.getElementById('scratchcanvas')
     local = null
+    rows = Number(nodeContent.rows || 3)
+    cols = Number(nodeContent.cols || 4)
+    tileW = drawWidth / cols
+    tileH = drawHeight / rows
+    offsetY = tileH / 2
+    offsetX = tileW / 2
 
     checkTileScratched = (xTap, yTap, xTarget, yTarget, xToler, yToler) -> 
       hitX = Math.abs(xTap - xTarget) < xToler
@@ -248,40 +254,52 @@ tilescratch = (node, jQuery) ->
         return true
       false
 
+
+    sampleTap = ->
+      colIter = 0
+      rowIter = 0
+      xTap = local.x
+      yTap = local.y
+
+      while rowIter < rows
+        colIter = 0
+        yTarget = ( rowIter * tileH ) + offsetY
+        while colIter < cols
+          xTarget = ( colIter * tileW ) + offsetX
+          if checkTileScratched(xTap, yTap, xTarget, yTarget, offsetX, offsetY)
+            console.log('getPrize')
+            scratchgame.getPrize(rowIter*cols + colIter)
+            return true
+          colIter++
+        rowIter++
+      return false
+      # if hit >= rows * cols * 0.9 # failsafe, 90% of samples are hit
+      #   scratchgame.checkGameOver(true)
+
     sampleScratch = ->
+      console.log('sampleScratch')
       if scratchgame.is_game_complete
         refreshCoupons()
         return  
       hit = 0
-      imageData = drawContext.getImageData(0, 0, drawWidth, drawHeight)
 
-      data = imageData.data
-      rows = Number(nodeContent.rows || 3)
-      cols = Number(nodeContent.cols || 4)
       tileW = drawWidth / cols
       tileH = drawHeight / rows
       offsetY = tileH / 2
       offsetX = tileW / 2
       colIter = 0
       rowIter = 0
-      scaleFactor = data.length / (drawHeight * drawWidth)
       xTap = local.x
       yTap = local.y
 
       while rowIter < rows
         colIter = 0
-        yTarget = ( rowIter * tileH ) + offsetY / scaleFactor
+        yTarget = ( rowIter * tileH ) + offsetY
         while colIter < cols
-          xTarget = ( colIter * tileW ) + offsetX / scaleFactor
+          xTarget = ( colIter * tileW ) + offsetX
           if checkTileScratched(xTap, yTap, xTarget, yTarget, offsetX, offsetY)
             hit++
-
-            tCol = colIter
-
-            # debug out the column number to be sure
-            console.log('tCol: ' + tCol)
-
-            scratchgame.getPrize(rowIter*cols + tCol)
+            scratchgame.getPrize(rowIter*cols + colIter)
           colIter++
         rowIter++
 
@@ -293,9 +311,12 @@ tilescratch = (node, jQuery) ->
     ###
     mousedown_handler = (e) ->
       local = getLocalCoords(c, e)
-      imageData = drawContext.getImageData(0, 0, drawWidth, drawHeight)
-      data = imageData.data
+      tileW = drawWidth / cols
+      tileH = drawHeight / rows
+      offsetY = tileH / 2
+      offsetX = tileW / 2
       mouseDown = true
+      sampleTap()
       scratchLine canvas.draw, local.x, local.y, true
       recompositeCanvases()
       if e.cancelable
