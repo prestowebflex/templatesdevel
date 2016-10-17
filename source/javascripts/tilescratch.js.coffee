@@ -703,6 +703,9 @@ class TileScratch
       @is_game_complete = true
       @game_state.reset()
       $('canvas').fadeOut()
+      window.setTimeout -> 
+        $('canvas').remove()
+      , 500
     else 
       @game_state.save()
 
