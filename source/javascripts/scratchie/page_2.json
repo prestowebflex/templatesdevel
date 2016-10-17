@@ -1,0 +1,192 @@
+{
+   "html_after":"",
+   "data_theme":"a",
+   "type":"everyday",
+   "week_days":[
+      "",
+      ""
+   ],
+   "hour":"0",
+   "minute":"0",
+   "html_gameover":"<p>\r\n\tGAME OVER</p>\r\n",
+   "pool_size":"20",
+   "html_nowin":"<p>\r\n\t<img alt=\"\" src=\"http://ya.wf-res.com/images/ckeditor/pictures/16767/data/content/img_adecf55d121c0bb7118a057fa5084c3b\" style=\"width: 100%;\" /></p>\r\n",
+   "max_daily_draws":"200000",
+   "background_image":"http://ya.wf-res.com/images/ckeditor/pictures/16730/data/content/img_3dc0efd78a3f0d947ebb341d4612674c",
+   "scratch_image":"http://ya.wf-res.com/images/ckeditor/pictures/16766/data/content/img_83329c6128272aeb0f5058a65bdd139b",
+   "blank_image":"https://yourapp-templatesdevel.s3.amazonaws.com/images/tilescratch/blank.jpg",
+   "prizes":{
+      "1472100908055":{
+         "html":"<p>\r\n\t<img alt=\"\" src=\"http://ya.wf-res.com/images/ckeditor/pictures/16761/data/content/img_c2a81cd6ec3e27bdf371da1f7f5593b8\" style=\"width: 100%;\" /></p>\r\n",
+         "number_to_collect":"3",
+         "odds":"10",
+         "coupons":{
+            "1472100937885":{
+               "title":"Free Beer",
+               "html":"<p>\r\n\t<img alt=\"\" src=\"http://ya.wf-res.com/images/ckeditor/pictures/4319/data/content/img_8b3408afe5a4f2ef54047fad8a3eed4a\" style=\"width: 100%;\" /></p>\r\n",
+               "type":"duration_days",
+               "days":"1",
+               "week_days":[
+                  "",
+                  ""
+               ],
+               "month_days":[
+                  "",
+                  ""
+               ],
+               "month_dates":[
+                  "",
+                  ""
+               ],
+               "allday":"0",
+               "hour":"",
+               "minute":"",
+               "length":"",
+               "times":"",
+               "generate_extra":"0",
+               "leeway_before":""
+            }
+         }
+      },
+      "1472100954559":{
+         "html":"<p>\r\n\t<img alt=\"\" src=\"http://ya.wf-res.com/images/ckeditor/pictures/16764/data/content/img_bcf3ac24a0f32aa039b6873ac21fb053\" style=\"width: 100%;\" /></p>\r\n",
+         "number_to_collect":"3",
+         "odds":"10",
+         "coupons":{
+            "1472100976708":{
+               "title":"Free Meal",
+               "html":"<p>\r\n\t<img alt=\"\" src=\"http://ya.wf-res.com/images/ckeditor/pictures/4317/data/content/img_ae82d32478c53d20de03e03235a66c7e\" style=\"width: 100%;\" /></p>\r\n",
+               "type":"duration_days",
+               "days":"1",
+               "week_days":[
+                  "",
+                  ""
+               ],
+               "month_days":[
+                  "",
+                  ""
+               ],
+               "month_dates":[
+                  "",
+                  ""
+               ],
+               "allday":"0",
+               "hour":"",
+               "minute":"",
+               "length":"",
+               "times":"",
+               "generate_extra":"0",
+               "leeway_before":""
+            }
+         }
+      },
+      "1472100987641":{
+         "html":"<p>\r\n\t<img alt=\"\" src=\"http://ya.wf-res.com/images/ckeditor/pictures/16765/data/content/img_1765a181da14f3f727703c2e6855de00\" style=\"width: 100%;\" /></p>\r\n",
+         "number_to_collect":"3",
+         "odds":"10",
+         "coupons":{
+            "1472101004984":{
+               "title":"10,000 Points",
+               "html":"<p>\r\n\t<img alt=\"\" src=\"http://ya.wf-res.com/images/ckeditor/pictures/15873/data/content/img_a1dee0a72798feefd5807b9b08d034f5\" style=\"width: 100%;\" /></p>\r\n",
+               "type":"duration_days",
+               "days":"1",
+               "week_days":[
+                  "",
+                  ""
+               ],
+               "month_days":[
+                  "",
+                  ""
+               ],
+               "month_dates":[
+                  "",
+                  ""
+               ],
+               "allday":"0",
+               "hour":"",
+               "minute":"",
+               "length":"",
+               "times":"",
+               "generate_extra":"0",
+               "leeway_before":""
+            }
+         }
+      },
+      "1472171444056":{
+         "html":"<p>\r\n\t<img alt=\"\" src=\"http://ya.wf-res.com/images/ckeditor/pictures/16760/data/content/img_08b17392c88ba6abd1407ebd369f47e3\" style=\"width: 100%;\" /></p>\r\n",
+         "number_to_collect":"3",
+         "odds":"10",
+         "coupons":{
+            "1472171483292":{
+               "title":"Buy 1 Meal get 1 Free",
+               "html":"<p>\r\n\t<img alt=\"\" src=\"http://ya.wf-res.com/images/ckeditor/pictures/4568/data/content/img_c3d76e0ef3cb726fbe7243e0aea569c1\" style=\"width: 100%;\" /></p>\r\n",
+               "type":"weekly",
+               "days":"",
+               "week_days":[
+                  "",
+                  "",
+                  "1",
+                  "2",
+                  "3",
+                  "4",
+                  "5"
+               ],
+               "month_days":[
+                  "",
+                  ""
+               ],
+               "month_dates":[
+                  "",
+                  ""
+               ],
+               "allday":"0",
+               "hour":"8",
+               "minute":"0",
+               "length":"720",
+               "times":"5",
+               "generate_extra":"1",
+               "leeway_before":""
+            }
+         }
+      },
+      "1472171547015":{
+         "html":"<p>\r\n\t<img alt=\"\" src=\"http://ya.wf-res.com/images/ckeditor/pictures/16762/data/content/img_42d6fda84ec92e9354cebe8642c59cb3\" style=\"width: 100%;\" /></p>\r\n",
+         "number_to_collect":"3",
+         "odds":"10",
+         "coupons":{
+            "1472171629303":{
+               "title":"Free Hot Drink",
+               "html":"<p>\r\n\t<img alt=\"\" src=\"http://ya.wf-res.com/images/ckeditor/pictures/4568/data/content/img_c3d76e0ef3cb726fbe7243e0aea569c1\" style=\"width: 100%;\" /></p>\r\n",
+               "type":"weekly",
+               "days":"",
+               "week_days":[
+                  "",
+                  "",
+                  "0",
+                  "1",
+                  "2",
+                  "3",
+                  "4",
+                  "5",
+                  "6"
+               ],
+               "month_days":[
+                  "",
+                  ""
+               ],
+               "month_dates":[
+                  "",
+                  ""
+               ],
+               "allday":"1",
+               "hour":"",
+               "minute":"",
+               "length":"",
+               "times":"7",
+               "generate_extra":"1",
+               "leeway_before":""
+            }
+         }
+      }
+   }
+}
