@@ -282,8 +282,12 @@ tilescratch = (node, jQuery) ->
             # 2 3 0 1
             # 2 3 0 1
 
-            # don't do this check/conversion now, log out the column to be sure:
-            #tCol = ( colIter + cols + 2 ) % cols
+            isSafari = navigator.userAgent.indexOf("Safari") > -1;
+            # only do this check/conversion for Safari:
+            if isSafari
+              tCol = ( colIter + cols + 2 ) % cols
+
+            # debug out the column number to be sure
             console.log('tCol: ' + tCol)
 
             scratchgame.getPrize(rowIter*cols + tCol)
