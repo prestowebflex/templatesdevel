@@ -9,7 +9,7 @@ title: Tile scratch
   = javascript_include_tag  "tilescratch"
 
 .tilescratchcontainer
-  / .html_before
+  .html_before
   %div{data:{role:"navbar"},style:"margin-left: -15px; margin-right: -15px;"}
     %ul
       %li
@@ -19,7 +19,6 @@ title: Tile scratch
           Coupons
           =surround '(', ')' do
             %span.couponcount 0
-  .top-panel
   .panels
     %canvas#scratchcanvas
     .tilescratch

@@ -412,9 +412,6 @@ tilescratch = (node, jQuery) ->
   # window.addEventListener 'load', (->
     # console.log "LOAD EVENT!"
   loadImages()
-  $('.top-panel').height( nodeContent.top_panel_height_px + 'px')
-    .css('background', 'transparent url(' + nodeContent.background_image + ') center top no-repeat')
-    .css('background-size', 'cover')
     # return
   # ), false
   return
