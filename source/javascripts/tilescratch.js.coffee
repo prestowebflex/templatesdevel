@@ -276,6 +276,11 @@ tilescratch = (node, jQuery) ->
         yTarget = ( rowIter * tileH ) + offsetY
         while colIter < cols
           xTarget = ( colIter * tileW ) + offsetX
+
+          # DEBUG
+          # uncomment to see the centresof the scratch targets
+          #scratchLine canvas.draw, xTarget, yTarget, true
+
           if checkTileScratched(xTap, yTap, xTarget, yTarget, tileQuarterX, tileQuarterY)
             console.log('getPrize')
             scratchgame.getPrize(rowIter*cols + colIter)
@@ -507,6 +512,7 @@ class TileScratch
     @flips = @size unless @flips?
 
     @game_state = new TileScratchState( @node.getRawId() )
+    @game_state.reset()
 
     doLoadGameData = @game_state.didLoad()
 
