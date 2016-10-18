@@ -199,6 +199,8 @@ tilescratch = (node, jQuery) ->
 
   recompositeCanvases = ->
     main = document.getElementById('scratchcanvas')
+    if !main 
+      return
     mainctx = main.getContext('2d')
 
     # trigger redraw
