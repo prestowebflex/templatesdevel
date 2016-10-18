@@ -321,7 +321,7 @@ tilescratch = (node, jQuery) ->
       recompositeCanvases()
       if e.cancelable
         e.preventDefault()
-      sampleInterval = window.setInterval(sampleScratch, 250)
+      sampleInterval = window.setInterval(sampleScratch, 100)
       false
 
     ###*
