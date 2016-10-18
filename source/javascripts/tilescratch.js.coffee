@@ -244,8 +244,10 @@ tilescratch = (node, jQuery) ->
     cols = Number(nodeContent.cols || 4)
     tileW = drawWidth / cols
     tileH = drawHeight / rows
-    offsetY = tileH / 2
-    offsetX = tileW / 2
+    offsetY = 0
+    offsetX = 0
+    tileQuarterX = 0
+    tileQuarterY = 0
 
     checkTileScratched = (xTap, yTap, xTarget, yTarget, xToler, yToler) -> 
       hitX = Math.abs(xTap - xTarget) < xToler
@@ -260,13 +262,19 @@ tilescratch = (node, jQuery) ->
       rowIter = 0
       xTap = local.x
       yTap = local.y
+      tileW = drawWidth / cols
+      tileH = drawHeight / rows
+      offsetY = tileH / 2
+      offsetX = tileW / 2
+      tileQuarterX = offsetX / 2
+      tileQuarterY = offsetY / 2
 
       while rowIter < rows
         colIter = 0
         yTarget = ( rowIter * tileH ) + offsetY
         while colIter < cols
           xTarget = ( colIter * tileW ) + offsetX
-          if checkTileScratched(xTap, yTap, xTarget, yTarget, offsetX, offsetY)
+          if checkTileScratched(xTap, yTap, xTarget, yTarget, tileQuarterX, tileQuarterY)
             console.log('getPrize')
             scratchgame.getPrize(rowIter*cols + colIter)
             return true
@@ -283,21 +291,19 @@ tilescratch = (node, jQuery) ->
         return  
       hit = 0
 
-      tileW = drawWidth / cols
-      tileH = drawHeight / rows
-      offsetY = tileH / 2
-      offsetX = tileW / 2
       colIter = 0
       rowIter = 0
       xTap = local.x
       yTap = local.y
+      tileQuarterX = offsetX / 2
+      tileQuarterY = offsetY / 2
 
       while rowIter < rows
         colIter = 0
         yTarget = ( rowIter * tileH ) + offsetY
         while colIter < cols
           xTarget = ( colIter * tileW ) + offsetX
-          if checkTileScratched(xTap, yTap, xTarget, yTarget, offsetX, offsetY)
+          if checkTileScratched(xTap, yTap, xTarget, yTarget, tileQuarterX, tileQuarterY)
             hit++
             scratchgame.getPrize(rowIter*cols + colIter)
           colIter++
