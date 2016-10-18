@@ -199,6 +199,8 @@ tilescratch = (node, jQuery) ->
 
   recompositeCanvases = ->
     main = document.getElementById('scratchcanvas')
+    if !main 
+      return
     mainctx = main.getContext('2d')
 
     # trigger redraw
@@ -332,7 +334,7 @@ tilescratch = (node, jQuery) ->
       recompositeCanvases()
       if e.cancelable
         e.preventDefault()
-      sampleInterval = window.setInterval(sampleScratch, 250)
+      sampleInterval = window.setInterval(sampleScratch, 15)
       false
 
     ###*
