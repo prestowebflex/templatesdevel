@@ -505,6 +505,7 @@ class TileScratch
     @flips = @size unless @flips?
 
     @game_state = new TileScratchState( @node.getRawId() )
+    @game_state.reset()
 
     doLoadGameData = @game_state.didLoad()
 
