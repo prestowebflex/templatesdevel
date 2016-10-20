@@ -727,9 +727,6 @@ class TileScratch
       coupons = @wonPrize.generateCoupons(@node)
       # show the first won coupon in the panel
       html $(".game_over"), coupons[0].html
-      window.setTimeout( () -> 
-        $("[data-role=navbar] a[data-panel='coupons']").trigger('click')
-      , 2000)
 
       if coupons.length > 1
         $(".game_over").append("<p>Plus " + (coupons.length-1) + " more</p>")
