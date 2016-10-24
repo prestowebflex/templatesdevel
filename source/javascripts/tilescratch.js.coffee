@@ -492,7 +492,7 @@ class TileScratch
   prize_pool: null
   html_before: ""
   html_after: ""
-  html_gameover: "Try Again"
+  html_gameover: ""
   # number of items in the pool
   pool_size: null
   # size of the grid
@@ -505,7 +505,7 @@ class TileScratch
   is_game_complete: false
   prize_counts: []
   constructor: (data = {}, @node) ->
-    {@html_before,@html_after,@html_tryagain,@flips,@max_daily_draws,@prizes,@prize_pool,@won_prize} = data
+    {@html_before,@html_after,@html_tryagain,@html_gameover,@flips,@max_daily_draws,@prizes,@prize_pool,@won_prize} = data
     @pool_size = Number(data.pool_size ? 100)
     @size = Number(@node.get('content').rows || 3) * Number(@node.get('content').cols || 4)
     
