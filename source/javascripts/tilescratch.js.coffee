@@ -578,6 +578,10 @@ class TileScratch
         d.valueOf() > period.valueOf()
        ).value().length
 
+    # record that we've started the game
+    @node.create(_datatype:"tilescratch", timedrawn: new Date())
+
+
   shuffle = (arr) ->
     i = arr.length
     return arr unless i > 0
