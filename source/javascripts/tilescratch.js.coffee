@@ -684,8 +684,8 @@ class TileScratch
     # .. when daily draws are exceeded?
     if @is_game_complete
       return false
-    @drawn < @max_daily_draws
-    @is_game_complete = Number(@flips) <= Number(@game_state.flipped)
+    @is_game_complete = @drawn >= @max_daily_draws
+    @is_game_complete = @is_game_complete || ( Number(@flips) <= Number(@game_state.flipped) )
     !@is_game_complete
 
   # genrate single prize
