@@ -1,6 +1,7 @@
 scratchgame = null
 thisnode = null
 thisjquery = null
+sampleInterval = null 
 
 # process html via collection
 html = (jquery, html) ->
@@ -493,6 +494,7 @@ class TileScratch
   html_before: ""
   html_after: ""
   html_gameover: ""
+  html_tryagain: ""
   # number of items in the pool
   pool_size: null
   # size of the grid
@@ -684,8 +686,12 @@ class TileScratch
     # .. when daily draws are exceeded?
     if @is_game_complete
       return false
-    @is_game_complete = @drawn >= @max_daily_draws
-    @is_game_complete = @is_game_complete || ( Number(@flips) <= Number(@game_state.flipped) )
+    if (@drawn >= @max_daily_draws)
+      html $(".game_over"), @node.get('content').html_tryagain
+      @checkGameOver(true)
+      return false
+
+    @is_game_complete = Number(@flips) <= Number(@game_state.flipped)
     !@is_game_complete
 
   # genrate single prize
@@ -727,6 +733,8 @@ class TileScratch
       coupons = @wonPrize.generateCoupons(@node)
       # show the first won coupon in the panel
       html $(".game_over"), coupons[0].html
+      $('.game_over').fadeIn()
+      $('.panel').fadeOut()
 
       if coupons.length > 1
         $(".game_over").append("<p>Plus " + (coupons.length-1) + " more</p>")
@@ -734,16 +742,23 @@ class TileScratch
       # todo: think of better alternatives than this approach
       $('.tile-flip-btn .ui-btn-inner').text(@wonPrize.number_to_collect + ' found, you win!')
       @is_game_complete = true
+      refreshCoupons()
 
     if (Number(@game_state.tile_ids_revealed.length) == Number(@flips))
       console.log('gameOver on flips')
       @is_game_complete = true
+      $('.game_over').fadeIn()
+      $('.panel').fadeOut()
 
     if @is_game_complete or forceGameOver
       console.log('reset')
       console.log('forceGameover: ' + forceGameOver)
       @is_game_complete = true
       @game_state.reset()
+      $('canvas').hide()
+      $('.game_over').fadeIn()
+      $('.panel').fadeOut()
+      window.clearInterval sampleInterval
     else 
       @game_state.save()
 
