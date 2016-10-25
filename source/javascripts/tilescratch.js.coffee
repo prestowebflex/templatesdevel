@@ -2,6 +2,7 @@ scratchgame = null
 thisnode = null
 thisjquery = null
 sampleInterval = null 
+hasBeenScratched = false 
 
 # process html via collection
 html = (jquery, html) ->
@@ -336,6 +337,10 @@ tilescratch = (node, jQuery) ->
       if e.cancelable
         e.preventDefault()
       sampleInterval = window.setInterval(sampleScratch, 15)
+
+      unless hasBeenScratched
+        hasBeenScratched = true
+        @node.create(_datatype:"tilescratch", timedrawn: new Date())
 
       false
 
@@ -674,9 +679,6 @@ class TileScratch
 
     @.checkGameOver()
 
-    # record that we've tried to claim a prize 
-    @node.create(_datatype:"tilescratch", timedrawn: new Date())
-
     prize
 
   isRevealed: (boxNumber) ->
@@ -733,8 +735,6 @@ class TileScratch
     console.log('checkGameOver continuing');
     
     if @wonPrize && (@prizes_to_collect <= @collected_prize_count)
-      console.log('about to generate coupons');
-      @node.create(_datatype:"tilescratch", timedrawn: new Date())
       coupons = @wonPrize.generateCoupons(@node)
       # show the first won coupon in the panel
       html $(".game_over"), coupons[0].html
