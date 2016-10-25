@@ -336,6 +336,7 @@ tilescratch = (node, jQuery) ->
       if e.cancelable
         e.preventDefault()
       sampleInterval = window.setInterval(sampleScratch, 15)
+
       false
 
     ###*
@@ -578,9 +579,6 @@ class TileScratch
         d.valueOf() > period.valueOf()
        ).value().length
 
-    # record that we've started the game
-    @node.create(_datatype:"tilescratch", timedrawn: new Date())
-
 
   shuffle = (arr) ->
     i = arr.length
@@ -675,6 +673,9 @@ class TileScratch
     return if isNaN(prize.number_to_collect)
 
     @.checkGameOver()
+
+    # record that we've tried to claim a prize 
+    @node.create(_datatype:"tilescratch", timedrawn: new Date())
 
     prize
 
