@@ -340,7 +340,7 @@ tilescratch = (node, jQuery) ->
 
       unless hasBeenScratched
         hasBeenScratched = true
-        alert(node)
+        # alert(node)
         node.create(_datatype:"tilescratch", timedrawn: new Date())
 
       false
