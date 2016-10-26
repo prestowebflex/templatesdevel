@@ -11,8 +11,11 @@ node = new Node
     html_gameover: "
       <p>Try again tomorrow</p>
     "
+    html_tryagain: "
+      <p>Try again tomorrow!</p>
+    "
     flips: "16"
-    max_daily_draws: "1"
+    max_daily_draws: "0"
     # use thse to rework out the pool size and try again etc...
     pool_size: "2"
     html_nowin: "<img src='images/tileflip/dud.png' />"

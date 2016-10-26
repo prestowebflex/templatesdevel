@@ -1,5 +1,7 @@
 thisnode = null
 jQuery = null
+hasBeenFlipped = false 
+
 # process html via collection
 # this function just converts an image id to a href
 getimageurl = (id, cb) ->
@@ -198,6 +200,10 @@ tileflip = (node, jq) ->
     console.log('boxes.game_state')
     console.log(boxes.game_state)
 
+    unless hasBeenFlipped
+      hasBeenFlipped = true
+      node.create(_datatype:"tileflip", timedrawn: new Date())
+
     #console.log
     html $_.find(".back > .info"), prize.html
     #console.log prize
@@ -270,7 +276,8 @@ class TileFlip
   prize_pool: null
   html_before: ""
   html_after: ""
-  html_gameover: "Try Again"
+  html_gameover: ""
+  html_tryagain: ""
   html_card_back: ""
   # number of items in the pool
   pool_size: null
@@ -449,7 +456,6 @@ class TileFlip
     console.log(@wonPrize)
 
     if (nToCollect <= nCollected)
-      @node.create(_datatype:"tileflip", timedrawn: new Date())
 
       if @wonPrize?
         # IF WE WIN SOMETHING SHOW THAT!
@@ -486,7 +492,10 @@ class TileFlip
     # .. when daily draws are exceeded?
     if @is_game_complete
       return false
-    @drawn < @max_daily_draws
+    if (@drawn >= @max_daily_draws)
+      html $(".game_over"), @node.get('content').html_tryagain
+      return false
+
     @is_game_complete = Number(@flips) <= Number(@game_state.flipped)
     !@is_game_complete
 
