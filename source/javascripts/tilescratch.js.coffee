@@ -729,7 +729,7 @@ class TileScratch
     if @wonPrize && (@prizes_to_collect <= @collected_prize_count)
       coupons = @wonPrize.generateCoupons(@node)
       # show the first won coupon in the panel
-      html $(".game_over"), coupons[0].html
+      html $(".game_over"), $('<div></div>').html($(coupons[0].html).find('img').first())
 
       if coupons.length > 1
         $(".game_over").append("<p>Plus " + (coupons.length-1) + " more</p>")
