@@ -289,7 +289,7 @@ class TileFlip
   prize_counts: []
   is_game_complete: false
   constructor: (data = {}, @node) ->
-    {@html_before,@html_after,@html_tryagain,@html_card_back,@flips,@max_daily_draws,@prizes,@prize_pool,@won_prize} = data
+    {@html_before,@html_after,@html_tryagain,@html_gameover,@html_card_back,@flips,@max_daily_draws,@prizes,@prize_pool,@won_prize} = data
     @pool_size = Number(data.pool_size ? 100)
 
     @game_state = new TileFlipState( @node.getRawId() )
