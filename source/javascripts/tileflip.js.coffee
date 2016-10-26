@@ -270,7 +270,8 @@ class TileFlip
   prize_pool: null
   html_before: ""
   html_after: ""
-  html_gameover: "Try Again"
+  html_gameover: ""
+  html_tryagain: ""
   html_card_back: ""
   # number of items in the pool
   pool_size: null
@@ -486,7 +487,10 @@ class TileFlip
     # .. when daily draws are exceeded?
     if @is_game_complete
       return false
-    @is_game_complete = @drawn >= @max_daily_draws
+    if (@drawn >= @max_daily_draws)
+      html $(".game_over"), @node.get('content').html_tryagain
+      return false
+
     @is_game_complete = Number(@flips) <= Number(@game_state.flipped)
     !@is_game_complete
 
