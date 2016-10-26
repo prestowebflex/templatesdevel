@@ -3,6 +3,7 @@ thisnode = null
 thisjquery = null
 sampleInterval = null 
 hasBeenScratched = false 
+is_continuing_after_gameover = false
 
 # process html via collection
 html = (jquery, html) ->
@@ -284,7 +285,6 @@ tilescratch = (node, jQuery) ->
           #scratchLine canvas.draw, xTarget, yTarget, true
 
           if checkTileScratched(xTap, yTap, xTarget, yTarget, tileQuarterX, tileQuarterY)
-            console.log('getPrize')
             scratchgame.getPrize(rowIter*cols + colIter)
             return true
           colIter++
@@ -294,10 +294,6 @@ tilescratch = (node, jQuery) ->
       #   scratchgame.checkGameOver(true)
 
     sampleScratch = ->
-      console.log('sampleScratch')
-      if scratchgame.is_game_complete
-        refreshCoupons()
-        return  
       hit = 0
 
       colIter = 0
@@ -315,6 +311,7 @@ tilescratch = (node, jQuery) ->
           if checkTileScratched(xTap, yTap, xTarget, yTarget, tileQuarterX, tileQuarterY)
             hit++
             scratchgame.getPrize(rowIter*cols + colIter)
+            refreshCoupons()
           colIter++
         rowIter++
 
@@ -340,7 +337,6 @@ tilescratch = (node, jQuery) ->
 
       unless hasBeenScratched
         hasBeenScratched = true
-        # alert(node)
         node.create(_datatype:"tilescratch", timedrawn: new Date())
 
       false
@@ -674,8 +670,6 @@ class TileScratch
 
     @game_state.revealTile(number)
 
-    console.log(@game_state.tile_ids_revealed)
-
     return if isNaN(prize.number_to_collect)
 
     @.checkGameOver()
@@ -731,42 +725,34 @@ class TileScratch
 
   checkGameOver: (forceGameOver) ->
     console.log('checkGameOver');
-    console.log(@wonPrize);
-    return if @is_game_complete
-    console.log('checkGameOver continuing');
     
     if @wonPrize && (@prizes_to_collect <= @collected_prize_count)
       coupons = @wonPrize.generateCoupons(@node)
       # show the first won coupon in the panel
       html $(".game_over"), coupons[0].html
-      $('.game_over').fadeIn()
-      $('.panel').fadeOut()
 
       if coupons.length > 1
         $(".game_over").append("<p>Plus " + (coupons.length-1) + " more</p>")
       # if more than one coupon won then indicate this below the first coupon
       # todo: think of better alternatives than this approach
       $('.tile-flip-btn .ui-btn-inner').text(@wonPrize.number_to_collect + ' found, you win!')
-      @is_game_complete = true
-      refreshCoupons()
 
     if (Number(@game_state.tile_ids_revealed.length) == Number(@flips))
-      console.log('gameOver on flips')
       @is_game_complete = true
-      $('.game_over').fadeIn()
-      $('.panel').fadeOut()
 
-    if @is_game_complete or forceGameOver
-      console.log('reset')
-      console.log('forceGameover: ' + forceGameOver)
-      @is_game_complete = true
-      @game_state.reset()
-      $('canvas').hide()
-      $('.game_over').fadeIn()
-      $('.panel').fadeOut()
+    if @is_game_complete || forceGameOver
+      unless is_continuing_after_gameover
+        is_continuing_after_gameover = true
+        $('.game_over').fadeIn()
+        $('.panel').fadeOut()      
+        @game_state.reset()
+        $('canvas').hide()
+        unless (@drawn >= @max_daily_draws)
+          $('.game_over').click -> 
+            $(this).hide()
+            $('.panel').show()
+            $('canvas').show()      
       window.clearInterval sampleInterval
-    else 
-      @game_state.save()
 
 
 
