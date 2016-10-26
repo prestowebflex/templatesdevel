@@ -1,5 +1,7 @@
 thisnode = null
 jQuery = null
+hasBeenFlipped = false 
+
 # process html via collection
 # this function just converts an image id to a href
 getimageurl = (id, cb) ->
@@ -197,6 +199,10 @@ tileflip = (node, jq) ->
     prize = boxes.getPrize($_.data("box"), $_.attr("data-box"))
     console.log('boxes.game_state')
     console.log(boxes.game_state)
+
+    unless hasBeenFlipped
+      hasBeenFlipped = true
+      node.create(_datatype:"tileflip", timedrawn: new Date())
 
     #console.log
     html $_.find(".back > .info"), prize.html
@@ -450,7 +456,6 @@ class TileFlip
     console.log(@wonPrize)
 
     if (nToCollect <= nCollected)
-      @node.create(_datatype:"tileflip", timedrawn: new Date())
 
       if @wonPrize?
         # IF WE WIN SOMETHING SHOW THAT!
