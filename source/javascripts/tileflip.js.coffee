@@ -462,7 +462,8 @@ class TileFlip
         # GERNATE ANY COUPON DATA for the won prize
         coupons = @wonPrize.generateCoupons(@node)
         # show the first won coupon in the panel
-        html $(".game_over"), $('<div></div>').html($(coupons[0].html).find('img').first())
+        # note $ here is a alias for jQuery.find()
+        html $(".game_over"), window.jQuery('<div></div>').html(window.jQuery(coupons[0].html).find('img').first())
         if coupons.length > 1
           $(".game_over").append("<p>Plus " + (coupons.length-1) + " more</p>")
         # if more than one coupon won then indicate this below the first coupon
