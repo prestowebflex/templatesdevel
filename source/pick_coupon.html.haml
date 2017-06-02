@@ -1,0 +1,38 @@
+---
+title: Pick a Box (Server-side coupons)
+---
+-content_for :assets do
+  = stylesheet_link_tag "pickabox_coupon"
+  = javascript_include_tag  "phonegap"
+  = javascript_include_tag  "underscore"
+  = javascript_include_tag  "node"
+  = javascript_include_tag  "environment"
+  = javascript_include_tag  "pickabox_coupon"
+.pickaboxcontainer
+  .html_before
+  %div{data:{role:"navbar"},style:"margin-left: -15px; margin-right: -15px;"}
+    %ul
+      %li
+        %a.ui-btn-active{data:{panel:"pickabox"},href:"#"} Pick a box
+      %li
+        %a{data:{panel:"coupons"},href:"#"}
+          Coupons
+  .panels
+    .pickabox
+      .grid.grid4
+        .try_again
+        -(4**2).times.each do |cell|
+          .panel{class: "box#{cell+1}", data: {box: cell}}
+            .front
+              .boxicon
+              .openicon
+            .back
+              .info
+              -#.buttonbar
+              -#  %a{href:"#", data:{role:"button"}} CLOSE
+    .coupons{style: "display: none;"}
+  .html_after
+  -# %div.ui-grid-c
+    -# -4.times.each do
+      -# -('a'..'d').each do |letter|
+        -# .panel{class: "ui-block-#{letter}"}
