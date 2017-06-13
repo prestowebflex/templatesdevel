@@ -1,5 +1,16 @@
 couponPageLocation = "coupons-page"
 
+uuid = yourapp.getuuid()
+access_token = localStorage.getItem('access_token')
+setupHeaders = (xhr) ->
+  xhr.setRequestHeader 'Authorization', "Bearer #{access_token}" if access_token?
+  xhr.setRequestHeader 'X-Client-UUID', uuid
+  for key, value of top.VERSION
+    xhr.setRequestHeader "X-Client-#{key}", value
+  xhr.setRequestHeader 'X-Requested-With', 'XMLHttpRequest'
+  true
+
+
 pickabox = (node, jQuery) ->
   
   # process html via collection
@@ -184,12 +195,12 @@ class Prize
     @data.coupons = {} unless @data.coupons?
 
   generateCoupons: (node) ->
-    generateCouponsSuccess = (data, textStatus, jqXHR) ->
+    generateCouponsSuccess = (data, textStatus, jqXHR) =>
       # data includes:
       #  message to be displayed: success or fail
       window.navigator.notification.alert data.message
 
-    generateCouponsError = (data, textStatus, jqXHR) ->
+    generateCouponsError = (data, textStatus, jqXHR) =>
       window.navigator.notification.confirm "Error generating coupons, retry?", (buttonIndex) ->
         if buttonIndex==1
           # retry ajax
@@ -197,15 +208,16 @@ class Prize
         return
       , "Error", "Yes,Dismiss"
 
-    doAjax = () ->
+    doAjax = () =>
       # generate coupons via ajax
-      $.ajax( { 
-        url: '/api/v2/coupon_claim',
-        data: { 
-          prize_id: @.id
-        }, 
-        success: generateCouponsSuccess,
-        error: generateCouponsError
+
+      $.ajax({ 
+          url: node.collection.url() + "/coupons/#{@id}/create",
+          data: {},
+          dataType: 'json',
+          beforeSend: setupHeaders,
+          success: generateCouponsSuccess,
+          error: generateCouponsError
       })
 
     doAjax() 
