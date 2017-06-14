@@ -1,4 +1,19 @@
-couponPageLocation = "coupons-page"
+
+# setup mocks for cordova native dialogs (if not present)
+
+window.navigator = {} unless window.navigator?
+window.navigator.notification = {} unless window.navigator.notification?
+
+unless window.navigator.notification.confirm?
+  window.navigator.notification.confirm = (message, callback, title, buttons) ->
+      callback? if confirm("#{title}\n#{message}") then 1 else 2
+      return
+unless window.navigator.notification.alert?
+  window.navigator.notification.alert = (message, callback, title, buttons) ->
+      alert "#{title}\n#{message}"
+      callback?()
+      return
+ 
 
 uuid = yourapp.getuuid()
 access_token = localStorage.getItem('access_token')
@@ -192,13 +207,19 @@ class Prize
   constructor: (@id, @data = {}) ->
     {@html, @odds} = @data
     @odds = Number(@odds)
-    @data.coupons = {} unless @data.coupons?
+    #@data.coupons = {} unless @data.coupons?
+    #@coupon_ids = _.chain(@data.coupon_ids or []).map((id) -> Number(id)).compact().value()
 
+  _getCouponData: ->
+    _.compact(for id, coupon of @data.coupons
+        if coupon.coupon_id?
+          {id: Number(coupon.coupon_id), max_redeems: Number(coupon.coupon_count) or 1}
+      )
   generateCoupons: (node) ->
     generateCouponsSuccess = (data, textStatus, jqXHR) =>
       # data includes:
       #  message to be displayed: success or fail
-      window.navigator.notification.alert data.message
+      window.navigator.notification.alert "Coupons created successfully", (->), "Prize awarded"
 
     generateCouponsError = (data, textStatus, jqXHR) =>
       window.navigator.notification.confirm "Error generating coupons, retry?", (buttonIndex) ->
@@ -210,17 +231,19 @@ class Prize
 
     doAjax = () =>
       # generate coupons via ajax
-
       $.ajax({ 
-          url: node.collection.url() + "/coupons/#{@id}/create",
-          data: {},
+          url: node.collection.url() + "/coupons/create_many",
+          data: JSON.stringify({coupons: @_getCouponData()}),
           dataType: 'json',
+          contentType: 'application/json',
+          type: 'POST',
           beforeSend: setupHeaders,
           success: generateCouponsSuccess,
           error: generateCouponsError
       })
+      return
 
-    doAjax() 
+    doAjax() if @data.coupons?
 
     # stub function finish this off
   getCoupon: (id) ->
