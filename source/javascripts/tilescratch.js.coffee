@@ -371,13 +371,28 @@ tilescratch = (node, jQuery) ->
   
     resizeScratchCanvas = -> 
       c = document.getElementById('scratchcanvas')
+
+      # copy the drawn line into temporary canvas
+      tmpCanvas = document.createElement("canvas")
+      tmpCanvas.width = canvas.draw.width
+      tmpCanvas.height = canvas.draw.height
+      tmpCtx = tmpCanvas.getContext("2d")
+      tmpCtx.drawImage(canvas.draw, 0, 0)
+
+      # perform resize of drawn canvas, this blanks the canvas
       c.width = $('.tilescratch').width()
-      console.log "TILESCRATCH WIDTH IS = #{$('.tilescratch').width()}"
       c.height = $('.tilescratch').height()
       canvas.draw.width = c.width
       canvas.draw.height = c.height
       drawWidth = c.width
       drawHeight = c.height
+
+      # copy temp canvas back into drawn canvas before recompositing
+      destCtx = canvas.draw.getContext('2d')
+      destCtx.drawImage(tmpCanvas, 0, 0, canvas.draw.width, canvas.draw.height)
+      tmpCtx = null
+
+
       # draw the stuff to start
       recompositeCanvases()
 
