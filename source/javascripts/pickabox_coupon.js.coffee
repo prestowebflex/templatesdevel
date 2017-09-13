@@ -111,13 +111,12 @@ pickabox = (node, jQuery) ->
     false
 
   # get the coupon tab click ready
-  $('#coupon-tab-header').click ->
+  $("[data-role=navbar] a[data-panel=coupons]").click ->
     content = node.get('content')
     nodeindex = node.collection.get('nodeindex')
     pageLocation = nodeindex.get('nodes')[content.coupon_page]
     if !content.coupon_page
       navigator.notification.alert 'There is no coupons page defined, please notify the page owner', (->), "Error", "Return"
-      return false
     else
       confirmCallback = (confirmResult) ->
         if confirmResult == 1
