@@ -1,0 +1,37 @@
+---
+title: Tile flip
+---
+-content_for :assets do
+  = stylesheet_link_tag "tileflip_coupon"
+  = javascript_include_tag  "underscore"
+  = javascript_include_tag  "node"
+  = javascript_include_tag  "environment_tileflip"
+  = javascript_include_tag  "tileflip_coupon"
+.tileflipcontainer
+  .html_before
+  %div{data:{role:"navbar"},style:"margin-left: -15px; margin-right: -15px;"}
+    %ul
+      %li
+        %a.tile-flip-btn.ui-btn-active{data:{panel:"tileflip"},href:"#"} Tile flip
+      %li
+        %a{href:"#"}
+          Coupons
+  .panels
+    .tileflip
+      .grid.grid4
+        .panel-container
+          -(4**2).times.each do |cell|
+            .panel{class: "box#{cell+1}", data: {box: cell}}
+              .front
+                .tileicon
+              .back
+                .info
+                -#.buttonbar
+                -#  %a{href:"#", data:{role:"button"}} CLOSE
+        .game_over
+    .coupons{style: "display: none;"}
+  .html_after
+  -# %div.ui-grid-c
+    -# -4.times.each do
+      -# -('a'..'d').each do |letter|
+        -# .panel{class: "ui-block-#{letter}"}
