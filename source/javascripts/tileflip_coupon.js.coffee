@@ -135,6 +135,24 @@ tileflip = (node, jq) ->
 
   refreshPanel()
 
+  # get the coupon tab click ready
+  $("[data-role=navbar] a[data-panel=coupons]").click ->
+    content = node.get('content')
+    nodeindex = node.collection.get('nodeindex')
+    pageLocation = nodeindex.get('nodes')[content.coupon_page]
+    if !content.coupon_page
+      navigator.notification.alert 'There is no coupons page defined, please notify the page owner', (->), "Error", "Return"
+    else
+      confirmCallback = (confirmResult) ->
+        if confirmResult == 1
+          window.jQuery.mobile.showPageLoadingMsg()
+          window.location = pageLocation.name
+          true
+      window.navigator.notification.confirm 'Navigate to the coupons page?',confirmCallback , 'View coupons', ['Ok', 'Cancel']
+    false
+
+
+
   # this is just to flip panel bits only.
   # trigger the update of grabbing a prize and initialize it.
   $(".tileflip").on "click", ".flipped", {}, ->
@@ -415,10 +433,11 @@ class TileFlip
       if @wonPrize?
         # IF WE WIN SOMETHING SHOW THAT!
         # GERNATE ANY COUPON DATA for the won prize
-        coupons = @wonPrize.generateCoupons(@node)
+        @wonPrize.generateCoupons(@node)
+        coupons = @wonPrize._getCouponData()
         # show the first won coupon in the panel
         # note $ here is a alias for jQuery.find()
-        html $(".game_over"), window.jQuery('<div></div>').html(window.jQuery(coupons[0].html).find('img').first())
+        html $(".game_over"), window.jQuery('<div></div>').html(window.jQuery(@wonPrize.html).find('img').first())
         if coupons.length > 1
           $(".game_over").append("<p>Plus " + (coupons.length-1) + " more</p>")
         # if more than one coupon won then indicate this below the first coupon
@@ -519,7 +538,7 @@ class Prize
 
     doAjax = () =>
       # generate coupons via ajax
-      $.ajax({ 
+      window.jQuery.ajax({ 
           url: node.collection.url() + "/coupons/create_many",
           data: JSON.stringify({coupons: @_getCouponData()}),
           dataType: 'json',
