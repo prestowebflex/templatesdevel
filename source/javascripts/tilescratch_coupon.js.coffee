@@ -769,7 +769,7 @@ class Prize
 
     doAjax = () =>
       # generate coupons via ajax
-      $.ajax({ 
+      window.jQuery.ajax({ 
           url: node.collection.url() + "/coupons/create_many",
           data: JSON.stringify({coupons: @_getCouponData()}),
           dataType: 'json',
