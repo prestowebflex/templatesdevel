@@ -86,22 +86,6 @@ tilescratch = (node, jQuery) ->
 
   refreshPanel()
 
-  # deal with the link for tile flip and coupons
-  # really only has to update coupon counts and change the box class
-  $("[data-role=navbar] a").click ->
-    $(".panels > div").hide()
-    $(".panels > .#{$(@).data("panel")}").show()
-
-    isGamePanel = $(@).data("panel") == 'tilescratch'
-    if isGamePanel
-      $('canvas').show()
-      $(".panels").css('background-size', 'cover')
-    else
-      $('canvas').hide()
-      $(".panels").css('background-size', '0% 0%')
-      .css('padding-top', '0px')
-
-
   #############################
   # SCRATCH INTERACTIVITY START
   #############################

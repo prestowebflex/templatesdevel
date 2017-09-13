@@ -71,13 +71,7 @@ pickabox = (node, jQuery) ->
   findCoupon = (id) ->
     _.find(@coupons, (c) -> c.id is id)
   refreshPanel()
-  
-  # deal with the link for pick a box and coupons
-  # really only has to update coupon counts and change the box class
-  $("[data-role=navbar] a").click ->
-    $(".panels > div").hide()
-    $(".panels > .#{$(@).data("panel")}").show()
-  
+    
   # this is just to flip panel bits only.
   # trigger the update of grabbing a prize and initialize it.
   $(".pickabox").on "click", ".flipped", {}, ->
