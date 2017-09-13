@@ -17,6 +17,7 @@ node = new Node
     type: "everyday" # just midnight every day 0 length only using start of interval
     hour: 0
     minute: 0
+    coupon_page: 1
     prizes:
       2:
         html: "AA You Win <img />"
