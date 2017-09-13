@@ -86,6 +86,23 @@ tilescratch = (node, jQuery) ->
 
   refreshPanel()
 
+  # get the coupon tab click ready
+  $("[data-role=navbar] a[data-panel=coupons]").click ->
+    content = node.get('content')
+    nodeindex = node.collection.get('nodeindex')
+    pageLocation = nodeindex.get('nodes')[content.coupon_page]
+    if !content.coupon_page
+      navigator.notification.alert 'There is no coupons page defined, please notify the page owner', (->), "Error", "Return"
+    else
+      confirmCallback = (confirmResult) ->
+        if confirmResult == 1
+          window.jQuery.mobile.showPageLoadingMsg()
+          window.location = pageLocation.name
+          true
+      window.navigator.notification.confirm 'Navigate to the coupons page?',confirmCallback , 'View coupons', ['Ok', 'Cancel']
+    false
+
+
   #############################
   # SCRATCH INTERACTIVITY START
   #############################
@@ -254,7 +271,6 @@ tilescratch = (node, jQuery) ->
           if checkTileScratched(xTap, yTap, xTarget, yTarget, tileQuarterX, tileQuarterY)
             hit++
             scratchgame.getPrize(rowIter*cols + colIter)
-            refreshCoupons()
           colIter++
         rowIter++
 
@@ -630,7 +646,7 @@ class TileScratch
 
     return if isNaN(prize.number_to_collect)
 
-    @.checkGameOver()
+    @checkGameOver()
 
     prize
 
@@ -685,9 +701,10 @@ class TileScratch
     console.log('checkGameOver');
     
     if @wonPrize && (@prizes_to_collect <= @collected_prize_count)
-      coupons = @wonPrize.generateCoupons(@node)
+      @wonPrize.generateCoupons(@node)
+      coupons = @wonPrize._getCouponData()
       # show the first won coupon in the panel
-      html $(".game_over"), $('<div></div>').html($(coupons[0].html).find('img').first())
+      html $(".game_over"), $('<div></div>').html($(@wonPrize.html).find('img').first())
 
       if coupons.length > 1
         $(".game_over").append("<p>Plus " + (coupons.length-1) + " more</p>")
