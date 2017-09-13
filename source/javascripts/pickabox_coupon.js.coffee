@@ -14,10 +14,7 @@ unless window.navigator.notification.alert?
       callback?()
       return
  
-uuid = null
-yourapp = null
-yourapp ?= yourapp
-uuid ?= yourapp?.getuuid()
+uuid = yourapp.getuuid()
 access_token = localStorage.getItem('access_token')
 setupHeaders = (xhr) ->
   xhr.setRequestHeader 'Authorization', "Bearer #{access_token}" if access_token?
@@ -115,47 +112,19 @@ pickabox = (node, jQuery) ->
 
   # get the coupon tab click ready
   $('#coupon-tab-header').click ->
-    content = node?.get('content')
-    collection = node?.collection
-    if !collection.get
-      content = { coupon_page: 1 }
-      pageLocation = { name: "this_was_just_a_test" } 
-    else 
-      nodeindex = collection?.get('nodeindex')
-      pageLocation = nodeindex?.get('nodes')[content?.coupon_page]
-
+    content = node.get('content')
+    nodeindex = node.collection.get('nodeindex')
+    pageLocation = nodeindex.get('nodes')[content.coupon_page]
     if !content.coupon_page
-      message = 'There is no coupons page defined, please notify the page owner'
-
-      alertCallback = ->
-
-      title = 'Error'
-      buttonName = 'Return'
-      if ( (_ref = window.navigator) ? ( (_ref1 = _ref.notification) ? _ref1.alert ) ) != null
-        navigator.notification.alert message, alertCallback, title, buttonName
-      else
-        alert message
-        alertCallback.call this
+      navigator.notification.alert 'There is no coupons page defined, please notify the page owner', (->), "Error", "Return"
       return false
-    message = 'Navigate to the coupons page?'
-
-    confirmCallback = (confirmResult) ->
-      if confirmResult == 1
-        window.location = pageLocation.name
-        jQuery.mobile.showPageLoadingMsg()
-        true
-      else
-        false
-
-    title = 'View coupons'
-    buttonLabels = [
-      'Ok'
-      'Cancel'
-    ]
-    if ( (_ref = window.navigator) ? ( (_ref1 = _ref.notification) ? _ref1.confirm ) ) != null
-      window.navigator.notification.confirm message, confirmCallback, title, buttonLabels
     else
-      confirmCallback.call this, if confirm(message) then 1 else 2
+      confirmCallback = (confirmResult) ->
+        if confirmResult == 1
+          window.jQuery.mobile.showPageLoadingMsg()
+          window.location = pageLocation.name
+          true
+      window.navigator.notification.confirm 'Navigate to the coupons page?',confirmCallback , 'View coupons', ['Ok', 'Cancel']
     false
 
 
