@@ -1,4 +1,3 @@
-
 # setup mocks for cordova native dialogs (if not present)
 
 window.navigator = {} unless window.navigator?
@@ -14,6 +13,7 @@ unless window.navigator.notification.alert?
       callback?()
       return
  
+
 uuid = yourapp.getuuid()
 access_token = localStorage.getItem('access_token')
 setupHeaders = (xhr) ->
@@ -25,38 +25,100 @@ setupHeaders = (xhr) ->
   true
 
 
-pickabox = (node, jQuery) ->
-  
-  # process html via collection
-  html = (jquery, html) ->
-    # load in html
-    jquery.html html
-    # proces each image
-    jquery.find("img").not("[src]").each (i) ->
-      img = $ @
-      node.collection.getAsync "image", img.data("image"), (image) ->
-        image.geturl (href) ->
-          img.attr "src", href
+thisnode = null
+jQuery = null
+hasBeenFlipped = false 
 
-  # quick mockup around jquery
-  $ = (selector) ->
-    jQuery.find selector
-  # initialize pick a box
-  boxes = new PickABox node.get("content"), node
+# process html via collection
+# this function just converts an image id to a href
+getimageurl = (id, cb) ->
+  thisnode.collection.getAsync "image", id, (image) ->
+    image.geturl (href) ->
+      cb?(href)
+# this processes images without src attributes and sets the href
+html = (jquery, html) ->
+  jquery.html html
+  jquery.find("img").not("[src]").each (i) ->
+    img = window.jQuery @
+    getimageurl img.data("image"), (href) ->
+      img.attr "src", href
+# extract the first image from a html snippet for use in custom css or whatever
+getimagefromhtml = (html, cb) ->
+  thisEl = window.jQuery("<div />").html html 
+  img = thisEl.find("img").not("[src]")
+  if img.length > 0
+    getimageurl img.data("image"), cb
+
+# quick mockup around jquery
+$ = (selector) ->
+  jQuery.find selector
+        
+        
+        
+  # # load in html
+  # jquery.each( (i) =>
+  #   thisEl = $(jquery[i])
+  #   thisEl.html(html)
+  #
+  #   thisImg = thisEl.find('img')
+  #
+  #   if thisImg.hasClass('backgroundImage')
+  #     thisEl.css 'background-image', 'url(' + thisImg.attr('src') + ')'
+  #       .css('background-size', 'contain')
+  #
+  #     thisImg.remove()
+
+
+tileflip = (node, jq) ->
+  thisnode = node
+  jQuery = jq
   
-  html $(".html_before"), boxes.html_before  
-  html $(".html_after"), boxes.html_after  
-  html $(".try_again"), boxes.html_tryagain  
-  #prizes = boxes.getPrizes 16
+  # initialize tile flip
+  nodeContent = node.get("content")
+
+  boxes = new TileFlip nodeContent, node
+
+  html $(".html_before"), boxes.html_before
+  html $(".html_after"), boxes.html_after
+  html $(".game_over"), boxes.html_gameover
+  # get the actual url for the background image out of the html
+  getimagefromhtml nodeContent.card_back_html, (url) ->
+    tileicon = $(".tileicon")
+    tileicon.html "<div></div>"
+    tileicon.find("div").css
+      "background-image": "url('#{url}')"
+      "background-color": nodeContent.card_back_color
+      "background-size": "contain"
+      
+  # delay this until the grid height isn't 0
+  adjustHeight = ->
+    gridHeight = $('.tileflip').innerHeight()
+    if gridHeight > 0
+      boxAspect = nodeContent.box_image_aspect || 1
+
+      if boxAspect > 1
+        gridHeight = $('.tileflip').innerHeight()
+        boxHeight = gridHeight / 4
+        $('.panel').css('height', boxHeight+'px')
+        $('.panel').css('width', boxHeight*boxAspect*0.95)
+      else 
+        gridWidth = $('.tileflip').innerWidth()
+        boxWidth = gridWidth / 4
+        $('.panel').css('width', boxWidth+'px')
+        $('.panel').css('height', boxWidth / boxAspect*0.95)
+    else
+      window.setTimeout adjustHeight, 50
+  adjustHeight()
   
   #refresh panel based upon the state of the boxes
-  refreshPanel = (revealbox) ->
-    pb = $(".pickabox").removeClass("available unavailable")
+  # reveal box is passed in on flip to set correct css for visuals
+  refreshPanel = (revealbox = null) ->
+    pb = $(".tileflip").removeClass("available unavailable")
     if boxes.isValid()
       pb.addClass "available"
     else
       pb.addClass "unavailable"
-    $(".panel").removeClass("flipped hidden revealed available").each ->
+    $(".panel").removeClass("hidden revealed available").each ->
       p = $(@)
       box = p.data "box"
       # remove presentastional classes
@@ -64,51 +126,14 @@ pickabox = (node, jQuery) ->
       if boxes.isRevealed(box) and revealbox != box
         p.addClass "revealed"
       else
-        p.addClass "available"
-  
+        if !p.hasClass("locked")
+          p.addClass "available"
+
   @coupons = []
   findCoupon = (id) ->
     _.find(@coupons, (c) -> c.id is id)
-  refreshPanel()
-    
-  # this is just to flip panel bits only.
-  # trigger the update of grabbing a prize and initialize it.
-  $(".pickabox").on "click", ".flipped", {}, ->
-    refreshPanel()
-    false
-    #panel = $(@).parents(".panel")
-    #console.log panel.parent().find(".panel")
-    #.removeClass "hidden flipped"
 
-  # any front available facing box can be clicked
-  # while nothing is flipped
-  .on "click", ":not(:has(.flipped)) .available", {}, ->
-    return false unless boxes.isValid()
-    $_  = $(@)
-    #return if $_.parent().find(".flipped").length
-    #unless $_.hasClass("flipped") or $_.hasClass("revealed")
-    prize = boxes.getPrize($_.data("box"))
-    #console.log
-    html $_.find(".back > .info"), prize.html
-    #console.log prize
-     # setup the dada
-    refreshPanel($(@).data("box"))
-    # setup the visuals
-    $_.addClass "flipped"
-    $_.parent().find(".panel").not(@).addClass "hidden"
-    # viewing backside of card
-    # # put back to front of card #mark as revealed
-    # $(@).parent().find(".panel").removeClass "hidden"
-    # $(@).removeClass "flipped"
-  # else
-    # # determine if the panel has been viewed before
-    # # How is this to be done
-    # $(@).removeClass "selectable"
-    # $(@).parent().find(".panel").not(@).addClass "hidden"
-    # $(@).addClass "flipped"
-    false
-  .on "touch", ->
-    false
+  refreshPanel()
 
   # get the coupon tab click ready
   $("[data-role=navbar] a[data-panel=coupons]").click ->
@@ -127,83 +152,355 @@ pickabox = (node, jQuery) ->
     false
 
 
-# pick a box pulls from a pool of prizes
-class PickABox
+
+  # this is just to flip panel bits only.
+  # trigger the update of grabbing a prize and initialize it.
+  $(".tileflip").on "click", ".flipped", {}, ->
+    refreshPanel()
+    false
+    #panel = $(@).parents(".panel")
+    #console.log panel.parent().find(".panel")
+    #.removeClass "hidden flipped"
+
+  # any front available facing box can be clicked
+  # while nothing is flipped
+  .on "click", ".available", {}, ->
+    return false unless boxes.isValid()
+    $_  = $(@)
+    #return if $_.parent().find(".flipped").length
+    #unless $_.hasClass("flipped") or $_.hasClass("revealed")
+    prize = boxes.getPrize($_.data("box"), $_.attr("data-box"))
+    console.log('boxes.game_state')
+    console.log(boxes.game_state)
+
+    unless hasBeenFlipped
+      hasBeenFlipped = true
+      node.create(_datatype:"tileflip", timedrawn: new Date())
+
+    #console.log
+    html $_.find(".back > .info"), prize.html
+    #console.log prize
+     # setup the dada
+    refreshPanel($(@).data("box"))
+    # setup the visuals
+    $_.addClass "flipped"
+    #$_.parent().find(".panel").not(@).addClass "hidden"
+
+    # viewing backside of card
+    # # put back to front of card #mark as revealed
+    $(@).parent().find(".panel").removeClass "hidden"
+
+  # else
+    # $(@).removeClass "flipped"
+    # # determine if the panel has been viewed before
+    # # How is this to be done
+    # $(@).removeClass "selectable"
+    # $(@).parent().find(".panel").not(@).addClass "hidden"
+    # $(@).addClass "flipped"
+    false
+  .on "touch", ->
+    false
+
+# TileFlipState: information about a flip game for storage / retrieval
+class TileFlipState
+  node_id: null
+  did_load: false
+  updated_at: null
+  tile_ids_flipped: []
+  prizes: []
+  prize_selected_id: null
+  constructor: ( node_id ) -> 
+    @node_id = node_id
+    @tile_ids_flipped = []
+    @.load()
+    
+  getStorageKey: () ->
+    '_tileflip_node_id_' + @node_id
+
+  load: () ->
+    dataString = localStorage.getItem(@.getStorageKey()) if @.getStorageKey()
+    dataObj = JSON.parse dataString if dataString
+
+    {@updated_at, @tile_ids_flipped, @prize_selected_id, @prizes, @prize_pool} = dataObj if dataObj
+
+    @did_load = true if dataObj
+
+  toJson: () ->
+    JSON.stringify(@)
+
+  save: () ->     
+    localStorage.setItem(@.getStorageKey(), @.toJson())
+
+  reset: () -> 
+    localStorage.removeItem(@.getStorageKey())
+
+  didLoad: () -> 
+    @did_load
+
+  flipTile: (tile_id) ->
+    @tile_ids_flipped.push(tile_id) if @tile_ids_flipped.indexOf(tile_id) is -1
+
+  prizeId: () -> 
+    @prize_selected_id
+
+# tile flip pulls from a pool of prizes
+class TileFlip
+  game_state: null 
   prize_pool: null
   html_before: ""
   html_after: ""
-  html_tryagain: "Try Again"
+  html_gameover: ""
+  html_tryagain: ""
+  html_card_back: ""
   # number of items in the pool
   pool_size: null
   # size of the grid
   size: 16
   drawn_prizes: null # the prize state as drawn
-  draws: 0
   drawn: 0
+  flips: 0
+  prize_counts: []
+  is_game_complete: false
   constructor: (data = {}, @node) ->
-    {@html_before,@html_after,@html_tryagain,@draws} = data
+    {@html_before,@html_after,@html_tryagain,@html_gameover,@html_card_back,@flips,@max_daily_draws,@prizes,@prize_pool,@won_prize} = data
     @pool_size = Number(data.pool_size ? 100)
-    @prize_pool = for id, prize of data.prizes
-      # TODO don't include prizes which fall outsize the date spec
-      new Prize(id, prize)
-    # put THE dud prize into the prize pool now
-    @prize_pool.push new Prize(0, {html: data.html_nowin, odds: (@pool_size - @_calculatePoolSize())})
-    # predraw the prizes now
-    @prizes = @getRandomPrizes()
-    @drawn_prizes = [] # store the drawn prizes somewhere
+
+    @game_state = new TileFlipState( @node.getRawId() )
+
+    doLoadGameData = @game_state.didLoad()
     
+    nodeUpdatedAt = @node.get('updated_at')
+
+    # make like we don't load game data until the 
+    # case of the disappearing tiles is solved
+
+    # if @game_state.updated_at != nodeUpdatedAt
+
+    if true 
+      doLoadGameData = false
+      @game_state.reset()
+      @game_state.tile_ids_flipped = []
+      @game_state.save()
+      @game_state.updated_at = nodeUpdatedAt
+
+    # assemble the prize pool
+    if doLoadGameData
+      @prize_pool = []
+      for prize in @game_state.prize_pool
+        @prize_pool.push(new Prize(prize.id, {html: prize.data.html, odds: prize.data.odds, coupons: prize.data.coupons, number_to_collect: prize.data.number_to_collect, number_collected: prize.data.number_collected }))
+    else
+      @prize_pool = for id, prize of data.prizes
+        # TODO don't include prizes which fall outsize the date spec
+        new Prize(id, prize)
+
+    @prize_counts = [0..@prize_pool.length].map -> 0
+
+    @game_state.prize_pool = @prize_pool
+
+    # calculate the odds of the dud prize from the prize pool
+    @dudPrize = new Prize("0", {html: data.html_nowin, odds: (@pool_size - @_calculatePoolSize())})
+
+    @drawn_prizes = [] # store the drawn prizes somewhere
+
+    # predraw the prizes now
+    loadedPrizeId = @game_state.prizeId()
+    if doLoadGameData
+      @prizes = []
+      for prize in @game_state.prizes
+        @prizes.push(new Prize(prize.id, prize.data))
+      tempPrize = _.find @prize_pool, (prize) -> prize.id is loadedPrizeId
+      @wonPrize = wonPrize = new Prize(tempPrize.id, {html: tempPrize.data.html, odds: tempPrize.data.odds, coupons: tempPrize.data.coupons, number_to_collect: tempPrize.data.number_to_collect, number_collected: tempPrize.data.number_collected }) if tempPrize
+
+      $('.panel').each (i, panel) =>
+        htmlContent = @game_state.prizes[i].html
+        html $(panel).find('.back .info'), htmlContent
+        return
+
+      #restore the panels flipped state 
+      for flippedId in @game_state.tile_ids_flipped
+        panel = $('.panel[data-box="'+flippedId+'"]')
+        panel.addClass('flipped').addClass('locked')
+    else        
+      @prizes = @getRandomPrizes()
+      shuffle(@prizes)
+      @game_state.prizes = @prizes
+
+    @game_state.save()
+
     # make it reset at midnight every day by default
     interval = RepeatingIntervalGenerator.generate(_.extend {type: "everyday", hour:0, minute:0}, data, {length: 0, allday: 0, times: 1})[0]
     period = interval.prev().getStart() # get the start of the previous period
     @next_period = interval.getStart() # this is the time to start the next interval
     # filter this by date number of records is the box count
-    @drawn = _.chain(@node.where(_datatype:"boxshow")).select((v) ->
+    @drawn = _.chain(@node.where(_datatype:"tileflip")).select((v) ->
         d = new Date(v.get("timedrawn"))
         d.valueOf() > period.valueOf()
        ).value().length
-  # generate N number of prizes as an array
+
+  shuffle = (arr) ->
+    i = arr.length
+    return arr unless i > 0
+
+    while --i
+      j = Math.floor(Math.random() * (i+1))
+      [arr[i], arr[j]] = [arr[j], arr[i]] # use pattern matching to swap
+
+  # generate N number of prizes as an array  
   getRandomPrizes: (number) ->
-    number = @size unless number?
-    @generateRandomPrize() for [1..number]
-  
+
+    tempPrizes = []
+    # decide which prize we are going to win
+    @wonPrize = wonPrize = @generateRandomPrize()
+    @game_state.prize_selected_id = wonPrize.id if wonPrize
+    @game_state.save()
+
+    # put enough of the won prize in the array
+    console.log('wonPrize')
+    console.log(wonPrize)
+
+    if wonPrize?
+      tempPrizes.push wonPrize for [1..wonPrize.number_to_collect]
+
+    # remove the won prize from the pool
+    to_fill = (prize for prize in @prize_pool when prize.id isnt wonPrize?.id)
+    # reorder the prize pool by a weighted random weight.
+    for prize in to_fill
+      prize.sort_weight = (1 / prize.odds) * Math.random()
+      prize.pieces_out = 0
+    to_fill.sort (a,b) -> b.sort_weight - a.sort_weight
+    console.log to_fill
+
+    # this puts the prizes onto the array keeping track of the number of prizes put out
+    # so this will stop these prizes hitting their limit
+    fillprize = (prize, number=1) =>
+      if prize?
+        for [1..number]
+          if tempPrizes.length < @size
+            if prize.pieces_out < (prize.number_to_collect-1)
+              prize.pieces_out += 1
+              tempPrizes.push(prize)
+
+    # 1st step is to fill 1 or 2 prizes depending if you won a prize
+    p1 = to_fill.pop()
+    fillprize(p1, p1.number_to_collect-1) if p1?
+    # if wonPrize is filled then don't do the n-1 thing twice
+    unless wonPrize?
+      p2 = to_fill.pop()
+      fillprize(p2, p2.number_to_collect-1) if p2?
+
+    for i in [0..(@size-1)]
+      # loop over the remaining prizes
+      fillprize(to_fill[i % to_fill.length])
+    # fill the rest with the dud prize if any
+    while tempPrizes.length < @size
+      tempPrizes.push(@dudPrize)
+    # # fill the rest of the array with other prizes
+    # for prize in to_fill
+    #   # IMPORTANT that there aren't enough other prizes to win anything else
+    #   for [1..(prize.number_to_collect - 1)]
+    #
+    # # if the array can't be filled with other prizes without causing a win
+    # # then fill the array with more of the won prize until array is full
+
+    return tempPrizes
+
   # get a prize for a boxx
   getPrize: (number) ->
-    if !@isRevealed(number) and @isValid() 
-      @node.create(_datatype:"boxshow", timedrawn: new Date())
-      @drawn++
-      @prizes[number].generateCoupons(@node)
-      @drawn_prizes[number] = @prizes[number]
-  
-  # is the prize revaled
+
+    prize = @prizes[number]
+    foundPrize = _.find(@prize_pool, (o) -> o.id == prize.id)
+    poolIndex = @prize_pool.indexOf(foundPrize)
+
+    if !@isRevealed(number) and @isValid() and poolIndex > -1
+      
+      # increment this prize count
+      nCollected = ++@prize_counts[poolIndex]
+
+      # save the updated prize pool data (number_collected)
+      # not
+      #@game_state.prize_pool = @prize_pool
+
+    nToCollect = @prizes[number].number_to_collect
+    nToCollect = -1 if !nToCollect
+
+    @game_state.flipTile(number)
+
+    console.log(nToCollect + ' <= ' + nCollected)
+    console.log(@wonPrize)
+
+    if (nToCollect <= nCollected)
+
+      if @wonPrize?
+        # IF WE WIN SOMETHING SHOW THAT!
+        # GERNATE ANY COUPON DATA for the won prize
+        @wonPrize.generateCoupons(@node)
+        coupons = @wonPrize._getCouponData()
+        # show the first won coupon in the panel
+        # note $ here is a alias for jQuery.find()
+        html $(".game_over"), window.jQuery('<div></div>').html(window.jQuery(@wonPrize.html).find('img').first())
+        if coupons.length > 1
+          $(".game_over").append("<p>Plus " + (coupons.length-1) + " more</p>")
+        # if more than one coupon won then indicate this below the first coupon
+        # todo: think of better alternatives than this approach
+        $('.tile-flip-btn .ui-btn-inner').text(nCollected + ' found, you win!')
+        @is_game_complete = true
+
+    if (Number(@game_state.tile_ids_flipped.length) == Number(@flips))
+      @is_game_complete = true
+
+    if @is_game_complete
+      @game_state.reset()
+    else 
+      @game_state.save()
+
+    @prizes[number]
+
   isRevealed: (boxNumber) ->
-    @drawn_prizes[boxNumber]?
-  
-  # is the current pick a box valid to draw from
+    # realise that this should be saved / loaded with game data
+    @game_state.tile_ids_flipped.indexOf(boxNumber) isnt -1
+
+  # is the current tile flip valid to draw from
   isValid: ->
-    @drawn < @draws   
+    # need to decide when to stop the flips: 
+    # .. when the prize is won?
+    # .. when all panels are revealed?
+    # .. when daily draws are exceeded?
+    if @is_game_complete
+      return false
+    if (@drawn >= @max_daily_draws)
+      html $(".game_over"), @node.get('content').html_tryagain
+      return false
+
+    @is_game_complete = Number(@flips) <= Number(@game_state.flipped)
+    !@is_game_complete
+
   # genrate single prize
+  # it now returns null if no prize is won to let other code no no prize
   generateRandomPrize: ->
     # draw a prize based upon the pool size and odds etc...
-    number = Math.random() * @getPoolSize() # number between 
+    number = Math.random() * @getPoolSize() # number between
     # decrement number till it's -ve
     for prize in @prize_pool
       number -= prize.odds
       return prize if number < 0
+    return null # not a winner
+
   # prize pool size
   getPoolSize: -> @pool_size
-  
+
   _calculatePoolSize: ->
     pool_size = 0
     for prize in @prize_pool
       pool_size += prize.odds
     pool_size
-    
+
   getCoupon: (id) ->
     # get the id of a specific coupon
     # id is split into 2 parts
     [prizeId, couponId] = id.split("-")
     prize = _.find(@prize_pool, (o) -> o.id == prizeId)
     prize?.getCoupon couponId
+
 # a prize includes 1 or more coupons
 class Prize
   coupons: null
@@ -212,12 +509,14 @@ class Prize
   validTo: new Date(2038,1,1) # leave this out for now
   validFrom: new Date(0) # leave this out for now
   html: ""
+  number_collected: 0
+  number_to_collect: 0
   constructor: (@id, @data = {}) ->
-    {@html, @odds} = @data
+    {@html, @odds, @number_to_collect, @number_collected} = @data
     @odds = Number(@odds)
+    @number_to_collect = Number(@number_to_collect)
+    @number_collected = Number(@number_collected)
     #@data.coupons = {} unless @data.coupons?
-    #@coupon_ids = _.chain(@data.coupon_ids or []).map((id) -> Number(id)).compact().value()
-
   _getCouponData: ->
     _.compact(for id, coupon of @data.coupons
         if coupon.coupon_id?
@@ -239,7 +538,7 @@ class Prize
 
     doAjax = () =>
       # generate coupons via ajax
-      $.ajax({ 
+      window.jQuery.ajax({ 
           url: node.collection.url() + "/coupons/create_many",
           data: JSON.stringify({coupons: @_getCouponData()}),
           dataType: 'json',
@@ -256,8 +555,9 @@ class Prize
     # stub function finish this off
   getCoupon: (id) ->
     @data.coupons[id]
-    
-RepeatingIntervalGenerator = 
+
+
+RepeatingIntervalGenerator =
   generate: (spec) ->
     # initialize one of the time based classes
     gen = (spec={}, kls) ->
@@ -266,12 +566,12 @@ RepeatingIntervalGenerator =
         o.setMinutes(spec.length) if spec.length?
         o.setStartTime(spec.hour, spec.minute) if spec.hour? and spec.minute?
       o
-    filterArray = (array) -> 
+    filterArray = (array) ->
       Number(x) for x in array when x isnt ""
     makeArray = (spec, generator) ->
       # generator = generator.interval()
       # # if the current start time - the leeway (rewind time) is less than current time add it in
-      # if (generator.getStart().valueOf() - (spec.leeway_before*60*1000)) < new Date().valueOf() 
+      # if (generator.getStart().valueOf() - (spec.leeway_before*60*1000)) < new Date().valueOf()
         # if spec.generate_extra=="1"
           # intervals.push generator
       # 1st interval? do checks
@@ -281,7 +581,7 @@ RepeatingIntervalGenerator =
         generator = generator.next()
         int
       # if the 1st interval falls within the leeway time
-        # and generate 
+        # and generate
       if (intervals[0].getStart().valueOf() - (spec.leeway_before*60*1000)) < new Date().valueOf()
         unless spec.generate_extra=="1"
           intervals[1...]
@@ -290,7 +590,7 @@ RepeatingIntervalGenerator =
       else
         # chop the end off
         intervals[...-1]
-        
+
     switch spec.type
       when "everyday"
         o = gen(spec, RepeatingInterval.EveryDay)
@@ -315,7 +615,7 @@ RepeatingIntervalGenerator =
         weeks = for x in spec.month_days when x isnt ""
           # day week use regexps to split out
           [day, week] = x.split ","
-          [Number(week), Number(day)] 
+          [Number(week), Number(day)]
         o.setDayWeeks weeks...
         makeArray(spec, o)
       when "duration_days"
@@ -329,7 +629,7 @@ RepeatingIntervalGenerator =
 ###
   A time interval
   Declared as a length and start forumula
-  
+
 ###
 class TimeInterval
   # has start / end
@@ -366,10 +666,10 @@ class TimeInterval
   # check if a bunch of values are the same
   valuesSame: (values...) ->
     for value in values
-      return false unless @getStart()["get#{value}"]() == @getEnd()["get#{value}"]() 
+      return false unless @getStart()["get#{value}"]() == @getEnd()["get#{value}"]()
     true
   equals: (interval) ->
-    @getStart().valueOf?()==interval?.getStart().valueOf?() and @getEnd().valueOf?()==interval?.getEnd().valueOf?()  
+    @getStart().valueOf?()==interval?.getStart().valueOf?() and @getEnd().valueOf?()==interval?.getEnd().valueOf?()
   toString: ->
     start = formatTime @getStart()
     end = formatTime @getEnd()
@@ -404,22 +704,22 @@ class TimeInterval
 
 ###
   A repeating interval generator class
-    
+
     only works on same day but the date pattern changes
-    
-    
+
+
     This generates a series of time interval object based upon
     a schedule
-    
+
     these are generated on a daily basis
-    
+
 ###
 
 
 # the repeating interval class just visualiuses a series
 # of time slots
 class RepeatingInterval extends TimeInterval
-  
+
   #utility method to get the number of days in the month given by the date passed in
   _daysInMonth = (date) ->
     # go to next month and go back 1 day (0th date)
@@ -480,24 +780,24 @@ class RepeatingInterval extends TimeInterval
       if ++counter > 120 # days
         throw Error "Infinite loop tried #{counter} times!"
     interval
-      
+
   # interval just return self
   interval: -> @
 
   isWithinStart: ->
     @isWithinInterval(@spec.startTime)
-  
+
   # these are the generator classes
   # so these are used to generate sequences of intervals
   class BaseInterval
-    
+
 
     # default is midnight
     # default is a whole day 00:00 -> 23:59:59
     # get the repeating interval method
-    
+
     _intervalNames = ['hour', 'minute', 'second', 'millisecond']
-    
+
     # default length is 1 day
     length: 60*60*1000*24 - 1 # 1 hour * milliseconds * 1 day
     hour: 0
@@ -512,12 +812,12 @@ class RepeatingInterval extends TimeInterval
       new @constructor.intervalClass(@, @startTime)
 
     # this is a delegate method to the generator
-    next: -> @interval().next()    
+    next: -> @interval().next()
     prev: -> @interval().prev()
     equals: (interval) -> @interval().equals(interval)
     getStart: -> @interval().getStart()
     getEnd: -> @interval().getEnd()
-        
+
     setMilliseconds: (ms) ->
       if ms > 7 * 24 * 60 * 60 * 1000 - 1
         throw Error "Length of interval can not be more than 1 week"
@@ -561,9 +861,9 @@ class RepeatingInterval extends TimeInterval
       newDate
   # constructor takes a mydate object
   # work out interval that falls on time or next
-    
+
   class @Daily extends BaseInterval
-    
+
     _validDays = [0..6]
 
     # this handles multiple days per week
@@ -572,17 +872,17 @@ class RepeatingInterval extends TimeInterval
     # this is a single day of month
     # from current one work out the next instance
     days: _validDays
-    
+
     # set the repeating days, By default every day
     setDays: (days...) ->
       days = _.flatten(days)
       unless _.every(days, (v) -> _.contains(_validDays, v))
         throw Error "Days must be between 0 and 6"
       if days.length == 0
-        throw Error "Must set at least 1 day" 
+        throw Error "Must set at least 1 day"
       @days = _.chain(days).uniq().sort().value()
       @
-    # this is the generator class which returns 
+    # this is the generator class which returns
     class DailyRepeatingInterval extends RepeatingInterval
       @scandays: 7
       _validDate: (date) ->
@@ -591,12 +891,12 @@ class RepeatingInterval extends TimeInterval
 
     @intervalClass: DailyRepeatingInterval
   class @EveryDay extends @Daily
-    setDays: -> # null function  
+    setDays: -> # null function
   class @MonthlyDate extends BaseInterval
     # this is the 1st of the month regarless of date
     # from current one work out next instance
     _validDates = (x for x in [-3..31] when x isnt 0)
-    
+
     # every day is valid
     dates: _validDates
     setDates: (dates...) ->
@@ -604,16 +904,16 @@ class RepeatingInterval extends TimeInterval
       unless _.every(dates, (v) -> _.contains(_validDates, v))
         throw Error "Days must be between 0 and 6"
       if dates.length == 0
-        throw Error "Must set at least 1 day" 
+        throw Error "Must set at least 1 day"
       @dates = _.chain(dates).uniq().sort().value()
       @
-    
+
     class MonthlyDateRepeatingInterval extends RepeatingInterval
       @scandays: 1
       _validDate: (date) ->
         # convert -ve dates into actual date values
         # -1 means last day of month etc...
-        daysInMonth = _daysInMonth(date) 
+        daysInMonth = _daysInMonth(date)
         # convert the dates
         dates = for v in @spec.dates
           if v < 0
@@ -622,7 +922,7 @@ class RepeatingInterval extends TimeInterval
         # is the day of this date one of our target days
         _.indexOf(dates, date.getDate()) != -1
       #next is simply myself combined with the end interval
-      
+
     # save a reference to this class on the class itself to be reused by the parent classes
     @intervalClass: MonthlyDateRepeatingInterval
 
@@ -633,7 +933,7 @@ class RepeatingInterval extends TimeInterval
     # default is 2nd last Sunday of the month
     # week number is first followed by the day number
     dayWeeks: [[_validWeeks[0], _validDays[0]]]
-    
+
     setDayWeeks: (ranges...) ->
       throw Error "Need at least 1 range" unless ranges.length > 0
       # check values
@@ -641,7 +941,7 @@ class RepeatingInterval extends TimeInterval
         throw Error "Need 2 values" unless range.length == 2
         throw Error "Week out of range -2->5 except 0 required got #{range[0]}" unless _.indexOf(_validWeeks, range[0], true) != -1
         throw Error "Day out of range 0-6 got #{range[1]}" unless _.indexOf(_validDays, range[1], true) != -1
-      @dayWeeks = ranges 
+      @dayWeeks = ranges
     # this handles day of month
     # 1st sunday of month
     # from current one work out next instance
@@ -652,11 +952,11 @@ class RepeatingInterval extends TimeInterval
         # convert -ve dates into actual date values
         # -1 means last day of month etc...
         # used for negative calculations
-        daysInMonth = _daysInMonth(date) 
+        daysInMonth = _daysInMonth(date)
         # convert the dates
         for dayWeek in @spec.dayWeeks
           # return true on first match
-          if (date.getDay() == dayWeek[1] and 
+          if (date.getDay() == dayWeek[1] and
             if dayWeek[0] < 0 # -ve value
               (daysInMonth - date.getDate())//7 == (-1 * dayWeek[0]) - 1
             else
@@ -667,13 +967,13 @@ class RepeatingInterval extends TimeInterval
         false
 
     @intervalClass: MonthlyDateRepeatingInterval
-  
+
   # simple number of days generator
   class @NumberOfDays extends BaseInterval
-    
+
     days: 1
     setDays: (@days) ->
-    
+
     class NumberOfDaysRepeatingInterval extends RepeatingInterval
       constructor: (@spec, @starttime) ->
         @setStart new Date(@starttime.valueOf())
@@ -687,11 +987,11 @@ class RepeatingInterval extends TimeInterval
       prev: ->
         throw Error "Not Implemented"
     @intervalClass: NumberOfDaysRepeatingInterval
-      
+
 
 
 @RepeatingIntervalGenerator = RepeatingIntervalGenerator
 @RepeatingInterval = RepeatingInterval
 @TimeInterval = TimeInterval
-@pickabox = pickabox
-@PickABox = PickABox
+@tileflip = tileflip
+@TileFlip = TileFlip

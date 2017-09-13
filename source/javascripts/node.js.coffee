@@ -1,3 +1,6 @@
+window.yourapp = 
+  getuuid: -> "UUID"
+
 # abstract class
 class Obj
   constructor: (attributes = {}) ->
@@ -47,6 +50,10 @@ class @Node extends Obj
       callback?(
         geturl: (callback) -> callback? "http://placehold.it/350x150"
         )
+    url: -> ""
+    get: (obj) ->
+      switch obj
+        when "nodeindex" then nodeindex
   create: (data={}) ->
     @nodedata.push new NodeData data
   where: (conditions={}) ->
@@ -61,3 +68,5 @@ class @Node extends Obj
     
 
 class NodeData extends Obj
+
+nodeindex = new @Node {nodes: {1: {name: 'sample_page', title: "This is a sample page"}}}

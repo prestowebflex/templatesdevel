@@ -1,0 +1,176 @@
+@import compass/css3
+
+::-webkit-scrollbar 
+  display: none 
+
+.tileflipcontainer
+  // the pick a box grids
+  @for $i from 1 through 5
+    .grid#{$i}
+      position: relative
+      @for $j from 1 through $i*$i
+        // row and col are 0 indexed
+        $row: floor(($j - 1) / $i)
+        $col: ($j - 1) % $i
+        .panel
+          width: (100% / $i)
+          height: (100% / $i)
+          //border: solid 1px black
+          display: block
+          float: left
+        .box#{$j}
+          top: (100% / $i) * $row
+          @if $col == 0
+            clear: left
+          @if $col == 3 
+            clear: right
+  .panel-container
+    display: inline-block
+  .grid 
+    text-align: center
+  //.flipped
+  //  +transform(rotatey(-180deg))
+  .panels
+    margin-top: 15px
+  // the basic panel
+  .panel
+    +perspective(800px)
+    //+transform-style(preserve-3d)
+    //+transition(0.5s ease-in-out)
+    // padding for perfect square box!
+    //position: relative
+    // position of boxes
+    +transform-style(preserve-3d)
+    +transition-property(height,width,top,left,right,bottom,rotate,box-shadow)
+    +transition-duration(0.5s)
+    +transition-timing-function(ease-in-out)
+    +transition(all 0.5s ease-in-out)
+    z-index: 1
+    .tileicon
+      position: absolute
+      top: 0
+      left: 0
+      right: 0
+      bottom: 0
+      //height: 100%
+      //width: 100%
+      background-color: #1E1D1D
+      background-position: center center
+      +background-size(contain)
+      background-repeat: no-repeat
+      //background-image: url("/")
+      cursor: pointer
+      & > div
+        height: 100%
+        background-position: center center
+        background-repeat: no-repeat
+    &.revealed .tileicon
+      display: none
+    &.hidden
+      //+scale(0)
+      //+opacity(0)
+      //+transform(rotatey(-180deg))
+      //+transform-style(preserve-3d)
+      //+backface-visibility(hidden)
+      +transition-duration(0s)
+      z-index: 0
+    &.hidden .back
+      display: none
+    .front, .back
+      position: absolute
+      top: 2%
+      left: 2%
+      right: 2%
+      bottom: 2%
+      //border: 1px solid #ccc
+      +backface-visibility(hidden)
+      +transform-style(preserve-3d)
+      +transition(inherit)
+    &.flipped
+      //width: 100%
+      //height: 100%
+      //left: 0
+      //top: 0
+      +transition-duration(0.5s)
+      cursor: pointer
+    &.flipped .front, &.flipped .back
+      //+box-shadow(0 1px 5px rgba(0,0,0,0.9))
+
+    .front
+      z-index: 900
+      //background: #6b7077
+
+      // note about 180 causing an unnatural looking half flip?
+      +transform(rotatey(0deg) rotatex(0deg))
+    &.flipped .front
+      //background: #333 // why?
+      //+box-shadow(0 15px 50px rgba(0,0,0,0.2)) // why?
+      +transform(rotatey(179deg))
+      z-index: 950
+    .back
+      z-index: 800
+      //background: #333
+      .info, .buttonbar
+        position: absolute
+        left: 0
+        right: 0
+      .info
+        top: 0
+        bottom: 0
+        p 
+          margin: 0
+        img
+          height: 100%
+          width: 100%
+        //50px
+      // .buttonbar
+        // bottom: 0
+        // height: 50px
+
+      +transform(rotatey(-179deg) rotatex(0deg))
+    &.flipped .back
+      //background: #80868d
+      +transform(rotatey(0deg))
+
+  .couponexpiry
+    font-size: 75%
+    font-weight: normal
+    float: right
+    &:before
+      content: "Expires: "
+
+  .coupon_validility
+    font-size: 80%
+    margin-top: 1ex
+    ul,li,h4
+      margin: 0
+  .tileflip .game_over
+    //border: solid 1px black
+    //background-color: blue
+    position: absolute
+    height: inherit
+    width: inherit
+    top: 0
+    left: 0
+    right: 0
+    bottom: 0
+    z-index: 10000 !important
+    //display: block
+    visibility: hidden
+    +opacity(0)
+    background-color: white
+    img
+      width: 100%
+  .tileflip
+    &.unavailable
+      .game_over
+        //+transform-style(preserve-3d)
+        +transition(all 2s ease-in-out)
+        +opacity(1)
+        visibility: visible
+        //display: block
+        z-index: 2
+  .coupons
+    img
+      height: 100%
+      width: 100%

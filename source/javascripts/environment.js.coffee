@@ -17,12 +17,15 @@ node = new Node
     type: "everyday" # just midnight every day 0 length only using start of interval
     hour: 0
     minute: 0
+    coupon_page: 1
     prizes:
       2:
         html: "AA You Win <img />"
         odds: "1"
         coupons:
           1:
+            coupon_id: 123
+            coupon_count: 456
             title: "AA y Coupon"
             html: "Free Something <img />"
             type: "weekly"
@@ -34,6 +37,8 @@ node = new Node
             leeway_before: 60
             generate_extra: 1
           2:
+            coupon_id: 2123
+            coupon_count: 2456
             title: "AA My Coupon #2"
             html: "Free Something always <img />"
             type: "duration_days"

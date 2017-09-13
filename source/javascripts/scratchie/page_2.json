@@ -15,6 +15,7 @@
    "background_image":"http://ya.wf-res.com/images/ckeditor/pictures/16730/data/content/img_3dc0efd78a3f0d947ebb341d4612674c",
    "scratch_image":"http://ya.wf-res.com/images/ckeditor/pictures/16766/data/content/img_83329c6128272aeb0f5058a65bdd139b",
    "blank_image":"https://yourapp-templatesdevel.s3.amazonaws.com/images/tilescratch/blank.jpg",
+   "coupon_page": "1",
    "prizes":{
       "1472100908055":{
          "html":"<p>\r\n\t<img alt=\"\" src=\"http://ya.wf-res.com/images/ckeditor/pictures/16761/data/content/img_c2a81cd6ec3e27bdf371da1f7f5593b8\" style=\"width: 100%;\" /></p>\r\n",
@@ -22,6 +23,8 @@
          "odds":"10",
          "coupons":{
             "1472100937885":{
+               "coupon_id": "41",
+               "coupon_count": "4",
                "title":"Free Beer",
                "html":"<p>\r\n\t<img alt=\"\" src=\"http://ya.wf-res.com/images/ckeditor/pictures/4319/data/content/img_8b3408afe5a4f2ef54047fad8a3eed4a\" style=\"width: 100%;\" /></p>\r\n",
                "type":"duration_days",
@@ -54,6 +57,8 @@
          "odds":"10",
          "coupons":{
             "1472100976708":{
+               "coupon_id": 41,
+               "coupon_count": 4,
                "title":"Free Meal",
                "html":"<p>\r\n\t<img alt=\"\" src=\"http://ya.wf-res.com/images/ckeditor/pictures/4317/data/content/img_ae82d32478c53d20de03e03235a66c7e\" style=\"width: 100%;\" /></p>\r\n",
                "type":"duration_days",
@@ -86,6 +91,8 @@
          "odds":"10",
          "coupons":{
             "1472101004984":{
+               "coupon_id": 41,
+               "coupon_count": 4,
                "title":"10,000 Points",
                "html":"<p>\r\n\t<img alt=\"\" src=\"http://ya.wf-res.com/images/ckeditor/pictures/15873/data/content/img_a1dee0a72798feefd5807b9b08d034f5\" style=\"width: 100%;\" /></p>\r\n",
                "type":"duration_days",
@@ -118,6 +125,8 @@
          "odds":"10",
          "coupons":{
             "1472171483292":{
+               "coupon_id": 41,
+               "coupon_count": 4,
                "title":"Buy 1 Meal get 1 Free",
                "html":"<p>\r\n\t<img alt=\"\" src=\"http://ya.wf-res.com/images/ckeditor/pictures/4568/data/content/img_c3d76e0ef3cb726fbe7243e0aea569c1\" style=\"width: 100%;\" /></p>\r\n",
                "type":"weekly",
@@ -155,6 +164,8 @@
          "odds":"10",
          "coupons":{
             "1472171629303":{
+               "coupon_id": 41,
+               "coupon_count": 4,
                "title":"Free Hot Drink",
                "html":"<p>\r\n\t<img alt=\"\" src=\"http://ya.wf-res.com/images/ckeditor/pictures/4568/data/content/img_c3d76e0ef3cb726fbe7243e0aea569c1\" style=\"width: 100%;\" /></p>\r\n",
                "type":"weekly",
