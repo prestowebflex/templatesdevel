@@ -96,8 +96,7 @@ tilescratch = (node, jQuery) ->
     else
       confirmCallback = (confirmResult) ->
         if confirmResult == 1
-          window.jQuery.mobile.showPageLoadingMsg()
-          window.location = pageLocation.name
+          window.jQuery.mobile.changePage pageLocation.name, {reloadPage: true}
           true
       window.navigator.notification.confirm 'Navigate to the coupons page?',confirmCallback , 'View coupons', ['Ok', 'Cancel']
     false
