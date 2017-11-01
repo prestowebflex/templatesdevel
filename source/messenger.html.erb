@@ -1,0 +1,17 @@
+---
+title: Messenger
+---
+<% content_for :assets do %>
+  <%= stylesheet_link_tag "messenger" %>
+  <%= javascript_include_tag  "underscore" %>
+  <%= javascript_include_tag  "backbone" %>
+  <%= javascript_include_tag  "node" %>
+  <%= javascript_include_tag  "environment_messenger" %>
+  <%= javascript_include_tag  "messenger" %>
+<% end %>
+<div class="notification_template">
+	<div data-role="header" data-theme="a">
+		<h2>loading...</h2>
+		<a href="#" class="ui-btn-right" data-icon="plus">Compose</a>
+	</div>
+</div>

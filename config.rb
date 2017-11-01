@@ -46,6 +46,7 @@ end
 #activate :sprokets
 
 sprockets.import_asset 'underscore.js' 
+sprockets.import_asset 'backbone.js' 
 
 # Methods defined in the helpers block are available in templates
 # helpers do
