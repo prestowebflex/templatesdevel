@@ -16,8 +16,7 @@
 @initApp2 = (view, node) =>
 	p = jQuery.Deferred()
 	$ =>
-		@view.$el = $ "body"
-		@view.el = @view.$el[0]
+		@view.setElement($ "body")
 		_.defer =>
 			p.resolve({})
 			@view.trigger "changepage"
