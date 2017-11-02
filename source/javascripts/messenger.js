@@ -72,7 +72,20 @@ Message = Backbone.Model.extend({
 			checkStr(attrs.message) || e('message', 'A body this for this message is required');
 		}
 		return errors;
-	}
+	},
+	buildReply: function() {
+		return new this.constructor({
+				parent_id: this.get('id'),
+				node_id: this.get('node_id'),
+				draft: true
+			});
+	},
+	reply: function(message) {
+		return this.collection.create({
+			parent_id: this.get('id'),
+			message: message
+		});
+	},
 }),
 Messages = Backbone.Collection.extend({
 	model: Message,
@@ -144,13 +157,25 @@ MessageAndRepliesView = Backbone.View.extend({
 }),
 // a top level message probrably has sub views btw
 AbstractMessageView = Backbone.View.extend({
-	destroy: function() {
+	destroy: function(e) {
+		e.preventDefault();
 		// TODO confirm with user? only if values entered?
 		this._destroyCancelConfirmation('Really delete this?', function(){
 			this.model.destroy();
 		});
 	},
-	cancel: function() {
+	initialize: function() {
+		throw "Abstract View not able to use directly please extend";
+	},
+	abstractInitialize: function() {
+		this.replyModel = this.model.buildReply();
+		this.listenTo(this.model, 'change:id', this.updateParentIdOnReply);
+	},
+	updateParentIdOnReply: function() {
+		this.replyModel.set('parent_id', this.model.get('id'));
+	},
+	cancel: function(e) {
+		e.preventDefault();
 		this._destroyCancelConfirmation('Discard Changes?', function(){
 			this.model.set({draft: false, editing: false});
 		});
@@ -176,8 +201,8 @@ AbstractMessageView = Backbone.View.extend({
 	isComposeMode: function() {
 		return this.model.get('draft');
 	},
-	reply: function() {
-		this.model.collection.add(new Message({draft: true, parent_id: this.model.get('id')}));
+	val: function(name) {
+		return this.$(`:input[name=${name}]`).val();
 	}
 }),
 MessageRootView = AbstractMessageView.extend({
@@ -186,28 +211,32 @@ MessageRootView = AbstractMessageView.extend({
 		'click a.delete' : 'destroy',
 		'click a.update' : 'update',
 		'click a.edit' : 'edit',
-		'click a.reply' : 'reply'
+		'submit form.message_form' : 'update',
 	},
 	initialize: function() {
 		this.listenTo(this.model, 'change', this.render);
 		this.listenTo(this.model, 'destroy', this.remove);
 		this.listenTo(this.model, 'error', this.invalid);
+		this.abstractInitialize();
 	},
-	update: function() {
+	update: function(e) {
 		// update the model
+		e.preventDefault(); 
 		this.model.save(_.extend(this.getFormValues(), {
 			draft: false,
 			editing: false
 		}), {validate: true});
+		return false;
 	},
 	getFormValues: function() {
 		return {
-			title: this.$title.val(),
-			message: this.$message.val(),
-			push_notifiation: this.$push_notifiation.val()=="1",
+			title: this.val('title'),
+			message: this.val('message'),
+			push_notifiation: this.val('push_notifiation')=="1",
 		};
 	},
 	invalid: function(model, errors) {
+		console.log(errors);
 		// remove existing errors
 		this.$('div[data-role=fieldcontain]').removeClass('has-errors').find('p.error').remove();
 		// place error element into view
@@ -224,7 +253,7 @@ MessageRootView = AbstractMessageView.extend({
 	},
 	render: function() {
 		if(this.isComposeMode()) {
-			this.$el.html(`<form>
+			this.$el.html(`<form class='message_form'>
 	        <div data-role="fieldcontain">
 	            <label for="${this.cid}_title">Title:</label>
 	            <input id="${this.cid}_title" name="title" value="${this.model.getHtml('title')}" placeholder="Topic">
@@ -241,37 +270,89 @@ MessageRootView = AbstractMessageView.extend({
 				</select> 	        	
 	        </div>
 	        <fieldset class="ui-grid-a">
-	            <div class="ui-block-a"><a class="update" data-role="button">${this.model.get('editing')?'Edit':'Send'}</a></div>
-	            <div class="ui-block-b"><a class="${this.model.get('editing')?'cancel':'delete'}" data-role="button">Cancel</a></div>
+	            <div class="ui-block-a"><a class="update" data-role="button" data-icon="check">${this.model.get('editing')?'Edit':'Send'}</a></div>
+	            <div class="ui-block-b"><a class="${this.model.get('editing')?'cancel':'delete'}" data-icon="delete" data-role="button">Cancel</a></div>
 	        </fieldset>
 	    </form>`);
 
-			this.$title = this.$(':input[name=title]');
-			this.$message = this.$(':input[name=message]');
-			this.$push_notifiation = this.$(':input[name=push_notifiation]');
 		} else {
 			// show a message :)
 			this.$el.html(`
 						<p>${this.model.getHtml('message')}</p>
-						<p><a href="#" class="edit">Update</a> <a href="#" class="delete">Delete</a> <a href="#" class="reply">Reply</a></p>
-					<div class="replies">
-					</div>
+					    <div class="ui-grid-a">
+					        <div class="ui-block-a"><a href="#" data-role="button" data-icon="gear" data-mini="true" class="edit">Update</a></div>
+					        <div class="ui-block-b"><a href="#" data-role="button" data-icon="delete" data-mini="true" class="delete">Delete</a></div>
+					    </div>
 				`);
+			// this view should also include a box to do a reply :)
+			// add reply view between the <p> and the <div>
+			var replyView = (new MessageReplyView({model: this.replyModel})).render();
+			this.$("p").after(replyView.el);
 		}
+		// initialize jquery mobile widgets
 		_.defer(_.bind(function(){
-			this.$('form').trigger('create');
+			this.$el.trigger('create');
 			// bind the children view to replies
-			var childrenList = new MessageListView({ el: this.$('.replies'), model: this.model.collection, parent_id: this.model.get('id'), messageListViewClass: MessageView});
+			// var childrenList = new MessageListView({ el: this.$('.replies'), model: this.model.collection, parent_id: this.model.get('id'), messageListViewClass: MessageView});
 		}, this));
 
 		return this;
 	}
 }),
+// this is the little mini form for a messgae reply.
+MessageReplyView = AbstractMessageView.extend({
+	events: {
+		'submit form.reply_form' : 'reply',
+		'click a.reply_button' : 'reply',
+		'change input[name=add_reply]' : 'saveDraft'
+	},
+	initialize: function() {
+		this.listenTo(this.model, 'change', this.render);
+		this.listenTo(this.model, 'destroy', this.remove);
+		this.listenTo(this.model, 'error', this.invalid);
+		this.abstractInitialize();
+	},
+	saveDraft: function() {
+		console.log('saving daft');
+		this.model.set({message: this.val('add_reply')},{validate: false, silent: true});
+	},
+	reply: function(e) {
+		e.preventDefault(); 
+		// add a new model to indicate a reply.
+		console.log(this.model.reply(this.val('add_reply')));
+		return false;
+	},
+	invalid: function() {
+		// do something for invalid record
+	},
+	render: function() {
+		if(this.isComposeMode()) {
+			this.$el.html(`
+						<form class="reply_form">
+							<input type="text" placeholder="Reply to this" name="add_reply" id="${this.cid}_add_reply" value="${this.model.getHtml('message')}" />
+							<a class="reply_button" data-role="button" data-inline="true" data-icon="check">Reply</a>
+						</form>
+					`);
+		} else {
+			this.$el.html(`<p>${this.model.getHtml('message')}</p>`);
+		}
+		// initialize jquery mobile widgets
+		_.defer(_.bind(function(){
+			this.$el.trigger('create');
+			// bind the children view to replies
+			// var childrenList = new MessageListView({ el: this.$('.replies'), model: this.model.collection, parent_id: this.model.get('id'), messageListViewClass: MessageView});
+		}, this));
+
+		return this;
+
+	}
+}),
 MessageView = AbstractMessageView.extend({
 	// the message itself
 	// this will be bound to children onlt
+	// this will allow editing a message inline and removing it.
 	render: function() {
-		this.$el.html('<p>DEMO</p>');
+		this.$el.html(`<p>${this.model.getHtml('message')}</p>`);
 		return this;
 	},
 })
