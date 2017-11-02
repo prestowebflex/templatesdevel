@@ -24,6 +24,13 @@ var initApp = function(view, node) {
   }
   return p.promise();
 }, 
+showConfirm = function(message, confirmCallback, title, buttonLabels) {
+            if (((_ref = window.navigator) != null ? (_ref1 = _ref.notification) != null ? _ref1.confirm : void 0 : void 0) != null) {
+                window.navigator.notification.confirm(message, confirmCallback, title, buttonLabels);
+            } else {
+                confirmCallback.call(this, (confirm(message) ? 1 : 2));
+            }
+        },
 Message = Backbone.Model.extend({
 	defaults: {
 		id: null,
@@ -31,7 +38,8 @@ Message = Backbone.Model.extend({
 		title: '',
 		message: '',
 		sent: false,
-		draft: true
+		draft: false,
+		push_notifiation: false
 	},
 	initialize: function(){
 		// setup replies
@@ -40,16 +48,23 @@ Message = Backbone.Model.extend({
 	sync: function(method, model, options) {
 		console.log("MESSAGE.SYNC", method, model, options);
 	},
+	getHtml: function(key) {
+		return _.escape(this.get(key));
+	},
 	validate: function(attrs, options) {
 		var errors = false,
 			e = function(name, value) {
 				if(!_.isObject(errors)) { errors = {}; };
 				if(!_.isArray(errors[name])) { errors[name] = []; };
 				errors[name].push(value);
+			},
+			// return TRUE if string is OK
+			checkStr = function(str){
+				return _.isString(str) && str.trim().length > 0;
 			};
 		if(!attrs.draft) {
-			attrs.title || e('title', 'A Topic for this message is required.');
-			attrs.message || e('message', 'A body this for this message is required');
+			checkStr(attrs.title) || e('title', 'A Topic for this message is required.');
+			checkStr(attrs.message) || e('message', 'A body this for this message is required');
 		}
 		return errors;
 	}
@@ -65,7 +80,7 @@ AppView = Backbone.View.extend({
 		'click .ui-btn-right': 'addBlankMessage'
 	},
 	addBlankMessage: function() {
-		this.model.create();
+		this.model.create({draft: true});
 	},
 	initialize: function() {
 		// do nothing for now.
@@ -98,7 +113,8 @@ MessageListView = Backbone.View.extend({
 // a top level message probrably has sub views btw
 MessageView = Backbone.View.extend({
 	events: {
-		'click a.cancel' : 'destroy',
+		'click a.cancel' : 'cancel',
+		'click a.delete' : 'destroy',
 		'click a.update' : 'update',
 		'click a.edit' : 'edit'
 	},
@@ -108,16 +124,47 @@ MessageView = Backbone.View.extend({
 		this.listenTo(this.model, 'error', this.invalid);
 	},
 	destroy: function() {
-		this.model.destroy();
+		// TODO confirm with user? only if values entered?
+		this._destroyCancelConfirmation('Really delete this?', function(){
+			this.model.destroy();
+		});
+	},
+	cancel: function() {
+		this._destroyCancelConfirmation('Discard Changes?', function(){
+			this.model.set({draft: false, editing: false});
+		});
+	},
+	_destroyCancelConfirmation: function(message, callbackIfOk) {
+		if(this.formNotChanged()) {
+			callbackIfOk.call(this);
+		} else  {
+			showConfirm(message, _.bind(function(result) {
+				if(result==1) {
+					callbackIfOk.call(this);
+				};
+			}, this), 'Confirm', ['Yes','No']);
+		}
 	},
 	update: function() {
 		// update the model
-		this.model.set({
+		this.model.set(_.extend(this.getFormValues(), {
+			draft: false,
+			editing: false
+		}), {validate: true});
+	},
+	// return true if the form hasn't changed
+	formNotChanged: function() {
+		if (!this.isComposeMode()) { return false; }
+		var formValues = this.getFormValues();
+		var attrs = _.pick.apply(this, _.flatten([this.model.attributes,_.keys(formValues)]));
+		return _.isEqual(attrs, formValues);
+	},
+	getFormValues: function() {
+		return {
 			title: this.$title.val(),
 			message: this.$message.val(),
 			push_notifiation: this.$push_notifiation.val()=="1",
-			draft: false
-		}, {validate: true});
+		};
 	},
 	invalid: function(model, errors) {
 		// remove existing errors
@@ -132,7 +179,7 @@ MessageView = Backbone.View.extend({
 		});
 	},
 	edit: function() {
-		this.model.set({draft: true});
+		this.model.set({draft: true, editing: true});
 	},
 	isComposeMode: function() {
 		return this.model.get('draft');
@@ -142,11 +189,11 @@ MessageView = Backbone.View.extend({
 			this.$el.html(`<form>
 	        <div data-role="fieldcontain">
 	            <label for="${this.cid}_title">Title:</label>
-	            <input id="${this.cid}_title" name="title" value="${this.model.get('title')}" placeholder="Topic">
+	            <input id="${this.cid}_title" name="title" value="${this.model.getHtml('title')}" placeholder="Topic">
 	        </div>
 	        <div data-role="fieldcontain">
 	            <label for="${this.cid}_message">Message:</label>
-	            <textarea id="${this.cid}_message" name="message" placeholder="Message">${this.model.get('message')}</textarea>
+	            <textarea id="${this.cid}_message" name="message" placeholder="Message">${this.model.getHtml('message')}</textarea>
 	        </div>
 	        <div data-role="fieldcontain">
 	        	<label for="${this.cid}_push">Send push notification:</label>
@@ -156,8 +203,8 @@ MessageView = Backbone.View.extend({
 				</select> 	        	
 	        </div>
 	        <fieldset class="ui-grid-a">
-	            <div class="ui-block-a"><a class="update" data-role="button">Send</a></div>
-	            <div class="ui-block-b"><a class="cancel" data-role="button">Cancel</a></div>
+	            <div class="ui-block-a"><a class="update" data-role="button">${this.model.get('editing')?'Edit':'Send'}</a></div>
+	            <div class="ui-block-b"><a class="${this.model.get('editing')?'cancel':'delete'}" data-role="button">Cancel</a></div>
 	        </fieldset>
 	    </form>`);
 
@@ -170,7 +217,7 @@ MessageView = Backbone.View.extend({
 					<div class="ui-body ui-body-a">
 						<h3>${this.model.get('title')}</h3>
 						<p>${this.model.get('message')}</p>
-						<p><a href="#" class="edit">Update</a> <a href="#" class="cancel">Delete</a></p>
+						<p><a href="#" class="edit">Update</a> <a href="#" class="delete">Delete</a></p>
 					</div>
 
 				`);

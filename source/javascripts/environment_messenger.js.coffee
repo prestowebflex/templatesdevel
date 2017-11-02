@@ -20,4 +20,5 @@
 		_.defer =>
 			p.resolve({})
 			@view.trigger "changepage"
+			window.messages.create({title:"demo", message:"Other"});
 	p.promise()
