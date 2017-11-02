@@ -39,13 +39,18 @@ Message = Backbone.Model.extend({
 		message: '',
 		sent: false,
 		draft: false,
-		push_notifiation: false
+		push_notifiation: false,
+		parent_id: null
 	},
 	initialize: function(){
 		// setup replies
 		this.replies = new Messages();
 	},
 	sync: function(method, model, options) {
+		if(method=="create") {
+			// give this model a FAKE ID for now
+			model.set({id: _.uniqueId('message_')}, {silent: true});
+		}
 		console.log("MESSAGE.SYNC", method, model, options);
 	},
 	getHtml: function(key) {
@@ -80,13 +85,13 @@ AppView = Backbone.View.extend({
 		'click .ui-btn-right': 'addBlankMessage'
 	},
 	addBlankMessage: function() {
-		this.model.create({draft: true});
+		this.listView.addOne(new Message({draft: true}));
 	},
 	initialize: function() {
 		// do nothing for now.
 		// this is just called once to setup the view for the application only
-		var view = new MessageListView({ model: this.model });
-		this.$el.append(view.render().el);
+		this.listView = new MessageListView({ model: this.model, parent_id: null, messageListViewClass: MessageRootView});
+		this.$el.append(this.listView.render().el);
 	},
 }),
 // the main message list view
@@ -100,8 +105,8 @@ MessageListView = Backbone.View.extend({
 	},
 	addOne: function(message){
 		// TODO should add messages in correct location! by date created
-		if(!message.get('parent_id')) {
-			var view = new MessageView({model: message});
+		if(message.get('parent_id')==this.options.parent_id) {
+			var view = new this.options.messageListViewClass({model: message});
 			this.$el.append(view.render().el);
 		}
 	},
@@ -111,18 +116,7 @@ MessageListView = Backbone.View.extend({
 	}
 }),
 // a top level message probrably has sub views btw
-MessageView = Backbone.View.extend({
-	events: {
-		'click a.cancel' : 'cancel',
-		'click a.delete' : 'destroy',
-		'click a.update' : 'update',
-		'click a.edit' : 'edit'
-	},
-	initialize: function() {
-		this.listenTo(this.model, 'change', this.render);
-		this.listenTo(this.model, 'destroy', this.remove);
-		this.listenTo(this.model, 'error', this.invalid);
-	},
+AbstractMessageView = Backbone.View.extend({
 	destroy: function() {
 		// TODO confirm with user? only if values entered?
 		this._destroyCancelConfirmation('Really delete this?', function(){
@@ -145,19 +139,35 @@ MessageView = Backbone.View.extend({
 			}, this), 'Confirm', ['Yes','No']);
 		}
 	},
-	update: function() {
-		// update the model
-		this.model.set(_.extend(this.getFormValues(), {
-			draft: false,
-			editing: false
-		}), {validate: true});
-	},
 	// return true if the form hasn't changed
 	formNotChanged: function() {
 		if (!this.isComposeMode()) { return false; }
 		var formValues = this.getFormValues();
 		var attrs = _.pick.apply(this, _.flatten([this.model.attributes,_.keys(formValues)]));
 		return _.isEqual(attrs, formValues);
+	},
+	isComposeMode: function() {
+		return this.model.get('draft');
+	}
+}),
+MessageRootView = AbstractMessageView.extend({
+	events: {
+		'click a.cancel' : 'cancel',
+		'click a.delete' : 'destroy',
+		'click a.update' : 'update',
+		'click a.edit' : 'edit'
+	},
+	initialize: function() {
+		this.listenTo(this.model, 'change', this.render);
+		this.listenTo(this.model, 'destroy', this.remove);
+		this.listenTo(this.model, 'error', this.invalid);
+	},
+	update: function() {
+		// update the model
+		this.model.set(_.extend(this.getFormValues(), {
+			draft: false,
+			editing: false
+		}), {validate: true});
 	},
 	getFormValues: function() {
 		return {
@@ -180,9 +190,6 @@ MessageView = Backbone.View.extend({
 	},
 	edit: function() {
 		this.model.set({draft: true, editing: true});
-	},
-	isComposeMode: function() {
-		return this.model.get('draft');
 	},
 	render: function() {
 		if(this.isComposeMode()) {
@@ -228,6 +235,10 @@ MessageView = Backbone.View.extend({
 		});
 		return this;
 	}
+}),
+MessageView = AbstractMessageView.extend({
+	// the message itself
+
 })
 ; //end var
 
