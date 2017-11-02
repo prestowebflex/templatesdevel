@@ -49,7 +49,7 @@ Message = Backbone.Model.extend({
 	sync: function(method, model, options) {
 		if(method=="create") {
 			// give this model a FAKE ID for now
-			model.set({id: _.uniqueId('message_')}, {silent: true});
+			model.set({id: _.uniqueId('message_')});
 		}
 		console.log("MESSAGE.SYNC", method, model, options);
 	},
@@ -68,7 +68,10 @@ Message = Backbone.Model.extend({
 				return _.isString(str) && str.trim().length > 0;
 			};
 		if(!attrs.draft) {
-			checkStr(attrs.title) || e('title', 'A Topic for this message is required.');
+			// if is a ROOT message we require a title
+			if(!attrs.parent_id) {
+				checkStr(attrs.title) || e('title', 'A Topic for this message is required.');
+			}
 			checkStr(attrs.message) || e('message', 'A body this for this message is required');
 		}
 		return errors;
@@ -79,13 +82,7 @@ Message = Backbone.Model.extend({
 				node_id: this.get('node_id'),
 				draft: true
 			});
-	},
-	reply: function(message) {
-		return this.collection.create({
-			parent_id: this.get('id'),
-			message: message
-		});
-	},
+	}
 }),
 Messages = Backbone.Collection.extend({
 	model: Message,
@@ -169,6 +166,9 @@ AbstractMessageView = Backbone.View.extend({
 	},
 	abstractInitialize: function() {
 		this.replyModel = this.model.buildReply();
+		this.listenTo(this.model, 'error', this.invalid);
+		this.listenTo(this.model, 'change', this.render);
+		this.listenTo(this.model, 'destroy', this.remove);
 		this.listenTo(this.model, 'change:id', this.updateParentIdOnReply);
 	},
 	updateParentIdOnReply: function() {
@@ -203,21 +203,6 @@ AbstractMessageView = Backbone.View.extend({
 	},
 	val: function(name) {
 		return this.$(`:input[name=${name}]`).val();
-	}
-}),
-MessageRootView = AbstractMessageView.extend({
-	events: {
-		'click a.cancel' : 'cancel',
-		'click a.delete' : 'destroy',
-		'click a.update' : 'update',
-		'click a.edit' : 'edit',
-		'submit form.message_form' : 'update',
-	},
-	initialize: function() {
-		this.listenTo(this.model, 'change', this.render);
-		this.listenTo(this.model, 'destroy', this.remove);
-		this.listenTo(this.model, 'error', this.invalid);
-		this.abstractInitialize();
 	},
 	update: function(e) {
 		// update the model
@@ -227,13 +212,6 @@ MessageRootView = AbstractMessageView.extend({
 			editing: false
 		}), {validate: true});
 		return false;
-	},
-	getFormValues: function() {
-		return {
-			title: this.val('title'),
-			message: this.val('message'),
-			push_notifiation: this.val('push_notifiation')=="1",
-		};
 	},
 	invalid: function(model, errors) {
 		console.log(errors);
@@ -247,6 +225,25 @@ MessageRootView = AbstractMessageView.extend({
 				fieldcontain.append(`<p class="error">${error}</p>`)
 			});
 		});
+	}
+}),
+MessageRootView = AbstractMessageView.extend({
+	events: {
+		'click a.cancel' : 'cancel',
+		'click a.delete' : 'destroy',
+		'click a.update' : 'update',
+		'click a.edit' : 'edit',
+		'submit form.message_form' : 'update',
+	},
+	initialize: function() {
+		this.abstractInitialize();
+	},
+	getFormValues: function() {
+		return {
+			title: this.val('title'),
+			message: this.val('message'),
+			push_notifiation: this.val('push_notifiation')=="1",
+		};
 	},
 	edit: function() {
 		this.model.set({draft: true, editing: true});
@@ -302,35 +299,29 @@ MessageRootView = AbstractMessageView.extend({
 // this is the little mini form for a messgae reply.
 MessageReplyView = AbstractMessageView.extend({
 	events: {
-		'submit form.reply_form' : 'reply',
-		'click a.reply_button' : 'reply',
-		'change input[name=add_reply]' : 'saveDraft'
+		'submit form.reply_form' : 'update',
+		'click a.reply_button' : 'update',
+		'change input[name=message]' : 'saveDraft'
 	},
 	initialize: function() {
-		this.listenTo(this.model, 'change', this.render);
-		this.listenTo(this.model, 'destroy', this.remove);
-		this.listenTo(this.model, 'error', this.invalid);
 		this.abstractInitialize();
 	},
 	saveDraft: function() {
-		console.log('saving daft');
-		this.model.set({message: this.val('add_reply')},{validate: false, silent: true});
+		this.model.set({message: this.val('message')},{validate: false, silent: true});
 	},
-	reply: function(e) {
-		e.preventDefault(); 
-		// add a new model to indicate a reply.
-		console.log(this.model.reply(this.val('add_reply')));
-		return false;
-	},
-	invalid: function() {
-		// do something for invalid record
+	getFormValues: function() {
+		return {
+			message: this.val('message')
+		};
 	},
 	render: function() {
 		if(this.isComposeMode()) {
 			this.$el.html(`
 						<form class="reply_form">
-							<input type="text" placeholder="Reply to this" name="add_reply" id="${this.cid}_add_reply" value="${this.model.getHtml('message')}" />
-							<a class="reply_button" data-role="button" data-inline="true" data-icon="check">Reply</a>
+							<div data-role="fieldcontain">
+								<input type="text" placeholder="Reply to this" name="message" id="${this.cid}_message" value="${this.model.getHtml('message')}" />
+								<a class="reply_button" data-role="button" data-inline="true" data-icon="check">Reply</a>
+							</div>
 						</form>
 					`);
 		} else {
@@ -361,7 +352,6 @@ MessageView = AbstractMessageView.extend({
 
 // APP INIT
 initApp2(view, node).done(function(app){
-	console.log('init');
 	view.on('changepage', function() {
 		// console.log(view.el);
 		// console.log(view.$el.html());
