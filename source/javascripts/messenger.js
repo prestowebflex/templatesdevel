@@ -44,7 +44,7 @@ Message = Backbone.Model.extend({
 	},
 	initialize: function(){
 		// setup replies
-		this.replies = new Messages();
+		// this.replies = new Messages();
 	},
 	sync: function(method, model, options) {
 		if(method=="create") {
@@ -85,12 +85,12 @@ AppView = Backbone.View.extend({
 		'click .ui-btn-right': 'addBlankMessage'
 	},
 	addBlankMessage: function() {
-		this.listView.addOne(new Message({draft: true}));
+		this.model.add(new Message({draft: true}));
 	},
 	initialize: function() {
 		// do nothing for now.
 		// this is just called once to setup the view for the application only
-		this.listView = new MessageListView({ model: this.model, parent_id: null, messageListViewClass: MessageRootView});
+		this.listView = new MessageListView({ model: this.model, parent_id: null, messageListViewClass: MessageAndRepliesView});
 		this.$el.append(this.listView.render().el);
 	},
 }),
@@ -102,6 +102,7 @@ MessageListView = Backbone.View.extend({
 	initialize: function() {
 		this.listenTo(this.model, 'add', this.addOne);
 		this.listenTo(this.model, 'reset', this.addAll);
+		this.addAll();
 	},
 	addOne: function(message){
 		// TODO should add messages in correct location! by date created
@@ -112,7 +113,33 @@ MessageListView = Backbone.View.extend({
 	},
 	addAll: function(){
 		this.$el.html('');
-		this.messages.each(this.addOne, this);
+		this.model.each(this.addOne, this);
+	}
+}),
+MessageAndRepliesView = Backbone.View.extend({
+	// view holds a message view and a replies view
+	// replies view only gets initialised once the message has an id
+	// bind the title of this to 
+	initialize: function() {
+		this.listenTo(this.model, 'destroy', this.remove);
+		this.listenTo(this.model, 'change:title', this.updateTitle);
+		this.listenTo(this.model, 'change:id', this.initializeChildren);
+	},
+	className: 'ui-body ui-body-a',
+	render: function() {
+		this.$el.html(`
+				<h3>${this.model.getHtml('title')}</h3>
+			`);
+		// initial main message view
+		var view = new MessageRootView({model: this.model});
+		this.$el.append(view.render().el);
+		return this;
+	},
+	updateTitle: function() {
+		this.$('h3').text(this.model.get('title'));
+	},
+	initializeChildren: function() {
+		// do nothing for now
 	}
 }),
 // a top level message probrably has sub views btw
@@ -148,6 +175,9 @@ AbstractMessageView = Backbone.View.extend({
 	},
 	isComposeMode: function() {
 		return this.model.get('draft');
+	},
+	reply: function() {
+		this.model.collection.add(new Message({draft: true, parent_id: this.model.get('id')}));
 	}
 }),
 MessageRootView = AbstractMessageView.extend({
@@ -155,7 +185,8 @@ MessageRootView = AbstractMessageView.extend({
 		'click a.cancel' : 'cancel',
 		'click a.delete' : 'destroy',
 		'click a.update' : 'update',
-		'click a.edit' : 'edit'
+		'click a.edit' : 'edit',
+		'click a.reply' : 'reply'
 	},
 	initialize: function() {
 		this.listenTo(this.model, 'change', this.render);
@@ -164,7 +195,7 @@ MessageRootView = AbstractMessageView.extend({
 	},
 	update: function() {
 		// update the model
-		this.model.set(_.extend(this.getFormValues(), {
+		this.model.save(_.extend(this.getFormValues(), {
 			draft: false,
 			editing: false
 		}), {validate: true});
@@ -221,24 +252,28 @@ MessageRootView = AbstractMessageView.extend({
 		} else {
 			// show a message :)
 			this.$el.html(`
-					<div class="ui-body ui-body-a">
-						<h3>${this.model.get('title')}</h3>
-						<p>${this.model.get('message')}</p>
-						<p><a href="#" class="edit">Update</a> <a href="#" class="delete">Delete</a></p>
+						<p>${this.model.getHtml('message')}</p>
+						<p><a href="#" class="edit">Update</a> <a href="#" class="delete">Delete</a> <a href="#" class="reply">Reply</a></p>
+					<div class="replies">
 					</div>
-
 				`);
 		}
-		var _this = this;
-		_.defer(function(){
-			_this.$el.trigger('create');	
-		});
+		_.defer(_.bind(function(){
+			this.$('form').trigger('create');
+			// bind the children view to replies
+			var childrenList = new MessageListView({ el: this.$('.replies'), model: this.model.collection, parent_id: this.model.get('id'), messageListViewClass: MessageView});
+		}, this));
+
 		return this;
 	}
 }),
 MessageView = AbstractMessageView.extend({
 	// the message itself
-
+	// this will be bound to children onlt
+	render: function() {
+		this.$el.html('<p>DEMO</p>');
+		return this;
+	},
 })
 ; //end var
 
