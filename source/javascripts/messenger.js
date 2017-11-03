@@ -321,6 +321,7 @@ Message = Backbone.Model.extend({
 			// give this model a FAKE ID for now
 			model.set({id: _.uniqueId('message_')});
 		}
+		model.set({updated_at: new Date()});
 		console.log("MESSAGE.SYNC", method, model, options);
 	},
 	timeAgo: function() {
@@ -486,6 +487,7 @@ MessageAndRepliesView = AbstractView.extend({
 		this.listenTo(this.model, 'destroy', this.remove);
 		this.listenTo(this.model, 'change:title', this.updateTitle);
 		this.listenTo(this.model, 'change:id', this.initializeChildren);
+		this.listenTo(this.model, 'change:updated_at', this.updateTimeAgo);
 		this.propogateEventToSubViews('tock');
 		this.on('tock', this.updateTimeAgo, this);
 	},
@@ -734,6 +736,7 @@ CommentsView = AbstractMessageView.extend({
 		// no op
 		this.abstractInitialize();
 		this.listenTo(this.replyModel, 'change:id', this.replaceReplyView);
+		this.listenTo(this.model, 'change:updated_at', this.updateTimeAgo);
 		this.on('tock', this.updateTimeAgo, this);
 	},
 	replaceReplyView: function(model, valueId, options) {
@@ -793,6 +796,7 @@ CommentsView = AbstractMessageView.extend({
 
 // APP INIT
 initApp2(view, node).done(function(app){
+
 	view.on('changepage', function() {
 		// console.log(view.el);
 		// console.log(view.$el.html());
