@@ -1,6 +1,32 @@
 // Async function to get ActionCable Javascript
 // in production this should be pointed at the cdn url?
 // returns a promise
+
+/*
+	SOME ASCII ART DESCRIBING VIEWS
+
+	SINGLE AppView (contains functionality to create new message)
+		SINGLE MessageListView(top level only)
+			MANY MessageAndRepliesView
+				MessageRootView (edit and display the main message + associated media)
+				CommentsView (each comments view contains another comments view along with a reply box at the bottom)
+					- CommentsView
+					- MessageReplyView
+
+Comments View Details
+
+Comment 1
+	reply 1
+		input for new reply again
+	reply 2
+		input for new reply again
+	input for new reply
+Comment 2
+	input for new reply
+input for new comment
+
+*/
+
 var initApp = function(view, node) {
   var p = jQuery.Deferred(),
       renderDeferred = jQuery.Deferred();
@@ -31,6 +57,9 @@ showConfirm = function(message, confirmCallback, title, buttonLabels) {
                 confirmCallback.call(this, (confirm(message) ? 1 : 2));
             }
         },
+User = Backbone.Model.extend({
+	// demo user
+}),
 Message = Backbone.Model.extend({
 	defaults: {
 		id: null,
@@ -77,11 +106,42 @@ Message = Backbone.Model.extend({
 		return errors;
 	},
 	buildReply: function() {
-		return new this.constructor({
+		var model = new this.constructor({
 				parent_id: this.get('id'),
 				node_id: this.get('node_id'),
 				draft: true
 			});
+		model._parent = this;
+		return model;
+	},
+	parent: function() {
+		if(this._parent) {
+			return this._parent;
+		}
+		if(!this.collection) {
+			return;
+		}
+		return this.collection.get(this.get('parent_id'));
+	},
+	levelName: function() {
+		return this.constructor.MESSAGE_LEVELS[this.depth()] || "Message";
+	},
+	depth: function() {
+		var parent = this.parent();
+		if(!this.parent()) {
+			return 0;
+		} else {
+			return this.parent().depth() + 1;
+		}
+	},
+	canReply: function() {
+		return this.depth() < 2;
+	}
+},{
+	MESSAGE_LEVELS: {
+		0: "Message",
+		1: "Comment",
+		2: "Reply"
 	}
 }),
 Messages = Backbone.Collection.extend({
@@ -143,13 +203,19 @@ MessageAndRepliesView = Backbone.View.extend({
 		// initial main message view
 		var view = new MessageRootView({model: this.model});
 		this.$el.append(view.render().el);
+
+		this.initializeChildren();
+
 		return this;
 	},
 	updateTitle: function() {
 		this.$('h3').text(this.model.get('title'));
 	},
-	initializeChildren: function() {
-		// do nothing for now
+	initializeChildren: function(model, id, options) {
+		if(id) {
+			var view = new CommentsView({model: this.model, parent_id: id});
+			this.$el.append(view.render().el);
+		}
 	}
 }),
 // a top level message probrably has sub views btw
@@ -214,15 +280,14 @@ AbstractMessageView = Backbone.View.extend({
 		return false;
 	},
 	invalid: function(model, errors) {
-		console.log(errors);
 		// remove existing errors
 		this.$('div[data-role=fieldcontain]').removeClass('has-errors').find('p.error').remove();
 		// place error element into view
 		var _this = this;
 		_.each(errors, function(errArray, name) {
-			var fieldcontain = _this.$(`:input[name=${name}]`).parent().addClass('has-errors');
+			var fieldcontain = _this.$(`:input[name=${name}]`).parent('[data-role=fieldcontain]').addClass('has-errors');
 			_.each(errArray, function(error) {
-				fieldcontain.append(`<p class="error">${error}</p>`)
+				fieldcontain.append(`<p class="error">${error}</p>`);
 			});
 		});
 	}
@@ -283,8 +348,8 @@ MessageRootView = AbstractMessageView.extend({
 				`);
 			// this view should also include a box to do a reply :)
 			// add reply view between the <p> and the <div>
-			var replyView = (new MessageReplyView({model: this.replyModel})).render();
-			this.$("p").after(replyView.el);
+			// var replyView = (new MessageReplyView({model: this.replyModel})).render();
+			// this.$("p").after(replyView.el);
 		}
 		// initialize jquery mobile widgets
 		_.defer(_.bind(function(){
@@ -303,7 +368,7 @@ MessageReplyView = AbstractMessageView.extend({
 		'click a.reply_button' : 'update',
 		'change input[name=message]' : 'saveDraft'
 	},
-	initialize: function() {
+	initialize: function(options) {
 		this.abstractInitialize();
 	},
 	saveDraft: function() {
@@ -319,8 +384,10 @@ MessageReplyView = AbstractMessageView.extend({
 			this.$el.html(`
 						<form class="reply_form">
 							<div data-role="fieldcontain">
-								<input type="text" placeholder="Reply to this" name="message" id="${this.cid}_message" value="${this.model.getHtml('message')}" />
-								<a class="reply_button" data-role="button" data-inline="true" data-icon="check">Reply</a>
+								<div style="display: flex;">
+									<input style="flex-grow: 1;" type="text" placeholder="${this.model.levelName()}" name="message" id="${this.cid}_message" value="${this.model.getHtml('message')}" />
+									<a class="reply_button" data-role="button" data-icon="check">${this.model.levelName()}</a>
+								</div>
 							</div>
 						</form>
 					`);
@@ -338,16 +405,60 @@ MessageReplyView = AbstractMessageView.extend({
 
 	}
 }),
-MessageView = AbstractMessageView.extend({
-	// the message itself
-	// this will be bound to children onlt
-	// this will allow editing a message inline and removing it.
-	render: function() {
-		this.$el.html(`<p>${this.model.getHtml('message')}</p>`);
-		return this;
+CommentsView = AbstractMessageView.extend({
+	// basic layout of this
+	// list of CommentsViews bound with parent_id restriction
+	// MessageReplyView
+	// model is in collection 
+	initialize: function() {
+		// no op
+		this.abstractInitialize();
+		this.listenTo(this.replyModel, 'change:id', this.replaceReplyView);
 	},
-})
-; //end var
+	replaceReplyView: function(model, valueId, options) {
+		if(valueId) {
+			// move model to collection
+			this.model.collection.add(model);
+			// remove all callbacks on this model
+			this.stopListening(model);
+
+			// build a new rpely model and rebind and render!
+			this.replyModel = this.model.buildReply();
+			this.listenTo(this.replyModel, 'change:id', this.replaceReplyView);
+			this.render();
+		}
+	},
+	render: function() {
+		this.$el.html(`<div style="padding-left: 10px;"></div>`);
+		if(this.model.get('parent_id')) {
+			// exclude the top level message from this view
+			this.$('> div').append(`<p>${this.model.getHtml('message')}</p>`);
+		}
+		this.listView = new MessageListView({ model: this.model.collection, parent_id: this.model.get('id'), messageListViewClass: CommentsView});
+		this.$('> div').append(this.listView.render().el);
+		if(this.model.canReply()) {
+			this.replyView = new MessageReplyView({parentModel: this.model, model: this.replyModel});
+			this.$el.append(this.replyView.render().el);
+		}
+		// this.$el.append(`<p>LIST OF COMMENTS VIEWS (empty initially)</p>`);
+		// this.$el.append(`
+		// 			<form class="reply_form">
+		// 				<div data-role="fieldcontain">
+		// 					<input style="flex-grow: 1;" type="text" placeholder="Reply to this" name="message" id="${this.cid}_message" value="" />
+		// 					<a class="reply_button" data-role="button" data-icon="check">Reply</a>
+		// 				</div>
+		// 			</form>
+		// 		`);
+		// initialize jquery mobile widgets
+		// _.defer(_.bind(function(){
+		// 	this.$el.trigger('create');
+		// 	// bind the children view to replies
+		// 	// var childrenList = new MessageListView({ el: this.$('.replies'), model: this.model.collection, parent_id: this.model.get('id'), messageListViewClass: MessageView});
+		// }, this));
+
+		return this;
+	}
+}); //end var
 
 
 // APP INIT
