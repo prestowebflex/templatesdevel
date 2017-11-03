@@ -495,7 +495,7 @@ MessageAndRepliesView = AbstractView.extend({
 				<div>
 					<img style="float: left; height: 2em; width: 2em; margin: none; margin-right: 0.5em;" src="${this.model.ownerAvatarUrl()}" />
 					<h3>${this.model.getHtml('title')}</h3>
-					<small><span class="timeago">${this.model.timeAgo()}</span> by <a href="#">${this.model.ownerName()}</a></small>
+					<small><span class="${this.cid}_timeago">${this.model.timeAgo()}</span> by <a href="#">${this.model.ownerName()}</a></small>
 				</div>
 
 			`);
@@ -508,7 +508,7 @@ MessageAndRepliesView = AbstractView.extend({
 		return this;
 	},
 	updateTimeAgo: function() {
-		this.$('.timeago').text(this.model.timeAgo());
+		this.$(`.${this.cid}_timeago`).text(this.model.timeAgo());
 	},
 	updateTitle: function() {
 		this.$('h3').text(this.model.get('title'));
@@ -750,7 +750,7 @@ CommentsView = AbstractMessageView.extend({
 		}
 	},
 	updateTimeAgo: function() {
-		this.$('.timeago').text(this.model.timeAgo());
+		this.$(`.${this.cid}_timeago`).text(this.model.timeAgo());
 	},
 	render: function() {
 		this.$el.html(`<div style="padding-left: 10px;"></div>`);
@@ -758,7 +758,7 @@ CommentsView = AbstractMessageView.extend({
 			// exclude the top level message from this view
 			this.$('> div').append(`
 					<img style="float: left; height: 2em; width: 2em; margin: none; margin-right: 0.5em;" src="${this.model.ownerAvatarUrl()}" />
-					<small><span class="timeago">${this.model.timeAgo()}</span> by <a href="#">${this.model.ownerName()}</a></small>
+					<small><span class="${this.cid}_timeago">${this.model.timeAgo()}</span> by <a href="#">${this.model.ownerName()}</a></small>
 					<p>${this.model.getHtml('message')}</p>
 			`);
 		}
