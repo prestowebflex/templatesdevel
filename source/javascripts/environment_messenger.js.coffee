@@ -1,4 +1,25 @@
-@node = new Node()
+@node = new Node
+		title: 'Messenger Demo'
+		can_post: true
+		message_push_enabled: true
+		message_view_permission: [
+			{name: "Group1", value: "aadfasdfasdfasdf1"},
+			{name: "Group2", value: "aadfasdfasdfasdf2"},
+			{name: "Group3", value: "aadfasdfasdfasdf3"},
+			{name: "Group4", value: "aadfasdfasdfasdf4"},
+		]
+		message_reply_permission: [
+			{name: "Group1", value: "aadfasdfasdfasdf1"},
+			{name: "Group2", value: "aadfasdfasdfasdf2"},
+			{name: "Group3", value: "aadfasdfasdfasdf3"},
+			{name: "Group4", value: "aadfasdfasdfasdf4"},
+		]
+		message_reply_view_permission: [
+			{name: "Group1", value: "aadfasdfasdfasdf1"},
+			{name: "Group2", value: "aadfasdfasdfasdf2"},
+			{name: "Group3", value: "aadfasdfasdfasdf3"},
+			{name: "Group4", value: "aadfasdfasdfasdf4"},
+		]
 @view = new Backbone.View()
 
 

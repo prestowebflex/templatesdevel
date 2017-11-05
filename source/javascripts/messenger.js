@@ -408,6 +408,7 @@ Messages = Backbone.Collection.extend({
 	}
 })
 AbstractView = Backbone.View.extend({
+
 	addView: function(view) {
 		if(!this._subviews) {
 			this._subviews = [];
@@ -424,12 +425,17 @@ AbstractView = Backbone.View.extend({
 	},
 	propogateEventToSubViews: function(evtName) {
 		this.on(evtName, _.bind(this._sendEventToViews, this, evtName), this);
+	},
+	getNode: function() {
+		return this.options.node;
 	}
 
 });
 AppView = AbstractView.extend({
-	events: {
-		'click .ui-btn-right': 'addBlankMessage'
+	events: function() {
+		return {
+			'click .ui-btn-right': 'addBlankMessage'
+		};
 	},
 	addBlankMessage: function() {
 		this.model.add(new Message({draft: true}));
@@ -437,9 +443,6 @@ AppView = AbstractView.extend({
 	initialize: function() {
 		// do nothing for now.
 		// this is just called once to setup the view for the application only
-		this.listView = new MessageListView({ model: this.model, parent_id: null, messageListViewClass: MessageAndRepliesView});
-		this.addView(this.listView);
-		this.$el.append(this.listView.render().el);
 		// setup timer
 		// bind a timer to appView
 		this.on("stoptimer",this.clearTock,this);
@@ -448,6 +451,23 @@ AppView = AbstractView.extend({
 	},
 	tock: function() {
 		this.listView.trigger("tock");
+	},
+	render: function() {
+		this.$el.html(
+			`<div data-role="header" data-theme="a">
+				<h2>loading...</h2>
+				<a href="#" class="ui-btn-right" data-icon="plus">Compose</a>
+			</div>`
+		);
+		this.listView = new MessageListView({ node: this.getNode(), model: this.model, parent_id: null, messageListViewClass: MessageAndRepliesView});
+		this.addView(this.listView);
+		this.$el.append(this.listView.render().el);
+		_.defer(_.bind(function(){
+			this.$('[data-role=header]').trigger('create');
+			// bind the children view to replies
+			// var childrenList = new MessageListView({ el: this.$('.replies'), model: this.model.collection, parent_id: this.model.get('id'), messageListViewClass: MessageView});
+		}, this));
+		return this;
 	},
 	clearTock: function() {
 		window.clearInterval(this._timer);
@@ -468,7 +488,7 @@ MessageListView = AbstractView.extend({
 	addOne: function(message){
 		// TODO should add messages in correct location! by date created
 		if(message.get('parent_id')==this.options.parent_id) {
-			var view = new this.options.messageListViewClass({model: message});
+			var view = new this.options.messageListViewClass({node: this.getNode(), model: message});
 			this.$el.append(view.render().el);
 			this.addView(view);
 		}
@@ -502,7 +522,7 @@ MessageAndRepliesView = AbstractView.extend({
 
 			`);
 		// initial main message view
-		var view = new MessageRootView({model: this.model});
+		var view = new MessageRootView({node: this.getNode(), model: this.model});
 		this.$el.append(view.render().el);
 		this.addView(view);
 		this.initializeChildren();
@@ -624,6 +644,7 @@ MessageRootView = AbstractMessageView.extend({
 			title: this.val('title'),
 			message: this.val('message'),
 			push_notifiation: this.val('push_notifiation')=="1",
+			groups: _.pluck(this.$(`:input[name^=checkbox]`).serializeArray(),'value')
 		};
 	},
 	edit: function() {
@@ -631,7 +652,11 @@ MessageRootView = AbstractMessageView.extend({
 	},
 	render: function() {
 		if(this.isComposeMode()) {
-			this.$el.html(`<form class='message_form'>
+
+			this.$el.html(`<form class='message_form'></form>`);
+			var form = this.$(".message_form");
+
+			form.append(`
 	        <div data-role="fieldcontain">
 	            <label for="${this.cid}_title">Title:</label>
 	            <input id="${this.cid}_title" name="title" value="${this.model.getHtml('title')}" placeholder="Topic">
@@ -640,18 +665,41 @@ MessageRootView = AbstractMessageView.extend({
 	            <label for="${this.cid}_message">Message:</label>
 	            <textarea id="${this.cid}_message" name="message" placeholder="Message">${this.model.getHtml('message')}</textarea>
 	        </div>
-	        <div data-role="fieldcontain">
-	        	<label for="${this.cid}_push">Send push notification:</label>
-				<select name="push_notifiation" id="${this.cid}_push" data-role="slider">
-					<option value="0" ${!this.model.get('push_notifiation')?" selected":""}>No</option>
-					<option value="1" ${this.model.get('push_notifiation')?" selected":""}>Yes</option>
-				</select> 	        	
-	        </div>
+	        `);
+
+	        if(this.getNode().get('message_push_enabled')) {
+	        	form.append(
+	        		`<div data-role="fieldcontain">
+			        	<label for="${this.cid}_push">Send push notification:</label>
+						<select name="push_notifiation" id="${this.cid}_push" data-role="slider">
+							<option value="0" ${!this.model.get('push_notifiation')?" selected":""}>No</option>
+							<option value="1" ${this.model.get('push_notifiation')?" selected":""}>Yes</option>
+						</select> 	        	
+			        </div>`);
+	        }
+	        _.each(this.constructor.PERMISSION_NAMES,function(permission_text,permission_name) {
+	        	if(this.getNode().get(permission_name)) {
+		        	var fieldset = $(`
+				        <div data-role="fieldcontain">
+				        	<fieldset data-role="controlgroup">
+				        		<legend>${_.escape(permission_text)}</legend>
+				        	</fieldset>
+				        </div>`).appendTo(form).find('fieldset');
+		    		_.each(this.getNode().get(permission_name),function(perm, idx){
+		    			fieldset.append(`
+			        		<input type="checkbox" id="${this.cid}_${permission_name}_${idx}" name="${permission_name}_${idx}" value="${_.escape(perm.value)}" ${_.contains(this.model.get('groups'),perm.value)?'checked':''}>
+			        		<label for="${this.cid}_${permission_name}_${idx}">${_.escape(perm.name)}</label>
+		        		`);
+		    		},this);
+		    	}
+	        },this);
+
+	        form.append(`
 	        <fieldset class="ui-grid-a">
 	            <div class="ui-block-a"><a class="update" data-role="button" data-icon="check">${this.model.get('editing')?'Edit':'Send'}</a></div>
 	            <div class="ui-block-b"><a class="${this.model.get('editing')?'cancel':'delete'}" data-icon="delete" data-role="button">Cancel</a></div>
 	        </fieldset>
-	    </form>`);
+	        	`);
 
 		} else {
 			// show a message :)
@@ -681,6 +729,12 @@ MessageRootView = AbstractMessageView.extend({
 		}, this));
 
 		return this;
+	}
+},{
+	PERMISSION_NAMES: {
+		'message_view_permission':'Who can see message?',
+		'message_reply_permission':'Who can reply?',
+		'message_reply_view_permission':'Who can see replies?'
 	}
 }),
 // this is the little mini form for a messgae reply.
@@ -765,11 +819,11 @@ CommentsView = AbstractMessageView.extend({
 					<p>${this.model.getHtml('message')}</p>
 			`);
 		}
-		this.listView = new MessageListView({ model: this.model.collection, parent_id: this.model.get('id'), messageListViewClass: CommentsView});
+		this.listView = new MessageListView({ node: this.getNode(), model: this.model.collection, parent_id: this.model.get('id'), messageListViewClass: CommentsView});
 		this.addView(this.listView);
 		this.$('> div').append(this.listView.render().el);
 		if(this.model.canReply()) {
-			this.replyView = new MessageReplyView({parentModel: this.model, model: this.replyModel});
+			this.replyView = new MessageReplyView({node: this.getNode(), parentModel: this.model, model: this.replyModel});
 			this.addView(this.replyView);
 			this.$el.append(this.replyView.render().el);
 		}
@@ -804,7 +858,8 @@ initApp2(view, node).done(function(app){
 		var messages = new Messages(),
 		app = new AppView({
 			model: messages,
-			el: view.$('.notification_template')[0] });
+			node: node,
+			el: view.$('.notification_template')[0] }).render();
 
 		view.on('closepage', function() {
 			app.trigger("stoptimer");
