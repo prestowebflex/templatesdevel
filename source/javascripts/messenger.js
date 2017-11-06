@@ -407,6 +407,12 @@ Message = Backbone.Model.extend({
 		'message_view_permission':'Who can see message?',
 		'message_reply_permission':'Who can reply?',
 		'message_reply_view_permission':'Who can see replies?'
+	},
+	LABELS: {
+		valid_from_set: 'Send now?',
+		valid_from: 'Send at:',
+		valid_to_set: 'Never expires?',
+		valid_to: 'Expires at:'
 	}
 }),
 Messages = Backbone.Collection.extend({
@@ -635,7 +641,9 @@ MessageRootView = AbstractMessageView.extend({
 				'click a.update' : 'update',
 				'click a.edit' : 'edit',
 				'submit form.message_form' : 'update',
-				'click a.cancel' : 'cancel'
+				'click a.cancel' : 'cancel',
+				'change select[name=valid_from_set]' : 'showHideDateInputs',
+				'change select[name=valid_to_set]' : 'showHideDateInputs'
 			});
 		}
 		if(this.model.canDelete()) {
@@ -648,19 +656,37 @@ MessageRootView = AbstractMessageView.extend({
 	initialize: function() {
 		this.abstractInitialize();
 	},
+	showHideDateInputs: function(evt) {
+		var target = $(evt.target);
+		target.parent(".ui-controlgroup-controls").find("input[type=datetime-local]").toggle(target.val()==0);
+	},
 	getFormValues: function() {
 		var values = {
 			title: this.val('title'),
 			message: this.val('message'),
 			push_notifiation: this.val('push_notifiation')=="1"
 		};
+		_.each(['valid_from', 'valid_to'], function(type){
+			values[`${type}_set`] = this.val(`${type}_set`)=="1";
+			values[type] = this.val(type);
+		}, this);
 		_.each(_.keys(this.model.constructor.PERMISSION_NAMES),function(permission_name){
-			values[permission_name] = _.pluck(this.$(`:input[name^=${permission_name}_]`).serializeArray(),'value');
+			values[permission_name] = this.val(permission_name);
+			//_.pluck(this.$(`:input[name^=${permission_name}_]`).serializeArray(),'value');
 		},this);
 		return values;
 	},
 	edit: function() {
 		this.model.set({draft: true, editing: true});
+	},
+	_slideHtml: function(name, label, yes, no) {
+    		return `
+	        	${label?`<label for="${this.cid}_${name}">${label}</label>`:''}
+				<select name="${name}" id="${this.cid}_${name}" data-role="slider">
+					<option value="0" ${!this.model.get(name)?" selected":""}>${no}</option>
+					<option value="1" ${this.model.get(name)?" selected":""}>${yes}</option>
+				</select> 	        	
+	        `;
 	},
 	render: function() {
 		if(this.isComposeMode()) {
@@ -678,32 +704,63 @@ MessageRootView = AbstractMessageView.extend({
 	            <textarea id="${this.cid}_message" name="message" placeholder="Message">${this.model.getHtml('message')}</textarea>
 	        </div>
 	        `);
+	        _.each(['valid_from', 'valid_to'],function(type){
+		      	var fieldcontain = $(`
+		      		<div data-role="fieldcontain">
+		      			<fieldset data-role="controlgroup" data-type="horizontal">
+		      				<legend>${this.model.constructor.LABELS[type]}</legend>
+		      			</fieldset>
+		      		</div>
+		      		`).appendTo(form).find("fieldset");
+
+				fieldcontain.append(this._slideHtml(`${type}_set`, false, type=="valid_from"?'Now':'Never', 'At'));
+		        fieldcontain.append(`
+		        		<input id="${this.cid}_${type}" name="${type}" value="${this.model.getHtml(type)}" type="datetime-local">
+		        	`);
+
+	        }, this);
 
 	        if(this.getNode().get('message_push_enabled')) {
-	        	form.append(
-	        		`<div data-role="fieldcontain">
-			        	<label for="${this.cid}_push">Send push notification:</label>
-						<select name="push_notifiation" id="${this.cid}_push" data-role="slider">
-							<option value="0" ${!this.model.get('push_notifiation')?" selected":""}>No</option>
-							<option value="1" ${this.model.get('push_notifiation')?" selected":""}>Yes</option>
-						</select> 	        	
-			        </div>`);
+	        	form.append(`<div data-role="fieldcontain">
+	        		${this._slideHtml('push_notifiation', 'Send push notification', 'Yes', 'No')}
+	        		</div>`);
 	        }
+	      //   _.each(this.model.constructor.PERMISSION_NAMES,function(permission_text,permission_name) {
+	      //   	var permissions = this.getNode().get(permission_name);
+	      //   	if(_.isArray(permissions) && permissions.length > 0) {
+		     //    	var fieldset = $(`
+				   //      <div data-role="fieldcontain">
+				   //      	<fieldset data-role="controlgroup">
+				   //      		<legend>${_.escape(permission_text)}</legend>
+				   //      	</fieldset>
+				   //      </div>`).appendTo(form).find('fieldset');
+		    	// 	_.each(permissions,function(perm, idx){
+		    	// 		fieldset.append(`
+			    //     		<input type="checkbox" id="${this.cid}_${permission_name}_${idx}" name="${permission_name}_${idx}" value="${_.escape(perm.value)}" ${_.contains(this.model.get(permission_name),perm.value)?'checked':''}>
+			    //     		<label for="${this.cid}_${permission_name}_${idx}">${_.escape(perm.name)}</label>
+		     //    		`);
+		    	// 	},this);
+		    	// }
+	      //   },this);
+	      	var fieldcontain = $(`
+	      		<div data-role="fieldcontain">
+	      			<fieldset data-role="controlgroup">
+	      				<legend>Permissions</legend>
+	      			</fieldset>
+	      		</div>
+	      		`).appendTo(form).find("fieldset");
 	        _.each(this.model.constructor.PERMISSION_NAMES,function(permission_text,permission_name) {
 	        	var permissions = this.getNode().get(permission_name);
 	        	if(_.isArray(permissions) && permissions.length > 0) {
 		        	var fieldset = $(`
-				        <div data-role="fieldcontain">
-				        	<fieldset data-role="controlgroup">
-				        		<legend>${_.escape(permission_text)}</legend>
-				        	</fieldset>
-				        </div>`).appendTo(form).find('fieldset');
-		    		_.each(permissions,function(perm, idx){
-		    			fieldset.append(`
-			        		<input type="checkbox" id="${this.cid}_${permission_name}_${idx}" name="${permission_name}_${idx}" value="${_.escape(perm.value)}" ${_.contains(this.model.get(permission_name),perm.value)?'checked':''}>
-			        		<label for="${this.cid}_${permission_name}_${idx}">${_.escape(perm.name)}</label>
-		        		`);
-		    		},this);
+		        		<label for="${this.cid}_${permission_name}">${_.escape(permission_text)}</label>
+		        		<select data-native-menu="false" id="${this.cid}_${permission_name}" name="${permission_name}" multiple="true">
+		        			<option>${_.escape(permission_text)}</option>
+		        			${_.map(permissions,function(perm){
+								return `<option value="${_.escape(perm.value)}" ${_.contains(this.model.get(permission_name),perm.value)?'selected':''}>${_.escape(perm.name)}</option>`;
+		        			}, this).join('')}
+		        		</select>
+				        `).appendTo(fieldcontain).find('select');
 		    	}
 	        },this);
 
@@ -737,6 +794,7 @@ MessageRootView = AbstractMessageView.extend({
 		// initialize jquery mobile widgets
 		_.defer(_.bind(function(){
 			this.$el.trigger('create');
+	        this.$(':input[name$=_set]').trigger('change');
 			// bind the children view to replies
 			// var childrenList = new MessageListView({ el: this.$('.replies'), model: this.model.collection, parent_id: this.model.get('id'), messageListViewClass: MessageView});
 		}, this));
