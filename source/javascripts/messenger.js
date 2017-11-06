@@ -372,11 +372,11 @@ Message = Backbone.Model.extend({
 				if(_.isDate(attrs.valid_to) && (attrs.valid_to < new Date())) {
 					e('valid_to', "Expiry time should be in the future.");
 				}
-				if(_.isDate(attrs.valid_from) && (attrs.valid_from > new Date())) {
+				if(_.isDate(attrs.valid_from) && (attrs.valid_from < new Date())) {
 					e('valid_from', "Send time should be in the future.");
 				}
 				if(_.isDate(attrs.valid_to) && _.isDate(attrs.valid_from) && attrs.valid_to < attrs.valid_from) {
-					e('valid_to', "Expiry time should be greater than Sening time");
+					e('valid_to', "Expiry time should be greater than Sending time");
 				}
 				_.isBoolean(attrs.push_notifiation) || e('push_notifiation',"should be a boolean value only");
 			}
