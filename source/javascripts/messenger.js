@@ -369,6 +369,15 @@ Message = Backbone.Model.extend({
 						_.isDate(attrs[name]) || e(name,"A time is required");
 					}
 				});
+				if(_.isDate(attrs.valid_to) && (attrs.valid_to < new Date())) {
+					e('valid_to', "Expiry time should be in the future.");
+				}
+				if(_.isDate(attrs.valid_from) && (attrs.valid_from > new Date())) {
+					e('valid_from', "Send time should be in the future.");
+				}
+				if(_.isDate(attrs.valid_to) && _.isDate(attrs.valid_from) && attrs.valid_to < attrs.valid_from) {
+					e('valid_to', "Expiry time should be greater than Sening time");
+				}
 				_.isBoolean(attrs.push_notifiation) || e('push_notifiation',"should be a boolean value only");
 			}
 			checkStr(attrs.message) || e('message', 'A body this for this message is required');
@@ -702,7 +711,10 @@ MessageRootView = AbstractMessageView.extend({
 		};
 		_.each(['valid_from', 'valid_to'], function(type){
 			values[`${type}_set`] = this.val(`${type}_set`)=="1";
-			values[type] = new Date(this.val(type));
+			var dateString = this.val(type);
+			if(dateString) {
+				values[type] = new Date(dateString);	
+			}
 		}, this);
 		_.each(_.keys(this.model.constructor.PERMISSION_NAMES),function(permission_name){
 			values[permission_name] = this.val(permission_name);
