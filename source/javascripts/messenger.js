@@ -306,7 +306,10 @@ Message = Backbone.Model.extend({
 		draft: false,
 		push_notifiation: false,
 		parent_id: null,
-		owner: new User()
+		owner: new User(),
+		message_view_permission: [],
+		message_reply_permission: [],
+		message_reply_view_permission: []
 	},
 	initialize: function(){
 		// setup replies
@@ -399,6 +402,11 @@ Message = Backbone.Model.extend({
 		0: "Message",
 		1: "Comment",
 		2: "Reply"
+	},
+	PERMISSION_NAMES: {
+		'message_view_permission':'Who can see message?',
+		'message_reply_permission':'Who can reply?',
+		'message_reply_view_permission':'Who can see replies?'
 	}
 }),
 Messages = Backbone.Collection.extend({
@@ -454,16 +462,17 @@ AppView = AbstractView.extend({
 	},
 	render: function() {
 		this.$el.html(
-			`<div data-role="header" data-theme="a">
-				<h2>loading...</h2>
-				<a href="#" class="ui-btn-right" data-icon="plus">Compose</a>
+			`<div class="ui-header ui-bar-a">
+				<h2 class="ui-title">TODO SET A TITLE OR CLEAN THIS PART UP FIXME ???</h2>
+				<a href="#" data-role="button" class="ui-btn-right" data-icon="plus">Compose</a>
 			</div>`
 		);
+		this.$el.css({margin: '-15px'});
 		this.listView = new MessageListView({ node: this.getNode(), model: this.model, parent_id: null, messageListViewClass: MessageAndRepliesView});
 		this.addView(this.listView);
 		this.$el.append(this.listView.render().el);
 		_.defer(_.bind(function(){
-			this.$('[data-role=header]').trigger('create');
+			this.$el.trigger('create');
 			// bind the children view to replies
 			// var childrenList = new MessageListView({ el: this.$('.replies'), model: this.model.collection, parent_id: this.model.get('id'), messageListViewClass: MessageView});
 		}, this));
@@ -640,12 +649,15 @@ MessageRootView = AbstractMessageView.extend({
 		this.abstractInitialize();
 	},
 	getFormValues: function() {
-		return {
+		var values = {
 			title: this.val('title'),
 			message: this.val('message'),
-			push_notifiation: this.val('push_notifiation')=="1",
-			groups: _.pluck(this.$(`:input[name^=checkbox]`).serializeArray(),'value')
+			push_notifiation: this.val('push_notifiation')=="1"
 		};
+		_.each(_.keys(this.model.constructor.PERMISSION_NAMES),function(permission_name){
+			values[permission_name] = _.pluck(this.$(`:input[name^=${permission_name}_]`).serializeArray(),'value');
+		},this);
+		return values;
 	},
 	edit: function() {
 		this.model.set({draft: true, editing: true});
@@ -677,17 +689,18 @@ MessageRootView = AbstractMessageView.extend({
 						</select> 	        	
 			        </div>`);
 	        }
-	        _.each(this.constructor.PERMISSION_NAMES,function(permission_text,permission_name) {
-	        	if(this.getNode().get(permission_name)) {
+	        _.each(this.model.constructor.PERMISSION_NAMES,function(permission_text,permission_name) {
+	        	var permissions = this.getNode().get(permission_name);
+	        	if(_.isArray(permissions) && permissions.length > 0) {
 		        	var fieldset = $(`
 				        <div data-role="fieldcontain">
 				        	<fieldset data-role="controlgroup">
 				        		<legend>${_.escape(permission_text)}</legend>
 				        	</fieldset>
 				        </div>`).appendTo(form).find('fieldset');
-		    		_.each(this.getNode().get(permission_name),function(perm, idx){
+		    		_.each(permissions,function(perm, idx){
 		    			fieldset.append(`
-			        		<input type="checkbox" id="${this.cid}_${permission_name}_${idx}" name="${permission_name}_${idx}" value="${_.escape(perm.value)}" ${_.contains(this.model.get('groups'),perm.value)?'checked':''}>
+			        		<input type="checkbox" id="${this.cid}_${permission_name}_${idx}" name="${permission_name}_${idx}" value="${_.escape(perm.value)}" ${_.contains(this.model.get(permission_name),perm.value)?'checked':''}>
 			        		<label for="${this.cid}_${permission_name}_${idx}">${_.escape(perm.name)}</label>
 		        		`);
 		    		},this);
@@ -729,12 +742,6 @@ MessageRootView = AbstractMessageView.extend({
 		}, this));
 
 		return this;
-	}
-},{
-	PERMISSION_NAMES: {
-		'message_view_permission':'Who can see message?',
-		'message_reply_permission':'Who can reply?',
-		'message_reply_view_permission':'Who can see replies?'
 	}
 }),
 // this is the little mini form for a messgae reply.
