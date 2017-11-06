@@ -349,11 +349,27 @@ Message = Backbone.Model.extend({
 			// return TRUE if string is OK
 			checkStr = function(str){
 				return _.isString(str) && str.trim().length > 0;
+			},
+			checkArray = function(array) {
+				return _.isArray(array) && array.length > 0;
+			},
+			checkBoolean = function(boolean) {
+				return _.isBoolean(boolean);
 			};
 		if(!attrs.draft) {
 			// if is a ROOT message we require a title
 			if(!attrs.parent_id) {
 				checkStr(attrs.title) || e('title', 'A Topic for this message is required.');
+				_.each(this.constructor.PERMISSION_NAMES,function(label, name){
+					checkArray(attrs[name]) || e(name, `Permission ${label} is empty`);
+				}, this);
+				_.each(['valid_to','valid_from'],function(name){
+					_.isBoolean(attrs[`${name}_set`]) || e(`${name}_set`,"should be a boolean value only");
+					if(!attrs[`${name}_set`]) {
+						_.isDate(attrs[name]) || e(name,"A time is required");
+					}
+				});
+				_.isBoolean(attrs.push_notifiation) || e('push_notifiation',"should be a boolean value only");
 			}
 			checkStr(attrs.message) || e('message', 'A body this for this message is required');
 		}
@@ -404,9 +420,9 @@ Message = Backbone.Model.extend({
 		2: "Reply"
 	},
 	PERMISSION_NAMES: {
-		'message_view_permission':'Who can see message?',
-		'message_reply_permission':'Who can reply?',
-		'message_reply_view_permission':'Who can see replies?'
+		'message_view_permission':'Who can see message',
+		'message_reply_permission':'Who can reply',
+		'message_reply_view_permission':'Who can see replies'
 	},
 	LABELS: {
 		valid_from_set: 'Send now?',
@@ -622,11 +638,12 @@ AbstractMessageView = AbstractView.extend({
 	},
 	invalid: function(model, errors) {
 		// remove existing errors
+		console.log(errors);
 		this.$('div[data-role=fieldcontain]').removeClass('has-errors').find('p.error').remove();
 		// place error element into view
 		var _this = this;
 		_.each(errors, function(errArray, name) {
-			var fieldcontain = _this.$(`:input[name=${name}]`).parent('[data-role=fieldcontain]').addClass('has-errors');
+			var fieldcontain = _this.$(`:input[name=${name}]`).closest('[data-role=fieldcontain]').addClass('has-errors');
 			_.each(errArray, function(error) {
 				fieldcontain.append(`<p class="error">${error}</p>`);
 			});
@@ -660,6 +677,23 @@ MessageRootView = AbstractMessageView.extend({
 		var target = $(evt.target);
 		target.parent(".ui-controlgroup-controls").find("input[type=datetime-local]").toggle(target.val()==0);
 	},
+	_dateToLocalDateString: function(date) {
+	    function pad(number) {
+	      if (number < 10) {
+	        return '0' + number;
+	      }
+	      return number;
+	    }
+	    if(!_.isDate(date)) {
+	    	return '';
+	    }
+	      return date.getFullYear() +
+	        '-' + pad(date.getMonth() + 1) +
+	        '-' + pad(date.getDate()) +
+	        'T' + pad(date.getHours()) +
+	        ':' + pad(date.getMinutes()) +
+	        ':' + pad(date.getSeconds());
+	},
 	getFormValues: function() {
 		var values = {
 			title: this.val('title'),
@@ -668,7 +702,7 @@ MessageRootView = AbstractMessageView.extend({
 		};
 		_.each(['valid_from', 'valid_to'], function(type){
 			values[`${type}_set`] = this.val(`${type}_set`)=="1";
-			values[type] = this.val(type);
+			values[type] = new Date(this.val(type));
 		}, this);
 		_.each(_.keys(this.model.constructor.PERMISSION_NAMES),function(permission_name){
 			values[permission_name] = this.val(permission_name);
@@ -714,10 +748,7 @@ MessageRootView = AbstractMessageView.extend({
 		      		`).appendTo(form).find("fieldset");
 
 				fieldcontain.append(this._slideHtml(`${type}_set`, false, type=="valid_from"?'Now':'Never', 'At'));
-		        fieldcontain.append(`
-		        		<input id="${this.cid}_${type}" name="${type}" value="${this.model.getHtml(type)}" type="datetime-local">
-		        	`);
-
+				$(`<input id="${this.cid}_${type}" name="${type}" value="${this._dateToLocalDateString(this.model.get(type))}" type="datetime-local">`).appendTo(fieldcontain);
 	        }, this);
 
 	        if(this.getNode().get('message_push_enabled')) {

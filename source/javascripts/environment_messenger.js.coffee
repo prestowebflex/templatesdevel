@@ -41,5 +41,8 @@
 		_.defer =>
 			p.resolve({})
 			@view.trigger "changepage"
-			window.messages.create({title:"demo", message:"Other"});
+			message = {title:"demo", message:"Other", valid_to_set: false, valid_to: new Date(), valid_from_set: false, valid_from: new Date()}
+			_.chain(Message.PERMISSION_NAMES).keys().each (key) ->
+				message[key] = _.chain(node.get(key)).pluck("value").shuffle().first(_.random(1,4)).value()
+			window.messages.create message
 	p.promise()
