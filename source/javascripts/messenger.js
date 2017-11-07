@@ -309,7 +309,9 @@ Message = Backbone.Model.extend({
 		owner: new User(),
 		message_view_permission: [],
 		message_reply_permission: [],
-		message_reply_view_permission: []
+		message_reply_view_permission: [],
+		valid_from_set: false,
+		valid_to_set: false
 	},
 	initialize: function(){
 		// setup replies
@@ -318,6 +320,7 @@ Message = Backbone.Model.extend({
 			updated_at: new Date(),
 			created_at: new Date()
 		});
+		this.files = new Files();
 	},
 	sync: function(method, model, options) {
 		if(method=="create") {
@@ -340,6 +343,10 @@ Message = Backbone.Model.extend({
 		return _.escape(this.get(key));
 	},
 	validate: function(attrs, options) {
+		options || (options = {});
+		if(!options.validate) {
+			return false;
+		}
 		var errors = false,
 			e = function(name, value) {
 				if(!_.isObject(errors)) { errors = {}; };
@@ -445,7 +452,23 @@ Messages = Backbone.Collection.extend({
 	sync: function(method, model, options) {
 		console.log("MESSAGES.SYNC", method, model, options);
 	}
-})
+}),
+File = Backbone.Model.extend({
+	sync: function(method, model, options) {
+		if(method=="create") {
+			// give this model a FAKE ID for now
+			model.set({id: _.uniqueId('file_')});
+		}
+		model.set({updated_at: new Date()});
+		console.log("FILE.SYNC", method, model, options);
+	}
+}),
+Files = Backbone.Collection.extend({
+	model: File,
+	sync: function(method, model, options) {
+		console.log("FILES.SYNC", method, model, options);
+	}
+}),
 AbstractView = Backbone.View.extend({
 
 	addView: function(view) {
@@ -469,7 +492,7 @@ AbstractView = Backbone.View.extend({
 		return this.options.node;
 	}
 
-});
+}),
 AppView = AbstractView.extend({
 	events: function() {
 		return {
@@ -513,6 +536,29 @@ AppView = AbstractView.extend({
 		window.clearInterval(this._timer);
 		this._timer = null;
 	}
+}),
+FilesListView = AbstractView.extend({
+	events: {
+		'dragover': 'dragover'
+	},
+	className: 'files-list-view',
+	initialize: function() {
+		console.log("INIT", this.options, arguments);
+	},
+	dragover: function(evt) {
+		console.log("DRAGOVER", evt);
+	},
+	render: function() {
+		// TODO add drop button
+		return this;
+	}
+	// List of files embedded within the Message Editor
+	// handle the list
+	// handle adding new files
+}),
+FileView = AbstractView.extend({
+	// each file represented on the list
+	// thumbnail - upload status etc...
 }),
 // the main message list view
 MessageListView = AbstractView.extend({
@@ -609,7 +655,7 @@ AbstractMessageView = AbstractView.extend({
 	cancel: function(e) {
 		e.preventDefault();
 		this._destroyCancelConfirmation('Discard Changes?', function(){
-			this.model.set({draft: false, editing: false});
+			this.model.set({draft: false, editing: false}, {validate: false});
 		});
 	},
 	_destroyCancelConfirmation: function(message, callbackIfOk) {
@@ -628,6 +674,7 @@ AbstractMessageView = AbstractView.extend({
 		if (!this.isComposeMode()) { return false; }
 		var formValues = this.getFormValues();
 		var attrs = _.pick.apply(this, _.flatten([this.model.attributes,_.keys(formValues)]));
+		// console.log("EQUAL", attrs, formValues);
 		return _.isEqual(attrs, formValues);
 	},
 	isComposeMode: function() {
@@ -717,13 +764,13 @@ MessageRootView = AbstractMessageView.extend({
 			}
 		}, this);
 		_.each(_.keys(this.model.constructor.PERMISSION_NAMES),function(permission_name){
-			values[permission_name] = this.val(permission_name);
+			values[permission_name] = this.val(permission_name) || [];
 			//_.pluck(this.$(`:input[name^=${permission_name}_]`).serializeArray(),'value');
 		},this);
 		return values;
 	},
 	edit: function() {
-		this.model.set({draft: true, editing: true});
+		this.model.set({draft: true, editing: true}, {validate: false});
 	},
 	_slideHtml: function(name, label, yes, no) {
     		return `
@@ -806,6 +853,10 @@ MessageRootView = AbstractMessageView.extend({
 				        `).appendTo(fieldcontain).find('select');
 		    	}
 	        },this);
+	        // add the files list view to the form at this point
+	        this.filesListView = new FilesListView({node: this.getNode(), message: this.model, model: this.model.files});
+			this.addView(this.filesListView);
+			form.append(this.filesListView.render().el);
 
 	        form.append(`
 	        <fieldset class="ui-grid-a">

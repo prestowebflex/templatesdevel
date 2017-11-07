@@ -40,8 +40,11 @@
 		@view.setElement($ "body")
 		_.defer =>
 			p.resolve({})
+
 			@view.trigger "changepage"
-			message = {title:"demo", message:"Other", valid_to_set: true, valid_to: new Date(), valid_from_set: true, valid_from: new Date()}
+			start = new Date(Date.now()+1000);
+			end = new Date(start.getTime()+20000000);
+			message = {title:"demo", message:"Other", valid_to_set: false, valid_to: end, valid_from_set: false, valid_from: start}
 			_.chain(Message.PERMISSION_NAMES).keys().each (key) ->
 				message[key] = _.chain(node.get(key)).pluck("value").shuffle().first(_.random(1,4)).value()
 			window.messages.create message
