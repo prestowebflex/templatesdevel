@@ -33,6 +33,9 @@ class AwsDirectHelper
 	def generate_form_values
 		{
 			url: "https://#{bucket}.s3-#{region}.amazonaws.com",
+			min_size: min_file_size,
+			max_size: max_file_size,
+			expires: (Time.now + upload_expiration).utc,
 			form_values: 		{  
 									policy: policy,
 									key: key,
@@ -62,11 +65,11 @@ class AwsDirectHelper
     end
 
     def upload_expiration
-    	1.hour
+    	1.week
     end
 
     def min_file_size
-    	1024 #1.kilobyte
+    	1 #1.byte
     end
 
     def max_file_size

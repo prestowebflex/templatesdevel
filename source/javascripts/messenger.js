@@ -25,6 +25,12 @@ Comment 2
 input for new comment
 
 */
+// extend Number to get fileSize out of it.
+Object.defineProperty(Number.prototype,'fileSize',{value:function(a,b,c,d){
+ return (a=a?[1e3,'k','B']:[1024,'K','iB'],b=Math,c=b.log,
+ d=c(this)/c(a[0])|0,this/b.pow(a[0],d)).toFixed(2)
+ +' '+(d?(a[1]+'MGTPEZY')[--d]+a[2]:'Bytes');
+},writable:false,enumerable:false});
 
 var initApp = function(view, node) {
   var p = jQuery.Deferred(),
@@ -188,7 +194,7 @@ BackboneModelFileUpload = Backbone.Model.extend({
     _progressHandler: function( event ) {
       if (event.lengthComputable) {
         var percentComplete = event.loaded / event.total;
-        this.trigger( 'progress', percentComplete );
+        this.trigger( 'progress', percentComplete, event.loaded, event.total);
       }
     }
   }),
@@ -363,13 +369,79 @@ AWSS3File = BackboneModelFileUpload.extend({
 	},
 	initialize: function(attrs,options) {
 		// fix up url and options
-		this.set(options.node.get('aws_signing_info').form_values);
-		this.url = options.node.get('aws_signing_info').url;
+		this.aws_signing_info = options.node.get('aws_signing_info');
+		this.set(this.aws_signing_info.form_values);
+		this.url = this.aws_signing_info.url;
 	},
 	// this is the method to upload a file to aws s3
 	url: null,
-	fileAttribute: 'file'
+	fileAttribute: 'file',
+	parse: function(resp) {
+		var $xml = $(resp),
+			result = {};
+		$xml.find("PostResponse > *").each(function(idx, e){
+			result[e.nodeName.toLowerCase()] = e.textContent;
+		});
+		return result;
+	},
+	abort: function() {
+		// abort an in progress event
+		if(this.xhr) {
+			this.aborted = true;
+			this.xhr.abort("Upload cancelled");
+		}
+	},
+	validate: function(attrs, options) {
+		options || (options = {});
+		if(!options.validate) {
+			return false;
+		}
+		var errors = false,
+			e = function(name, value) {
+				if(!_.isObject(errors)) { errors = {}; };
+				if(!_.isArray(errors[name])) { errors[name] = []; };
+				errors[name].push(value);
+			},
+		file = attrs[this.fileAttribute];
+		if(!file) {
+			e('file', 'A file is required to upload');
+		} else {
+			if(!_.contains(this.constructor.ALLOWED_MIME_TYPES, file.type)) {
+				e('file', `File type is invalid only image and video types are allowed.`);
+			}
+			if(file.size < this.aws_signing_info.min_size) {
+				e('file', `File is too small at ${file.size.fileSize()} minimum size is ${this.aws_signing_info.min_size.fileSize()}`)
+			}
+			if(file.size > this.aws_signing_info.max_size) {
+				e('file', `File is too large at ${file.size.fileSize()}, Maximum size allowed is ${this.aws_signing_info.max_size.fileSize()}`)
+			}
+		}
+		//policy expiry check?
+		this.previousError = errors;
+
+		return errors;
+	},
+	isImage: function() {
+		var file = this.get(this.fileAttribute);
+		return (file && file.type.startsWith('image/'));
+	},
+	// force datatype to be XML
+	sync: function(method, model, options) {
+		this.previousError = false;
+		this.aborted = false;
+		options = options || {}
+		options.dataType = "xml";
+		this.xhr = Backbone.sync.call(this, method, model, options);
+		return this.xhr;
+		// if(method=="create") {
+		// 	// give this model a FAKE ID for now
+		// 	model.set({id: _.uniqueId('file_')});
+		// }
+		// model.set({updated_at: new Date()});
+	}
 	// on posting we need to set the other values correct for s3 here
+},{
+	ALLOWED_MIME_TYPES: ["video/mp4", "video/ogg", "video/webm", "image/gif", "image/jpeg", "image/png"]
 }),
 File = Backbone.Model.extend({
 	// this is the method to send the details of the uploaded file to s3 to our server
@@ -384,8 +456,34 @@ File = Backbone.Model.extend({
 	initialize: function(attrs, options) {
 		this.file = new AWSS3File({},{node: options.node});
 		this.listenTo(this.file, 'progress', this.progress);
+		this.listenTo(this.file, 'error', this.uploadError);
+		this.listenTo(this.file, 'request', this.uploadStarted);
+		this.listenTo(this.file, 'sync', this.uploadComplete)
 	},
-	uploadFile(file) {
+	uploadStarted: function(model, xhr, options) {
+		this.trigger('uploadstart');
+	},
+	uploadComplete: function() {
+		console.log("UPLOADCOMPLETD", arguments);
+		this.trigger('uploadcomplete');
+	},
+	uploadError: function(model, xhr, options) {
+		// try and make sense of the upload
+		var errorText = "Unknown error";
+		if(model.previousError) {
+			errorText = JSON.stringify(model.previousError);
+		} else if(model.aborted) {
+			errorText = 'Upload aborted';
+		} else if(xhr.readyState == 0) {
+			// request never completed provide the status Text
+			errorText = `Failed to connect to server: ${xhr.statusText}`;
+		} else if (xhr.readyState == 4) {
+			// request completed error from aws
+			errorText = `Request failedd: ${xhr.statusText}`;
+		}
+		this.trigger('uploaderror', errorText);
+	},
+	setFile: function(file) {
 		this.file.set(AWSS3File.prototype.fileAttribute, file);
 		this.file.set('Content-Type', file.type);
 		this.set({
@@ -394,11 +492,15 @@ File = Backbone.Model.extend({
 			size: file.size,
 			type: file.type
 		});
+		// this.file.on('all', console.log);
 		// we also have to listen to this somehow to setup the paramaters for myself.
+		// this.file.save();
+	},
+	upload: function() {
 		this.file.save();
 	},
-	progress: function(percentComplete) {
-		this.trigger('progress', percentComplete);
+	progress: function(percentComplete, loaded, total) {
+		this.trigger('progress', percentComplete, loaded, total);
 	}
 }),
 Files = Backbone.Collection.extend({
@@ -479,7 +581,8 @@ AppView = AbstractView.extend({
 }),
 FilesListView = AbstractView.extend({
 	events: {
-		'click .uploadfiles': 'processFiles'
+		'click .uploadfiles': 'processFiles',
+		'change input[type=file]': 'processFiles'
 	},
 	className: 'files-list-view',
 	initialize: function() {
@@ -511,9 +614,11 @@ FilesListView = AbstractView.extend({
 		evt.preventDefault();
 		_.each(this.$(':input[type=file]')[0].files, function(file){
 			var fileModel = new File({},{node: this.getNode()});
-			fileModel.uploadFile(file);
-			this.model. add(fileModel);
+			fileModel.setFile(file);
+			this.model.add(fileModel);
+			fileModel.upload();
 		}, this);
+		this.$(':input[type=file]').val('');
 		return false;
 	},
 	render: function() {
@@ -555,17 +660,52 @@ FilesListView = AbstractView.extend({
 FileView = AbstractView.extend({
 	// each file represented on the list
 	// thumbnail - upload status etc...
+	events: {
+		'click .abort': 'abort'
+	},
 	initialize: function() {
 		// bind progress to the view
+		this.listenTo(this.model, 'uploadstart', this.uploadStarted);
 		this.listenTo(this.model, 'progress', this.updateProgress);
+		this.listenTo(this.model, 'uploaderror', this.uploadError);
+		this.listenTo(this.model, 'uploadcomplete', this.uploadComplete);
+		this.listenTo(this.model, 'destroy', this.remove);
+	},
+	abort: function() {
+		this.model.file.abort();
+	},
+	uploadStarted: function() {
+		// if this is a image put a preview of it up as well.
+		this.$el.append(`<p>UPLOAD STARTED</p>`);	
+		if(this.model.file.isImage()) {
+			var previewDiv = $("<div />").appendTo(this.$el).css({
+				width: '180px',
+				height: '180px',
+				backgroundPosition: 'center center',
+				backgroundSize: 'cover',
+				display: 'inline-block'
+			}),
+			reader = new FileReader();
+			reader.onload = function() {
+				previewDiv.css({'backgroundImage':`url(${this.result})`});
+			};
+			reader.readAsDataURL(this.model.file.get('file'));
+		}
 	},
 	updateProgress: function(pct) {
-		this.$('.progress').text(pct);
+		this.$('.progress').text(pct * 100);
+	},
+	uploadError: function(text) {
+		this.$el.append(`<p>ERROR: ${_.escape(text)}</p>`);	
+	},
+	uploadComplete: function() {
+		this.$el.append(`<p>Completed upload</p>`);	
 	},
 	render: function(){
 		this.$el.html(`
-			<p>Name: ${this.model.get('name')}</p>
-			<p>Size: ${this.model.get('size')}</p>
+			<h2>${this.model.get('name')}</h2>
+			<p><a href="#" class="abort">Abort</a></p>
+			<p>Size: ${this.model.get('size').fileSize()}</p>
 			<p>LastModified: ${this.model.get('last_modified')}</p>
 			<p>Type: ${this.model.get('type')}</p>
 			<p>Progress: <span class="progress">0</span>%</p>
