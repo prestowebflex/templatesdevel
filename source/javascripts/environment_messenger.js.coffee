@@ -20,6 +20,7 @@
 			{name: "Group3vr", value: "aadfasdfasdfasdf3"},
 			{name: "Group4vr", value: "aadfasdfasdfasdf4"},
 		]
+		aws_signing_info: AWS_SIGNING_INFO
 @view = new Backbone.View()
 
 

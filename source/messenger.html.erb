@@ -1,7 +1,13 @@
 ---
 title: Messenger
 ---
+<%
+	require 'lib/aws_direct_helper'
+%>
 <% content_for :assets do %>
+<script type="text/javascript">
+  	var AWS_SIGNING_INFO = <%=::AwsDirectHelper.new.generate_form_values.to_json %>;
+</script>
   <%= stylesheet_link_tag "messenger" %>
   <%= javascript_include_tag  "underscore" %>
   <%= javascript_include_tag  "backbone" %>

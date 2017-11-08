@@ -67,6 +67,12 @@ set :images_dir, 'images'
 require "lib/csv_helpers"
 helpers CsvHelpers
 
+# require 'rubygems'
+# require 'action_view/helpers/capture_helper'
+# require 'action_view/helpers/tag_helper'
+# require 'action_view/helpers/javascript_helper'
+# helpers ::ActionView::Helpers::JavaScriptHelper
+
 # Build-specific configuration
 configure :build do
   # For example, change the Compass output style for deployment

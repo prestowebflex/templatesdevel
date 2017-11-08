@@ -56,6 +56,142 @@ showConfirm = function(message, confirmCallback, title, buttonLabels) {
                 confirmCallback.call(this, (confirm(message) ? 1 : 2));
             }
         },
+ _superClass = Backbone.Model.prototype,
+BackboneModelFileUpload = Backbone.Model.extend({
+
+    // ! Default file attribute - can be overwritten
+    fileAttribute: 'file',
+
+    // @ Save - overwritten
+    save: function(key, val, options) {
+
+      // Variables
+      var attrs, attributes = this.attributes,
+          that = this;
+
+      // Signature parsing - taken directly from original Backbone.Model.save
+      // and it states: 'Handle both "key", value and {key: value} -style arguments.'
+      if (key == null || typeof key === 'object') {
+        attrs = key;
+        options = val;
+      } else {
+        (attrs = {})[key] = val;
+      }
+
+      // Validate & wait options - taken directly from original Backbone.Model.save
+      options = _.extend({validate: true}, options);
+      if (attrs && !options.wait) {
+        if (!this.set(attrs, options)) return false;
+      } else {
+        if (!this._validate(attrs, options)) return false;
+      }
+
+      // Merge data temporarily for formdata
+      var mergedAttrs = _.extend({}, attributes, attrs);
+
+      if (attrs && options.wait) {
+        this.attributes = mergedAttrs;
+      }
+
+      // Check for "formData" flag and check for if file exist.
+      if ( options.formData === true
+        || options.formData !== false
+        && mergedAttrs[ this.fileAttribute ]
+        && mergedAttrs[ this.fileAttribute ] instanceof File
+        || mergedAttrs[ this.fileAttribute ] instanceof FileList
+        || mergedAttrs[ this.fileAttribute ] instanceof Blob ) {
+
+        // Flatten Attributes reapplying File Object
+        var formAttrs = _.clone( mergedAttrs ),
+          fileAttr = mergedAttrs[ this.fileAttribute ];
+        formAttrs = this._flatten( formAttrs );
+        formAttrs[ this.fileAttribute ] = fileAttr;
+
+        // Converting Attributes to Form Data
+        var formData = new FormData();
+        _.each( formAttrs, function( value, key ){
+          if (value instanceof FileList || (key === that.fileAttribute && value instanceof Array)) {
+            _.each(value, function(file) {
+              formData.append( key, file );
+            });
+          }
+          else {
+            formData.append( key, value );
+          }
+        });
+
+        // Set options for AJAX call
+        options.data = formData;
+        options.processData = false;
+        options.contentType = false;
+
+        // Handle "progress" events
+        if (!options.xhr) {
+          options.xhr = function(){
+            var xhr = Backbone.$.ajaxSettings.xhr();
+            xhr.upload.addEventListener('progress', _.bind(that._progressHandler, that), false);
+            return xhr
+          }
+        }
+      }
+
+      // Resume back to original state
+      if (attrs && options.wait) this.attributes = attributes;
+
+      // Continue to call the existing "save" method
+      return _superClass.save.call(this, attrs, options);
+
+    },
+
+    // _ FlattenObject gist by "penguinboy".  Thank You!
+    // https://gist.github.com/penguinboy/762197
+    // NOTE for those who use "<1.0.0".  The notation changed to nested brackets
+    _flatten: function flatten( obj ) {
+      var output = {};
+      for (var i in obj) {
+        if (!obj.hasOwnProperty(i)) continue;
+        if (typeof obj[i] == 'object') {
+          var flatObject = flatten(obj[i]);
+          for (var x in flatObject) {
+            if (!flatObject.hasOwnProperty(x)) continue;
+            output[i + '[' + x + ']'] = flatObject[x];
+          }
+        } else {
+          output[i] = obj[i];
+        }
+      }
+      return output;
+
+    },
+
+    // An "Unflatten" tool which is something normally should be on the backend
+    // But this is a guide to how you would unflatten the object
+    _unflatten: function unflatten(obj, output) {
+      var re = /^([^\[\]]+)\[(.+)\]$/g;
+      output = output || {};
+      for (var key in obj) {
+        var value = obj[key];
+        if (!key.toString().match(re)) {
+          var tempOut = {};
+          tempOut[key] = value;
+          _.extend(output, tempOut);
+        } else {
+          var keys = _.compact(key.split(re)), tempOut = {};
+          tempOut[keys[1]] = value;
+          output[keys[0]] = unflatten( tempOut, output[keys[0]] )
+        }
+      }
+      return output;
+    },
+
+    // _ Get the Progress of the uploading file
+    _progressHandler: function( event ) {
+      if (event.lengthComputable) {
+        var percentComplete = event.loaded / event.total;
+        this.trigger( 'progress', percentComplete );
+      }
+    }
+  }),
 // a user model to demo with
 User = Backbone.Model.extend({
 	// demo user
@@ -221,7 +357,22 @@ Messages = Backbone.Collection.extend({
 		console.log("MESSAGES.SYNC", method, model, options);
 	}
 }),
+AWSS3File = BackboneModelFileUpload.extend({
+	defaults: {
+		"Content-Type": ''
+	},
+	initialize: function(attrs,options) {
+		// fix up url and options
+		this.set(options.node.get('aws_signing_info').form_values);
+		this.url = options.node.get('aws_signing_info').url;
+	},
+	// this is the method to upload a file to aws s3
+	url: null,
+	fileAttribute: 'file'
+	// on posting we need to set the other values correct for s3 here
+}),
 File = Backbone.Model.extend({
+	// this is the method to send the details of the uploaded file to s3 to our server
 	sync: function(method, model, options) {
 		if(method=="create") {
 			// give this model a FAKE ID for now
@@ -229,9 +380,29 @@ File = Backbone.Model.extend({
 		}
 		model.set({updated_at: new Date()});
 		console.log("FILE.SYNC", method, model, options);
+	},
+	initialize: function(attrs, options) {
+		this.file = new AWSS3File({},{node: options.node});
+		this.listenTo(this.file, 'progress', this.progress);
+	},
+	uploadFile(file) {
+		this.file.set(AWSS3File.prototype.fileAttribute, file);
+		this.file.set('Content-Type', file.type);
+		this.set({
+			last_modified: new Date(file.lastModified),
+			name: file.name,
+			size: file.size,
+			type: file.type
+		});
+		// we also have to listen to this somehow to setup the paramaters for myself.
+		this.file.save();
+	},
+	progress: function(percentComplete) {
+		this.trigger('progress', percentComplete);
 	}
 }),
 Files = Backbone.Collection.extend({
+	// this is the collection of files
 	model: File,
 	sync: function(method, model, options) {
 		console.log("FILES.SYNC", method, model, options);
@@ -287,7 +458,8 @@ AppView = AbstractView.extend({
 			`<div class="ui-header ui-bar-a">
 				<h2 class="ui-title">TODO SET A TITLE OR CLEAN THIS PART UP FIXME ???</h2>
 				<a href="#" data-role="button" class="ui-btn-right" data-icon="plus">Compose</a>
-			</div>`
+			</div>
+			`
 		);
 		this.$el.css({margin: '-15px'});
 		this.listView = new MessageListView({ node: this.getNode(), model: this.model, parent_id: null, messageListViewClass: MessageAndRepliesView});
@@ -307,11 +479,25 @@ AppView = AbstractView.extend({
 }),
 FilesListView = AbstractView.extend({
 	events: {
-		'dragover': 'dragover'
+		'click .uploadfiles': 'processFiles'
 	},
 	className: 'files-list-view',
 	initialize: function() {
-		console.log("INIT", this.options, arguments);
+		this.listenTo(this.model, 'add', this.addOne);
+		this.listenTo(this.model, 'reset', this.addAll);
+		this.propogateEventToSubViews('tock');
+		this.addAll();
+		// console.log("INIT", this.options, arguments);
+	},
+	addOne: function(file){
+		var view = new FileView({node: this.getNode(), model: file});
+		this.$el.append(view.render().el);
+		this.addView(view);
+	},
+	addAll: function(){
+		this.clearViews();
+		this.$el.html('');
+		this.model.each(this.addOne, this);
 	},
 	dragover: function(evt) {
 		console.log("DRAGOVER", evt);
@@ -321,8 +507,45 @@ FilesListView = AbstractView.extend({
 	dragstop: function(evt) {
 		evt.preventDefault();
 	},
+	processFiles: function(evt) {
+		evt.preventDefault();
+		_.each(this.$(':input[type=file]')[0].files, function(file){
+			var fileModel = new File({},{node: this.getNode()});
+			fileModel.uploadFile(file);
+			this.model. add(fileModel);
+		}, this);
+		return false;
+	},
 	render: function() {
 		// TODO add drop button
+		this.$el.html(`
+    <!-- TODO clean this up it's a mess!!!! The fileinput-button span is used to style the file input field as button -->
+    <span class="btn btn-success fileinput-button">
+        <input type="file" name="files[]" multiple>
+        <a href="#" class="uploadfiles">UPLOAD</a>
+    </span>
+
+			`);
+		// var _this = this;
+
+		// this.$(":input[type=file]").fileupload({
+  //       url: '/demo',
+  //       dataType: 'json',
+  //       done: function (e, data) {
+  //           $.each(data.result.files, function (index, file) {
+  //               $('<p/>').text(file.name).appendTo(_this.$('.files'));
+  //           });
+  //       },
+  //       progressall: function (e, data) {
+  //           var progress = parseInt(data.loaded / data.total * 100, 10);
+  //           _this.$('.progress .progress-bar').css(
+  //               'width',
+  //               progress + '%'
+  //           );
+  //       }
+  //   }).prop('disabled', !$.support.fileInput)
+  //       .parent().addClass($.support.fileInput ? undefined : 'disabled');
+
 		return this;
 	}
 	// List of files embedded within the Message Editor
@@ -332,6 +555,28 @@ FilesListView = AbstractView.extend({
 FileView = AbstractView.extend({
 	// each file represented on the list
 	// thumbnail - upload status etc...
+	initialize: function() {
+		// bind progress to the view
+		this.listenTo(this.model, 'progress', this.updateProgress);
+	},
+	updateProgress: function(pct) {
+		this.$('.progress').text(pct);
+	},
+	render: function(){
+		this.$el.html(`
+			<p>Name: ${this.model.get('name')}</p>
+			<p>Size: ${this.model.get('size')}</p>
+			<p>LastModified: ${this.model.get('last_modified')}</p>
+			<p>Type: ${this.model.get('type')}</p>
+			<p>Progress: <span class="progress">0</span>%</p>
+			`);
+		// preview
+		// status
+		// progress bar
+		// cancel / delete 
+		// reodering
+		return this;
+	}
 }),
 // the main message list view
 MessageListView = AbstractView.extend({
@@ -1042,11 +1287,13 @@ var initjQueryPlugins = function() {
   document.createElement("time");
 }));
 
+
+
 };
 
 initjQueryPlugins();
 
-// expose some things
+// expose some thingsl
 this.Message = Message;
 
 

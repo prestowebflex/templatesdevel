@@ -25,3 +25,5 @@ gem "rails-backbone", "0.9.0", require: false
 
 
 gem "jasmine-core", github: "pivotal/jasmine"
+
+gem "carrierwave_direct"
