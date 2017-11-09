@@ -425,6 +425,10 @@ AWSS3File = BackboneModelFileUpload.extend({
 		var file = this.get(this.fileAttribute);
 		return (file && file.type.startsWith('image/'));
 	},
+	isVideo: function() {
+		var file = this.get(this.fileAttribute);
+		return (file && file.type.startsWith('video/'));
+	},
 	// force datatype to be XML
 	sync: function(method, model, options) {
 		this.previousError = false;
@@ -459,9 +463,13 @@ File = Backbone.Model.extend({
 		this.listenTo(this.file, 'error', this.uploadError);
 		this.listenTo(this.file, 'request', this.uploadStarted);
 		this.listenTo(this.file, 'sync', this.uploadComplete)
+		this.listenTo(this, 'destroy', this.cancelUpload);
 	},
 	uploadStarted: function(model, xhr, options) {
 		this.trigger('uploadstart');
+	},
+	cancelUpload: function() {
+		this.file.abort();
 	},
 	uploadComplete: function() {
 		console.log("UPLOADCOMPLETD", arguments);
@@ -470,8 +478,8 @@ File = Backbone.Model.extend({
 	uploadError: function(model, xhr, options) {
 		// try and make sense of the upload
 		var errorText = "Unknown error";
-		if(model.previousError) {
-			errorText = JSON.stringify(model.previousError);
+		if(model.previousError && _.isArray(model.previousError['file'])) {
+			errorText = model.previousError['file'].join("<br />");
 		} else if(model.aborted) {
 			errorText = 'Upload aborted';
 		} else if(xhr.readyState == 0) {
@@ -584,7 +592,6 @@ FilesListView = AbstractView.extend({
 		'click .uploadfiles': 'processFiles',
 		'change input[type=file]': 'processFiles'
 	},
-	className: 'files-list-view',
 	initialize: function() {
 		this.listenTo(this.model, 'add', this.addOne);
 		this.listenTo(this.model, 'reset', this.addAll);
@@ -594,7 +601,7 @@ FilesListView = AbstractView.extend({
 	},
 	addOne: function(file){
 		var view = new FileView({node: this.getNode(), model: file});
-		this.$el.append(view.render().el);
+		this.$("ul").append(view.render().el);
 		this.addView(view);
 	},
 	addAll: function(){
@@ -624,13 +631,13 @@ FilesListView = AbstractView.extend({
 	render: function() {
 		// TODO add drop button
 		this.$el.html(`
-    <!-- TODO clean this up it's a mess!!!! The fileinput-button span is used to style the file input field as button -->
-    <span class="btn btn-success fileinput-button">
-        <input type="file" name="files[]" multiple>
-        <a href="#" class="uploadfiles">UPLOAD</a>
-    </span>
-
-			`);
+			<ul data-role="listview">
+				<li data-role="list-divider">
+					<label for="${this.cid}_file" data-icon="plus" data-iconpos="right" data-role="button">Add Images &amp; Videos</label>
+			        <input type="file" name="files[]" multiple name="file" id="${this.cid}_file" style="display: none;">
+				</li>
+			</ul>
+			`).attr({"data-role":'fieldcontain'});
 		// var _this = this;
 
 		// this.$(":input[type=file]").fileupload({
@@ -650,7 +657,9 @@ FilesListView = AbstractView.extend({
   //       }
   //   }).prop('disabled', !$.support.fileInput)
   //       .parent().addClass($.support.fileInput ? undefined : 'disabled');
-
+		_.defer(_.bind(function(){
+			this.$el.trigger('create');
+		}, this));
 		return this;
 	}
 	// List of files embedded within the Message Editor
@@ -661,8 +670,9 @@ FileView = AbstractView.extend({
 	// each file represented on the list
 	// thumbnail - upload status etc...
 	events: {
-		'click .abort': 'abort'
+		'click .remove': 'abort'
 	},
+	tagName: 'li',
 	initialize: function() {
 		// bind progress to the view
 		this.listenTo(this.model, 'uploadstart', this.uploadStarted);
@@ -672,44 +682,65 @@ FileView = AbstractView.extend({
 		this.listenTo(this.model, 'destroy', this.remove);
 	},
 	abort: function() {
-		this.model.file.abort();
+		this.model.destroy();
 	},
 	uploadStarted: function() {
 		// if this is a image put a preview of it up as well.
-		this.$el.append(`<p>UPLOAD STARTED</p>`);	
+		this.$('.statustext').text(`Upload starting.`)
 		if(this.model.file.isImage()) {
-			var previewDiv = $("<div />").appendTo(this.$el).css({
-				width: '180px',
-				height: '180px',
-				backgroundPosition: 'center center',
-				backgroundSize: 'cover',
-				display: 'inline-block'
-			}),
+			var prviewImg = $("<img />").prependTo(this.$("a:first")),
 			reader = new FileReader();
+			this.refreshList();
 			reader.onload = function() {
-				previewDiv.css({'backgroundImage':`url(${this.result})`});
+				prviewImg[0].src = this.result;
 			};
 			reader.readAsDataURL(this.model.file.get('file'));
 		}
+		if(this.model.file.isVideo()) {
+			$(`<img src="https://d30y9cdsu7xlg0.cloudfront.net/png/565458-200.png" />`).prependTo(this.$("a:first"));
+			this.refreshList();
+		}
 	},
 	updateProgress: function(pct) {
-		this.$('.progress').text(pct * 100);
+		this.$('.ui-slider-bg').css({width: `${pct * 100}%`});
+		this.$('.statustext').text(`Upload ${Math.round(pct * 100)}% complete.`)
 	},
 	uploadError: function(text) {
-		this.$el.append(`<p>ERROR: ${_.escape(text)}</p>`);	
+		// remove progressbar
+		this.$('.ui-slider').remove();
+		this.$('.statustext').text(`${_.escape(text)}`)
 	},
 	uploadComplete: function() {
-		this.$el.append(`<p>Completed upload</p>`);	
+		this.$('.statustext').text(`Upload complete.`)
+	},
+	refreshList: function(callback) {
+		_.defer(_.bind(function(){
+			// update the listview after adding the li elements
+			this.$el.closest('[data-role=listview]').listview('refresh');
+			// bind the children view to replies
+			// var childrenList = new MessageListView({ el: this.$('.replies'), model: this.model.collection, parent_id: this.model.get('id'), messageListViewClass: MessageView});
+			if(callback) {
+				callback.call(this);
+			}
+		}, this));
 	},
 	render: function(){
 		this.$el.html(`
-			<h2>${this.model.get('name')}</h2>
-			<p><a href="#" class="abort">Abort</a></p>
-			<p>Size: ${this.model.get('size').fileSize()}</p>
-			<p>LastModified: ${this.model.get('last_modified')}</p>
-			<p>Type: ${this.model.get('type')}</p>
-			<p>Progress: <span class="progress">0</span>%</p>
+			<a>
+				<h3 style="margin-top: 0;">${this.model.get('name')}</h3>
+				<div class="ui-slider  ui-btn-down-a ui-btn-corner-all">
+					<div class="ui-slider-bg ui-btn-active ui-btn-corner-all" style="width: 0%;"></div>
+				</div>
+				<p class="statustext"></p>
+			</a>
+			<a class="remove" data-icon="delete">Remove</a>
 			`);
+		this.$('.ui-slider').css({
+			width: '96%',
+			margin: '-6px 2% 6px'
+		});
+		this.refreshList();
+//					<input data-highlight="true" type="range" name="slider-1" min="0" max="100" value="0"/>
 		// preview
 		// status
 		// progress bar
