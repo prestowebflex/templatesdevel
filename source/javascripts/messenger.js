@@ -406,8 +406,18 @@ AWSS3File = BackboneModelFileUpload.extend({
 		if(!file) {
 			e('file', 'A file is required to upload');
 		} else {
-			if(!_.contains(this.constructor.ALLOWED_MIME_TYPES, file.type)) {
-				e('file', `File type is invalid only image and video types are allowed.`);
+			if(!_.contains(_.keys(this.constructor.MIME_TYPE_MAP), attrs['Content-Type'])) {
+				// failing this try the filename and reset
+				var extension = file.name.replace(/^.*\./, '').toLowerCase(), foundMimeType = false;
+				_.each(this.constructor.MIME_TYPE_MAP, function(value, key, list){
+					if(_.contains(value, extension)) {
+						this.set({'Content-Type':key}, {silent: true});
+						foundMimeType = true;
+						return false
+					}
+					return true;
+				}, this);
+				foundMimeType || e('file', `File type is invalid only image and video types are allowed.`);
 			}
 			if(file.size < this.aws_signing_info.min_size) {
 				e('file', `File is too small at ${file.size.fileSize()} minimum size is ${this.aws_signing_info.min_size.fileSize()}`)
@@ -422,12 +432,10 @@ AWSS3File = BackboneModelFileUpload.extend({
 		return errors;
 	},
 	isImage: function() {
-		var file = this.get(this.fileAttribute);
-		return (file && file.type.startsWith('image/'));
+		return this.get('Content-Type').startsWith('image/');
 	},
 	isVideo: function() {
-		var file = this.get(this.fileAttribute);
-		return (file && file.type.startsWith('video/'));
+		return this.get('Content-Type').startsWith('video/');
 	},
 	// force datatype to be XML
 	sync: function(method, model, options) {
@@ -445,9 +453,25 @@ AWSS3File = BackboneModelFileUpload.extend({
 	}
 	// on posting we need to set the other values correct for s3 here
 },{
-	ALLOWED_MIME_TYPES: ["video/mp4", "video/ogg", "video/webm", "image/gif", "image/jpeg", "image/png"]
+	MIME_TYPE_MAP: {
+		"video/mp4": ["mp4", "m4v"],
+		"video/ogg": ["ogg"],
+		"video/webm": ["webm"],
+		"image/gif": ["gif"],
+		"image/jpeg": ["jpg", "jpeg"],
+		"image/png": ["png"],
+		"video/x-flv": ["flv"],
+		"video/3gpp": ["3gp"],
+		"video/avi" : ["avi"],
+		"video/x-matroska" : ["mkv"],
+		"video/quicktime": ["mov"],
+		"video/x-ms-wmv": ["wmv"],
+		"video/MP2T": ["ts"]
+	}
 }),
 File = Backbone.Model.extend({
+	defaults: {
+	},
 	// this is the method to send the details of the uploaded file to s3 to our server
 	sync: function(method, model, options) {
 		if(method=="create") {
@@ -459,6 +483,7 @@ File = Backbone.Model.extend({
 	},
 	initialize: function(attrs, options) {
 		this.file = new AWSS3File({},{node: options.node});
+		this.set({state:this.constructor.STATE_NOT_STARTED},{silent: true});
 		this.listenTo(this.file, 'progress', this.progress);
 		this.listenTo(this.file, 'error', this.uploadError);
 		this.listenTo(this.file, 'request', this.uploadStarted);
@@ -466,13 +491,14 @@ File = Backbone.Model.extend({
 		this.listenTo(this, 'destroy', this.cancelUpload);
 	},
 	uploadStarted: function(model, xhr, options) {
+		this.set({state: this.constructor.STATE_UPLOADING});
 		this.trigger('uploadstart');
 	},
 	cancelUpload: function() {
 		this.file.abort();
 	},
 	uploadComplete: function() {
-		console.log("UPLOADCOMPLETD", arguments);
+		this.set({state: this.constructor.STATE_COMPLETE});
 		this.trigger('uploadcomplete');
 	},
 	uploadError: function(model, xhr, options) {
@@ -489,9 +515,11 @@ File = Backbone.Model.extend({
 			// request completed error from aws
 			errorText = `Request failedd: ${xhr.statusText}`;
 		}
+		this.set({state: this.constructor.STATE_ERROR, errorText: errorText});
 		this.trigger('uploaderror', errorText);
 	},
 	setFile: function(file) {
+		this.set({state: this.constructor.STATE_INITIALIZED});
 		this.file.set(AWSS3File.prototype.fileAttribute, file);
 		this.file.set('Content-Type', file.type);
 		this.set({
@@ -510,6 +538,12 @@ File = Backbone.Model.extend({
 	progress: function(percentComplete, loaded, total) {
 		this.trigger('progress', percentComplete, loaded, total);
 	}
+},{
+	STATE_NOT_STARTED: 'not_started',
+	STATE_INITIALIZED: 'initialized',
+	STATE_UPLOADING: 'uploading',
+	STATE_COMPLETE: 'complete',
+	STATE_ERROR: 'error',
 }),
 Files = Backbone.Collection.extend({
 	// this is the collection of files
@@ -606,7 +640,7 @@ FilesListView = AbstractView.extend({
 	},
 	addAll: function(){
 		this.clearViews();
-		this.$el.html('');
+		this.$("ul > li").slice(1).remove();
 		this.model.each(this.addOne, this);
 	},
 	dragover: function(evt) {
@@ -630,14 +664,19 @@ FilesListView = AbstractView.extend({
 	},
 	render: function() {
 		// TODO add drop button
+		var acceptListForFile = _.chain(AWSS3File.MIME_TYPE_MAP).map(function(value, key){
+			return _.flatten([key,_.map(value, function(v){return `.${v}`;})]);
+		}).flatten().value().join(",");
 		this.$el.html(`
 			<ul data-role="listview">
 				<li data-role="list-divider">
 					<label for="${this.cid}_file" data-icon="plus" data-iconpos="right" data-role="button">Add Images &amp; Videos</label>
-			        <input type="file" name="files[]" multiple name="file" id="${this.cid}_file" style="display: none;">
+			        <input accept="${acceptListForFile}" type="file" name="files[]" multiple name="file" id="${this.cid}_file" style="display: none;">
 				</li>
 			</ul>
 			`).attr({"data-role":'fieldcontain'});
+		this.addAll();
+
 		// var _this = this;
 
 		// this.$(":input[type=file]").fileupload({
@@ -675,31 +714,49 @@ FileView = AbstractView.extend({
 	tagName: 'li',
 	initialize: function() {
 		// bind progress to the view
-		this.listenTo(this.model, 'uploadstart', this.uploadStarted);
+		this.listenTo(this.model, 'change:state', this.changeState);
+		// this.listenTo(this.model, 'uploadstart', this.uploadStarted);
 		this.listenTo(this.model, 'progress', this.updateProgress);
-		this.listenTo(this.model, 'uploaderror', this.uploadError);
-		this.listenTo(this.model, 'uploadcomplete', this.uploadComplete);
+		// this.listenTo(this.model, 'uploaderror', this.uploadError);
+		// this.listenTo(this.model, 'uploadcomplete', this.uploadComplete);
 		this.listenTo(this.model, 'destroy', this.remove);
 	},
 	abort: function() {
 		this.model.destroy();
 	},
+	changeState: function() {
+		var newState = this.model.get('state');
+		if(newState == File.STATE_ERROR) {
+			this.uploadError(this.model.get('errorText'));
+		} else if (newState == File.STATE_INITIALIZED) {
+			// nothing here
+		} else if (newState == File.STATE_COMPLETE) {
+			this.uploadComplete();
+		} else if (newState == File.STATE_UPLOADING ) {
+			this.uploadStarted();
+		}
+	},
+	setupThumbnail: function() {
+		// if no thumbnail????
+		if(this.$("img").length == 0) {
+			if(this.model.file.isImage()) {
+				var prviewImg = $("<img />").prependTo(this.$("a:first")),
+				reader = new FileReader();
+				this.refreshList();
+				reader.onload = function() {
+					prviewImg[0].src = this.result;
+				};
+				reader.readAsDataURL(this.model.file.get('file'));
+			} else if(this.model.file.isVideo()) {
+				$(`<img src="https://d30y9cdsu7xlg0.cloudfront.net/png/565458-200.png" />`).prependTo(this.$("a:first"));
+				this.refreshList();
+			}
+		}
+	},
 	uploadStarted: function() {
 		// if this is a image put a preview of it up as well.
 		this.$('.statustext').text(`Upload starting.`)
-		if(this.model.file.isImage()) {
-			var prviewImg = $("<img />").prependTo(this.$("a:first")),
-			reader = new FileReader();
-			this.refreshList();
-			reader.onload = function() {
-				prviewImg[0].src = this.result;
-			};
-			reader.readAsDataURL(this.model.file.get('file'));
-		}
-		if(this.model.file.isVideo()) {
-			$(`<img src="https://d30y9cdsu7xlg0.cloudfront.net/png/565458-200.png" />`).prependTo(this.$("a:first"));
-			this.refreshList();
-		}
+		this.setupThumbnail();
 	},
 	updateProgress: function(pct) {
 		this.$('.ui-slider-bg').css({width: `${pct * 100}%`});
@@ -712,6 +769,8 @@ FileView = AbstractView.extend({
 		this.$('.statustext').text(`${_.escape(text)}`)
 	},
 	uploadComplete: function() {
+		this.setupThumbnail();
+		this.$('.ui-slider-bg').css({width: `100%`});
 		this.$('.statustext').text(`Upload complete.`)
 	},
 	refreshList: function(callback) {
@@ -740,6 +799,8 @@ FileView = AbstractView.extend({
 			width: '96%',
 			margin: '-6px 2% 6px'
 		});
+		// refresh UI off state
+		this.changeState();
 		this.refreshList();
 //					<input data-highlight="true" type="range" name="slider-1" min="0" max="100" value="0"/>
 		// preview
