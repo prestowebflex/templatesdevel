@@ -708,6 +708,7 @@ FileView = AbstractView.extend({
 	uploadError: function(text) {
 		// remove progressbar
 		this.$('.ui-slider').remove();
+		this.$("a").addClass('remove');
 		this.$('.statustext').text(`${_.escape(text)}`)
 	},
 	uploadComplete: function() {
