@@ -55,6 +55,12 @@ var initApp = function(view, node) {
   }
   return p.promise();
 }, 
+isAdvancedUpload = function() {
+	// DISABLE advanced drag and drop upload
+	return false;
+		// var div = document.createElement( 'div' );
+		// return ( ( 'draggable' in div ) || ( 'ondragstart' in div && 'ondrop' in div ) ) && 'FormData' in window && 'FileReader' in window;
+},
 showConfirm = function(message, confirmCallback, title, buttonLabels) {
             if (((_ref = window.navigator) != null ? (_ref1 = _ref.notification) != null ? _ref1.confirm : void 0 : void 0) != null) {
                 window.navigator.notification.confirm(message, confirmCallback, title, buttonLabels);
@@ -239,6 +245,9 @@ Message = Backbone.Model.extend({
 		}
 		model.set({updated_at: new Date()});
 		console.log("MESSAGE.SYNC", method, model, options);
+	},
+	addFiles: function(files) {
+		this.files.addFiles(files);
 	},
 	timeAgo: function() {
 		return jQuery.timeago(this.get('updated_at'));
@@ -550,6 +559,15 @@ Files = Backbone.Collection.extend({
 	model: File,
 	sync: function(method, model, options) {
 		console.log("FILES.SYNC", method, model, options);
+	},
+	addFiles: function(files, options) {
+		options = options || {};
+		_.each(files, function(file) {
+			var fileModel = new File({},{node: options.node});
+			fileModel.setFile(file);
+			this.add(fileModel);
+			fileModel.upload();
+		}, this);
 	}
 }),
 AbstractView = Backbone.View.extend({
@@ -643,22 +661,9 @@ FilesListView = AbstractView.extend({
 		this.$("ul > li").slice(1).remove();
 		this.model.each(this.addOne, this);
 	},
-	dragover: function(evt) {
-		console.log("DRAGOVER", evt);
-		evt.preventDefault();
-
-	},
-	dragstop: function(evt) {
-		evt.preventDefault();
-	},
 	processFiles: function(evt) {
 		evt.preventDefault();
-		_.each(this.$(':input[type=file]')[0].files, function(file){
-			var fileModel = new File({},{node: this.getNode()});
-			fileModel.setFile(file);
-			this.model.add(fileModel);
-			fileModel.upload();
-		}, this);
+		this.model.addFiles(this.$(':input[type=file]')[0].files, {node: this.getNode()});
 		this.$(':input[type=file]').val('');
 		return false;
 	},
@@ -975,7 +980,38 @@ MessageRootView = AbstractMessageView.extend({
 				'click a.delete' : 'destroy',
 			});
 		}
+		if(isAdvancedUpload()) {
+			events['drop form'] = 'filedrop';
+			_.each('drag dragstart dragend dragover dragenter dragleave drop'.split(' '), function(e){
+				events[`${e} form`] = 'dragPreventDefaults';
+			});
+			_.each('dragover dragenter'.split(' '), function(e){
+				events[`${e} form`] = 'dragenter';
+			});
+			_.each('dragleave dragend drop'.split(' '), function(e){
+				events[`${e} form`] = 'dragstop';
+			});
+		}
+		console.log(events);
 		return events;
+	},
+	dragPreventDefaults: function(e) {
+		console.log('prevented');
+		e.preventDefault();
+		e.stopPropagation();
+	},
+	dragenter: function(e) {
+		console.log('enter', e);
+		this.$("form").addClass('is-dragover');
+	},
+	dragstop: function(e) {
+		console.log('exit');
+		this.$("form").removeClass('is-dragover');
+	},
+	filedrop: function(e) {
+		console.log('drop');
+		// send files to the other view to process
+		this.model.addFiles(e.originalEvent.dataTransfer.files,{node: this.getNode});
 	},
 	initialize: function() {
 		this.abstractInitialize();
@@ -1105,7 +1141,7 @@ MessageRootView = AbstractMessageView.extend({
 		    	}
 	        },this);
 	        // add the files list view to the form at this point
-	        this.filesListView = new FilesListView({node: this.getNode(), message: this.model, model: this.model.files});
+	        this.filesListView = new FilesListView({dragElement: form, node: this.getNode(), message: this.model, model: this.model.files});
 			this.addView(this.filesListView);
 			form.append(this.filesListView.render().el);
 
