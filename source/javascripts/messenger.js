@@ -25,14 +25,16 @@ Comment 2
 input for new comment
 
 */
-// extend Number to get fileSize out of it.
-Object.defineProperty(Number.prototype,'fileSize',{value:function(a,b,c,d){
- return (a=a?[1e3,'k','B']:[1024,'K','iB'],b=Math,c=b.log,
- d=c(this)/c(a[0])|0,this/b.pow(a[0],d)).toFixed(2)
- +' '+(d?(a[1]+'MGTPEZY')[--d]+a[2]:'Bytes');
-},writable:false,enumerable:false});
+if(!_.isFunction(Number.prototype.fileSize)) {
+	// extend Number to get fileSize out of it.
+	Object.defineProperty(Number.prototype,'fileSize',{value:function(a,b,c,d){
+	 return (a=a?[1e3,'k','B']:[1024,'K','iB'],b=Math,c=b.log,
+	 d=c(this)/c(a[0])|0,this/b.pow(a[0],d)).toFixed(2)
+	 +' '+(d?(a[1]+'MGTPEZY')[--d]+a[2]:'Bytes');
+	},writable:false,enumerable:false});
+}
 
-var initApp = function(view, node) {
+this.initMessagingApp = function(view, node) {
   var p = jQuery.Deferred(),
       renderDeferred = jQuery.Deferred();
   view.on("render", function() {
@@ -54,8 +56,9 @@ var initApp = function(view, node) {
     });
   }
   return p.promise();
-}, 
-isAdvancedUpload = function() {
+};
+
+var isAdvancedUpload = function() {
 	// DISABLE advanced drag and drop upload
 	return false;
 		// var div = document.createElement( 'div' );
@@ -69,6 +72,13 @@ showConfirm = function(message, confirmCallback, title, buttonLabels) {
             }
         },
  _superClass = Backbone.Model.prototype,
+ _syncMethodForModels = {
+	sync: function() {
+      return Backbone.ajaxSync.apply(this, arguments);
+	}
+},
+AbstractModel = Backbone.Model.extend(_syncMethodForModels),
+AbstractCollection = Backbone.Collection.extend(_syncMethodForModels),
 BackboneModelFileUpload = Backbone.Model.extend({
 
     // ! Default file attribute - can be overwritten
@@ -212,10 +222,10 @@ User = Backbone.Model.extend({
 		name: "Joe Bloggs"
 	}
 }),
-Message = Backbone.Model.extend({
+Message = AbstractModel.extend({
 	defaults: {
 		id: null,
-		node_id: node._id, // get nodeid from page??? this shold be passed into the views somehow.
+		node_id: null, // get nodeid from page??? this shold be passed into the views somehow.
 		title: '',
 		message: '',
 		sent: false,
@@ -229,7 +239,8 @@ Message = Backbone.Model.extend({
 		valid_from_set: false,
 		valid_to_set: false
 	},
-	initialize: function(){
+	initialize: function(attributes, options){
+		options = options || {}
 		// setup replies
 		// this.replies = new Messages();
 		this.set({
@@ -237,14 +248,9 @@ Message = Backbone.Model.extend({
 			created_at: new Date()
 		});
 		this.files = new Files();
-	},
-	sync: function(method, model, options) {
-		if(method=="create") {
-			// give this model a FAKE ID for now
-			model.set({id: _.uniqueId('message_')});
+		if(options.node) {
+			this.set({node_id: options.node.get('_id')});
 		}
-		model.set({updated_at: new Date()});
-		console.log("MESSAGE.SYNC", method, model, options);
 	},
 	addFiles: function(files) {
 		this.files.addFiles(files);
@@ -282,6 +288,10 @@ Message = Backbone.Model.extend({
 			checkBoolean = function(boolean) {
 				return _.isBoolean(boolean);
 			};
+		
+		// make sure node_id is always set
+		_.isNumber(attrs.node_id) || e('message', 'A message can not be saved without a associated node');
+
 		if(!attrs.draft) {
 			// if is a ROOT message we require a title
 			if(!attrs.parent_id) {
@@ -305,6 +315,7 @@ Message = Backbone.Model.extend({
 					e('valid_to', "Expiry time should be greater than Sending time");
 				}
 				_.isBoolean(attrs.push_notifiation) || e('push_notifiation',"should be a boolean value only");
+				checkStr(attrs.message_category_id) || e('message_category_id', "a message category is required");
 			}
 			checkStr(attrs.message) || e('message', 'A body this for this message is required');
 		}
@@ -347,6 +358,19 @@ Message = Backbone.Model.extend({
 	},
 	canEdit: function() {
 		return true; //!!this.get('parent_id');
+	},
+	toJSON: function() {
+		// serialize this model for json
+		var json = _.pick(this.attributes, this.constructor.ROOT_KEYS);
+		if(!this.get('valid_from_set')) {
+			json.valid_from = null;
+		}
+		if(!this.get('valid_to_set')) {
+			json.valid_to = null;
+		}
+		// place the rest of the keys onto message property
+		json['message'] = _.omit(this.attributes, _.flatten([this.constructor.ROOT_KEYS, this.constructor.IGNORE_KEYS]));
+		return json;
 	}
 },{
 	MESSAGE_LEVELS: {
@@ -364,13 +388,26 @@ Message = Backbone.Model.extend({
 		valid_from: 'Send at:',
 		valid_to_set: 'Never expires?',
 		valid_to: 'Expires at:'
-	}
+	},
+	ROOT_KEYS: ['message_category_id', 'parent_id', 'push_notifiation', 'valid_from', 'valid_to','message_view_permission', 'message_reply_permission', 'message_reply_view_permission'],
+	IGNORE_KEYS: ['editing', 'valid_from_set', 'valid_to_set','sent','draft','owner','id','node_id', 'created_at', 'updated_at']
 }),
-Messages = Backbone.Collection.extend({
+Messages = AbstractCollection.extend({
 	model: Message,
-	sync: function(method, model, options) {
-		console.log("MESSAGES.SYNC", method, model, options);
+	getuuid: function() {
+		// simple proxy onto the node
+		return this.node.collection.getuuid();
+	},
+	initialize: function(models, options) {
+		options = options || {}
+		this.node = options.node;
+	},
+	url: function() {
+		return `${this.node.collection.url()}/node/${this.node.get('_id')}/messages`;
 	}
+	// sync: function(method, model, options) {
+	// 	console.log("MESSAGES.SYNC", method, model, options);
+	// }
 }),
 AWSS3File = BackboneModelFileUpload.extend({
 	defaults: {
@@ -601,7 +638,7 @@ AppView = AbstractView.extend({
 		};
 	},
 	addBlankMessage: function() {
-		this.model.add(new Message({draft: true}));
+		this.model.add(new Message({draft: true},{node: this.getNode()}));
 	},
 	initialize: function() {
 		// do nothing for now.
@@ -1041,7 +1078,8 @@ MessageRootView = AbstractMessageView.extend({
 		var values = {
 			title: this.val('title'),
 			message: this.val('message'),
-			push_notifiation: this.val('push_notifiation')=="1"
+			push_notifiation: this.val('push_notifiation')=="1",
+			message_category_id: this.val('message_category_id')
 		};
 		_.each(['valid_from', 'valid_to'], function(type){
 			values[`${type}_set`] = this.val(`${type}_set`)=="1";
@@ -1119,6 +1157,25 @@ MessageRootView = AbstractMessageView.extend({
 		    	// 	},this);
 		    	// }
 	      //   },this);
+	      if(this.getNode().get('message_categories').length == 1) {
+	      	// keep same category as it may have changed
+	      	form.append(`<input type="hidden" name="message_category_id" value="${this.model.get('message_category_id') || this.getNode().get('message_categories')[0].id}" />`);
+	      } else {
+		      form.append(`
+				<div data-role="fieldcontain">
+					<label for="${this.cid}_message_category_id">Message Category:</label>
+					<select name="message_category_id" id="${this.cid}_message_category_id">
+						<option value="">Message Category</option>
+		    			${_.map(this.getNode().get('message_categories'),function(category){
+							return `<option value="${_.escape(category.id)}" ${this.model.get('message_category_id')==category.id?'selected':''}>${_.escape(category.name)}</option>`;
+		    			}, this).join('')}
+					</select>
+				</div>
+		      	`);
+
+	      }
+
+	      	// THIS IS THE PERMISSIONS SECTIONcategory
 	      	var fieldcontain = $(`
 	      		<div data-role="fieldcontain">
 	      			<fieldset data-role="controlgroup">
@@ -1132,9 +1189,9 @@ MessageRootView = AbstractMessageView.extend({
 		        	var fieldset = $(`
 		        		<label for="${this.cid}_${permission_name}">${_.escape(permission_text)}</label>
 		        		<select data-native-menu="false" id="${this.cid}_${permission_name}" name="${permission_name}" multiple="true">
-		        			<option>${_.escape(permission_text)}</option>
+		        			<option value="">${_.escape(permission_text)}</option>
 		        			${_.map(permissions,function(perm){
-								return `<option value="${_.escape(perm.value)}" ${_.contains(this.model.get(permission_name),perm.value)?'selected':''}>${_.escape(perm.name)}</option>`;
+								return `<option value="${_.escape(perm.id)}" ${_.contains(this.model.get(permission_name),perm.id)?'selected':''}>${_.escape(perm.name)}</option>`;
 		        			}, this).join('')}
 		        		</select>
 				        `).appendTo(fieldcontain).find('select');
@@ -1295,31 +1352,35 @@ CommentsView = AbstractMessageView.extend({
 
 
 // APP INIT
-initApp2(view, node).done(function(app){
+// initApp2(view, node).done(
 
-	view.on('changepage', function() {
-		// console.log(view.el);
-		// console.log(view.$el.html());
-		// console.log("TEMPLATE DIV", view.$('.notification_template')[0]);
-		var messages = new Messages(),
-		app = new AppView({
-			model: messages,
-			node: node,
-			el: view.$('.notification_template')[0] }).render();
+this.getStartMessagingAppFunction = function(view, node){
+	// need to pass in view and node to get this working.
+	return function(app){
 
-		view.on('closepage', function() {
-			app.trigger("stoptimer");
-		});
+		// view.on('changepage', function() {
+			// console.log(view.el);
+			// console.log(view.$el.html());
+			// console.log("TEMPLATE DIV", view.$('.notification_template')[0]);
+			var messages = new Messages([], {node: node}),
+			app = new AppView({
+				model: messages,
+				node: node,
+				el: view.$('.notification_template')[0] }).render();
+
+			view.on('closepage', function() {
+				app.trigger("stoptimer");
+			});
 
 
 
 
-		window.view = view;
-		window.app = app;
-		window.messages = messages;
-	});
-});
-
+			window.view = view;
+			window.app = app;
+			window.messages = messages;
+		// });
+	};
+};
 
 var initjQueryPlugins = function() {
 
@@ -1562,7 +1623,7 @@ var initjQueryPlugins = function() {
 
 initjQueryPlugins();
 
-// expose some thingsl
+// expose some things this one is temp need to remove for production or somehow export this.
 this.Message = Message;
 
 
