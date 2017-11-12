@@ -3,22 +3,22 @@
 		can_post: true
 		message_push_enabled: true
 		message_view_permission: [
-			{name: "Group1v", value: "aadfasdfasdfasdf1"},
-			{name: "Group2v", value: "aadfasdfasdfasdf2"},
-			{name: "Group3v", value: "aadfasdfasdfasdf3"},
-			{name: "Group4v", value: "aadfasdfasdfasdf4"},
+			{name: "Group1v", id: "aadfasdfasdfasdf1"},
+			{name: "Group2v", id: "aadfasdfasdfasdf2"},
+			{name: "Group3v", id: "aadfasdfasdfasdf3"},
+			{name: "Group4v", id: "aadfasdfasdfasdf4"},
 		]
 		message_reply_permission: [
-			{name: "Group1r", value: "aadfasdfasdfasdf1"},
-			{name: "Group2r", value: "aadfasdfasdfasdf2"},
-			{name: "Group3r", value: "aadfasdfasdfasdf3"},
-			{name: "Group4r", value: "aadfasdfasdfasdf4"},
+			{name: "Group1r", id: "aadfasdfasdfasdf1"},
+			{name: "Group2r", id: "aadfasdfasdfasdf2"},
+			{name: "Group3r", id: "aadfasdfasdfasdf3"},
+			{name: "Group4r", id: "aadfasdfasdfasdf4"},
 		]
 		message_reply_view_permission: [
-			{name: "Group1vr", value: "aadfasdfasdfasdf1"},
-			{name: "Group2vr", value: "aadfasdfasdfasdf2"},
-			{name: "Group3vr", value: "aadfasdfasdfasdf3"},
-			{name: "Group4vr", value: "aadfasdfasdfasdf4"},
+			{name: "Group1vr", id: "aadfasdfasdfasdf1"},
+			{name: "Group2vr", id: "aadfasdfasdfasdf2"},
+			{name: "Group3vr", id: "aadfasdfasdfasdf3"},
+			{name: "Group4vr", id: "aadfasdfasdfasdf4"},
 		]
 		aws_signing_info: AWS_SIGNING_INFO
 @view = new Backbone.View()
