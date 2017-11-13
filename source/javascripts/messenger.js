@@ -243,13 +243,17 @@ Message = AbstractModel.extend({
 		options = options || {}
 		// setup replies
 		// this.replies = new Messages();
-		this.set({
-			updated_at: new Date(),
-			created_at: new Date()
-		});
+		if(!attributes.updated_at) {
+			this.set({updated_at: new Date()});
+		}
+		if(!attributes.created_at) {
+			this.set({created_at: new Date()});
+		}
 		this.files = new Files();
-		if(options.node) {
-			this.set({node_id: options.node.get('_id')});
+		if(!attributes.node_id) {
+			if(options.node) {
+				this.set({node_id: options.node.get('_id')});
+			}
 		}
 	},
 	addFiles: function(files) {
@@ -328,6 +332,7 @@ Message = AbstractModel.extend({
 				draft: true
 			});
 		model._parent = this;
+		model.collection = this.collection;
 		return model;
 	},
 	parent: function() {
@@ -359,18 +364,40 @@ Message = AbstractModel.extend({
 	canEdit: function() {
 		return true; //!!this.get('parent_id');
 	},
+	parse: function(resp) {
+		// do the inverse of parse
+		var specialKeys = _.flatten([this.constructor.ROOT_KEYS, this.constructor.SERVER_KEYS]);
+		var json = _.pick(resp, specialKeys);
+		// setup valid_to_set and valid_from_set
+		_.each(['valid_to', 'valid_from'], function(dateType){
+			var date = null;
+			if(_.isString(json[dateType])) {
+				var dateAsNumber = Date.parse(json[dateType]);
+				if(dateAsNumber!=null) {
+					date = new Date(dateAsNumber);
+				}
+			}
+			json[dateType] = date;
+			json[`${dateType}_set`] = (date == null);
+		});
+		json.owner = new User(resp.owner);
+		// should be clean to default onto the response
+		return _.defaults(json,_.omit(resp['message'],_.flatten([specialKeys,this.constructor.IGNORE_KEYS])));
+
+	},
 	toJSON: function() {
 		// serialize this model for json
 		var json = _.pick(this.attributes, this.constructor.ROOT_KEYS);
-		if(!this.get('valid_from_set')) {
+		if(this.get('valid_from_set')) {
 			json.valid_from = null;
 		}
-		if(!this.get('valid_to_set')) {
+		if(this.get('valid_to_set')) {
 			json.valid_to = null;
 		}
 		// place the rest of the keys onto message property
 		json['message'] = _.omit(this.attributes, _.flatten([this.constructor.ROOT_KEYS, this.constructor.IGNORE_KEYS]));
-		return json;
+		// wrap paramater for rails
+		return {message: json};
 	}
 },{
 	MESSAGE_LEVELS: {
@@ -390,7 +417,8 @@ Message = AbstractModel.extend({
 		valid_to: 'Expires at:'
 	},
 	ROOT_KEYS: ['message_category_id', 'parent_id', 'push_notifiation', 'valid_from', 'valid_to','message_view_permission', 'message_reply_permission', 'message_reply_view_permission'],
-	IGNORE_KEYS: ['editing', 'valid_from_set', 'valid_to_set','sent','draft','owner','id','node_id', 'created_at', 'updated_at']
+	IGNORE_KEYS: ['editing', 'valid_from_set', 'valid_to_set','sent','draft','owner','id','node_id', 'created_at', 'updated_at'],
+	SERVER_KEYS: ['id', 'updated_at', 'created_at', 'node_id']
 }),
 Messages = AbstractCollection.extend({
 	model: Message,
@@ -648,6 +676,8 @@ AppView = AbstractView.extend({
 		this.on("stoptimer",this.clearTock,this);
 		this._timer = window.setInterval(_.bind(this.tock,this), 60000);
 		this.propogateEventToSubViews('tock');
+		// update the view
+		this.model.fetch();
 	},
 	tock: function() {
 		this.listView.trigger("tock");
@@ -915,7 +945,7 @@ MessageAndRepliesView = AbstractView.extend({
 		this.$('h3').text(this.model.get('title'));
 	},
 	initializeChildren: function(model, id, options) {
-		if(id) {
+		if(this.model.get('id')) {
 			var view = new CommentsView({model: this.model, parent_id: id});
 			this.addView(view);
 			this.$el.append(view.render().el);
