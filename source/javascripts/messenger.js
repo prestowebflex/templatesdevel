@@ -390,6 +390,8 @@ Message = AbstractModel.extend({
 			json[dateType] = date;
 			json[`${dateType}_set`] = (date == null);
 		});
+		json.updated_at = new Date(Date.parse(json.updated_at));
+		json.created_at = new Date(Date.parse(json.created_at));
 		json.owner = new User(resp.owner);
 		// should be clean to default onto the response
 		return _.defaults(json,_.omit(resp['message'],_.flatten([specialKeys,this.constructor.IGNORE_KEYS])));
@@ -440,10 +442,14 @@ Messages = AbstractCollection.extend({
 		options = options || {}
 		this.node = options.node;
 		this.client_guid = lib.utils.guid();
+		this.on('change:updated_at', this.sort, this);
 	},
 	url: function() {
 		return `${this.node.collection.url()}/node/${this.node.get('_id')}/messages`;
-	}
+	},
+	comparator: function(a,b) {
+		return b.get('updated_at').getTime() - a.get('updated_at').getTime();
+	}	
 	// sync: function(method, model, options) {
 	// 	console.log("MESSAGES.SYNC", method, model, options);
 	// }
@@ -928,6 +934,7 @@ MessageListView = AbstractView.extend({
 	initialize: function() {
 		this.listenTo(this.model, 'add', this.addOne);
 		this.listenTo(this.model, 'reset', this.addAll);
+		this.listenTo(this.model, 'sort', this.resort);
 		this.propogateEventToSubViews('tock');
 		this.addAll();
 	},
@@ -935,7 +942,7 @@ MessageListView = AbstractView.extend({
 		// TODO should add messages in correct location! by date created
 		if(message.get('parent_id')==this.options.parent_id) {
 			var view = new this.options.messageListViewClass({node: this.getNode(), model: message});
-			this.$el.append(view.render().el);
+			this.$el.prepend(view.render().el);
 			this.addView(view);
 		}
 	},
@@ -943,6 +950,15 @@ MessageListView = AbstractView.extend({
 		this.clearViews();
 		this.$el.html('');
 		this.model.each(this.addOne, this);
+		this.resort();
+	},
+	resort: function() {
+		this._subviews = _.sortBy(this._subviews, function(v) {
+			return this.model.indexOf(v.model);
+		},this);
+		_.each(this._subviews, function(v) {
+			this.$el.append(v.$el);
+		}, this);
 	}
 }),
 MessageAndRepliesView = AbstractView.extend({
