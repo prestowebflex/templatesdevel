@@ -77,7 +77,17 @@ showConfirm = function(message, confirmCallback, title, buttonLabels) {
       return Backbone.ajaxSync.apply(this, arguments);
 	}
 },
-AbstractModel = Backbone.Model.extend(_syncMethodForModels),
+AbstractModel = Backbone.Model.extend(_syncMethodForModels).extend({
+	destroy: function(options) {
+		options = options || {};
+		if(this.collection) {
+			options.contentType = 'application/json';
+			options.data = JSON.stringify({client_guid: (this.collection && this.collection.client_guid)});
+		}
+		// super call
+		return Backbone.Model.prototype.destroy.call(this, options);
+	}
+}),
 AbstractCollection = Backbone.Collection.extend(_syncMethodForModels),
 BackboneModelFileUpload = Backbone.Model.extend({
 
@@ -236,8 +246,8 @@ Message = AbstractModel.extend({
 		message_view_permission: [],
 		message_reply_permission: [],
 		message_reply_view_permission: [],
-		valid_from_set: false,
-		valid_to_set: false
+		valid_from_set: true,
+		valid_to_set: true
 	},
 	initialize: function(attributes, options){
 		options = options || {}
@@ -300,7 +310,7 @@ Message = AbstractModel.extend({
 			// if is a ROOT message we require a title
 			if(!attrs.parent_id) {
 				checkStr(attrs.title) || e('title', 'A Topic for this message is required.');
-				_.each(this.constructor.PERMISSION_NAMES,function(label, name){
+				_.each({'message_view_permission':'Who can see message'},function(label, name){
 					checkArray(attrs[name]) || e(name, `Permission ${label} is empty`);
 				}, this);
 				_.each(['valid_to','valid_from'],function(name){
@@ -397,7 +407,7 @@ Message = AbstractModel.extend({
 		// place the rest of the keys onto message property
 		json['message'] = _.omit(this.attributes, _.flatten([this.constructor.ROOT_KEYS, this.constructor.IGNORE_KEYS]));
 		// wrap paramater for rails
-		return {message: json};
+		return {client_guid: (this.collection && this.collection.client_guid), message: json};
 	}
 },{
 	MESSAGE_LEVELS: {
@@ -429,6 +439,7 @@ Messages = AbstractCollection.extend({
 	initialize: function(models, options) {
 		options = options || {}
 		this.node = options.node;
+		this.client_guid = lib.utils.guid();
 	},
 	url: function() {
 		return `${this.node.collection.url()}/node/${this.node.get('_id')}/messages`;
@@ -661,15 +672,26 @@ AbstractView = Backbone.View.extend({
 }),
 AppView = AbstractView.extend({
 	events: function() {
-		return {
-			'click .ui-btn-right': 'addBlankMessage'
-		};
+		var events = {};
+		if(this.getNode().get('can_post')) {
+			events['click .ui-btn-right'] = 'addBlankMessage';
+		}
+		return events;
 	},
 	addBlankMessage: function() {
 		this.model.add(new Message({draft: true},{node: this.getNode()}));
 	},
-	initialize: function() {
-		// do nothing for now.
+	initialize: function(options) {
+		options = options || {}
+
+		if(options.app) {
+			// setup websockets
+			this.app = options.app;
+			// bind message  updates to the main model!
+			// just send them into the main model
+			this.listenTo(this.app, 'received', this.onReceived);
+			this.app.init(true); // force start
+		}
 		// this is just called once to setup the view for the application only
 		// setup timer
 		// bind a timer to appView
@@ -679,6 +701,19 @@ AppView = AbstractView.extend({
 		// update the view
 		this.model.fetch();
 	},
+	onReceived: function(message) {
+		// TODO ignore messages with the same GUID as US!
+		if(message.client_guid == this.model.client_guid) {
+			console.log("IGNORING OWN MESSAGE!");
+			return;
+		}
+		if(message.type == "message" && _.isObject(message.data)) {
+			// merge existing models to update data
+			this.model.add(message.data, {parse: true, merge: true});
+		} else if(message.type == "message_delete") {
+			this.model.remove(message.data);
+		}
+	},
 	tock: function() {
 		this.listView.trigger("tock");
 	},
@@ -686,10 +721,12 @@ AppView = AbstractView.extend({
 		this.$el.html(
 			`<div class="ui-header ui-bar-a">
 				<h2 class="ui-title">TODO SET A TITLE OR CLEAN THIS PART UP FIXME ???</h2>
-				<a href="#" data-role="button" class="ui-btn-right" data-icon="plus">Compose</a>
 			</div>
 			`
 		);
+		if(this.getNode().get('can_post')) {
+			this.$("div.ui-header").append(`<a href="#" data-role="button" class="ui-btn-right" data-icon="plus">Compose</a>`);
+		}
 		this.$el.css({margin: '-15px'});
 		this.listView = new MessageListView({ node: this.getNode(), model: this.model, parent_id: null, messageListViewClass: MessageAndRepliesView});
 		this.addView(this.listView);
@@ -913,10 +950,11 @@ MessageAndRepliesView = AbstractView.extend({
 	// replies view only gets initialised once the message has an id
 	// bind the title of this to 
 	initialize: function() {
-		this.listenTo(this.model, 'destroy', this.remove);
+		this.listenTo(this.model, 'remove', this.remove);
 		this.listenTo(this.model, 'change:title', this.updateTitle);
 		this.listenTo(this.model, 'change:id', this.initializeChildren);
 		this.listenTo(this.model, 'change:updated_at', this.updateTimeAgo);
+		this.listenTo(this.model, 'change:owner', this.updateOwner);
 		this.propogateEventToSubViews('tock');
 		this.on('tock', this.updateTimeAgo, this);
 	},
@@ -926,7 +964,7 @@ MessageAndRepliesView = AbstractView.extend({
 				<div>
 					<img style="float: left; height: 2em; width: 2em; margin: none; margin-right: 0.5em;" src="${this.model.ownerAvatarUrl()}" />
 					<h3>${this.model.getHtml('title')}</h3>
-					<small><span class="${this.cid}_timeago">${this.model.timeAgo()}</span> by <a href="#">${this.model.ownerName()}</a></small>
+					<small><span class="${this.cid}_timeago">${this.model.timeAgo()}</span> by <a href="#" class='owner_name'>${_.escape(this.model.ownerName())}</a></small>
 				</div>
 
 			`);
@@ -937,6 +975,11 @@ MessageAndRepliesView = AbstractView.extend({
 		this.initializeChildren();
 
 		return this;
+	},
+	updateOwner: function() {
+		this.$('img').attr('src', this.model.ownerAvatarUrl());
+		this.$('.owner_name').text(this.model.ownerName());
+
 	},
 	updateTimeAgo: function() {
 		this.$(`.${this.cid}_timeago`).text(this.model.timeAgo());
@@ -968,7 +1011,7 @@ AbstractMessageView = AbstractView.extend({
 		this.replyModel = this.model.buildReply();
 		this.listenTo(this.model, 'error', this.invalid);
 		this.listenTo(this.model, 'change', this.render);
-		this.listenTo(this.model, 'destroy', this.remove);
+		this.listenTo(this.model, 'remove', this.remove);
 		this.listenTo(this.model, 'change:id', this.updateParentIdOnReply);
 		this.propogateEventToSubViews('tock');
 	},
@@ -1109,15 +1152,17 @@ MessageRootView = AbstractMessageView.extend({
 			title: this.val('title'),
 			message: this.val('message'),
 			push_notifiation: this.val('push_notifiation')=="1",
-			message_category_id: this.val('message_category_id')
+			message_category_id: this.val('message_category_id'),
+			link_node_id: this.val('link_node_id')
 		};
-		_.each(['valid_from', 'valid_to'], function(type){
-			values[`${type}_set`] = this.val(`${type}_set`)=="1";
-			var dateString = this.val(type);
-			if(dateString) {
-				values[type] = new Date(dateString);	
-			}
-		}, this);
+		// TODO REMOVED VAOID_FROM&TO FOR NOW TEMP FIX
+		// _.each(['valid_from', 'valid_to'], function(type){
+		// 	values[`${type}_set`] = this.val(`${type}_set`)=="1";
+		// 	var dateString = this.val(type);
+		// 	if(dateString) {
+		// 		values[type] = new Date(dateString);	
+		// 	}
+		// }, this);
 		_.each(_.keys(this.model.constructor.PERMISSION_NAMES),function(permission_name){
 			values[permission_name] = this.val(permission_name) || [];
 			//_.pluck(this.$(`:input[name^=${permission_name}_]`).serializeArray(),'value');
@@ -1151,19 +1196,30 @@ MessageRootView = AbstractMessageView.extend({
 	            <label for="${this.cid}_message">Message:</label>
 	            <textarea id="${this.cid}_message" name="message" placeholder="Message">${this.model.getHtml('message')}</textarea>
 	        </div>
-	        `);
-	        _.each(['valid_from', 'valid_to'],function(type){
-		      	var fieldcontain = $(`
-		      		<div data-role="fieldcontain">
-		      			<fieldset data-role="controlgroup" data-type="horizontal">
-		      				<legend>${this.model.constructor.LABELS[type]}</legend>
-		      			</fieldset>
-		      		</div>
-		      		`).appendTo(form).find("fieldset");
+	        <div data-role="fieldcontain">
+	            <label for="${this.cid}_link_node_id">Link to page:</label>
+				<select id="${this.cid}_link_node_id" name="link_node_id">
+					<option value="">No Page</option>
+	    			${_.map(this.getNode().collection.get('nodeindex').get('nodes'),function(data, id){
+						return `<option value="${_.escape(data.id)}" ${this.model.get('link_node_id')==data.id?'selected':''}>${_.escape(data.title)}</option>`;
+	    			}, this).join('')}
+				</select>	            
+	        </div>
 
-				fieldcontain.append(this._slideHtml(`${type}_set`, false, type=="valid_from"?'Now':'Never', 'At'));
-				$(`<input id="${this.cid}_${type}" name="${type}" value="${this._dateToLocalDateString(this.model.get(type))}" type="datetime-local">`).appendTo(fieldcontain);
-	        }, this);
+	        `);
+	        // DISABLED FOR NOW
+	   //      _.each(['valid_from', 'valid_to'],function(type){
+		  //     	var fieldcontain = $(`
+		  //     		<div data-role="fieldcontain">
+		  //     			<fieldset data-role="controlgroup" data-type="horizontal">
+		  //     				<legend>${this.model.constructor.LABELS[type]}</legend>
+		  //     			</fieldset>
+		  //     		</div>
+		  //     		`).appendTo(form).find("fieldset");
+
+				// fieldcontain.append(this._slideHtml(`${type}_set`, false, type=="valid_from"?'Now':'Never', 'At'));
+				// $(`<input id="${this.cid}_${type}" name="${type}" value="${this._dateToLocalDateString(this.model.get(type))}" type="datetime-local">`).appendTo(fieldcontain);
+	   //      }, this);
 
 	        if(this.getNode().get('message_push_enabled')) {
 	        	form.append(`<div data-role="fieldcontain">
@@ -1244,6 +1300,13 @@ MessageRootView = AbstractMessageView.extend({
 			this.$el.html(`
 						<p>${this.model.getHtml('message')}</p>
 						`);
+			// put a link to a page
+			if(this.model.get('link_node_id')) {
+				var page = this.getNode().collection.get('nodeindex').get('nodes')[this.model.get('link_node_id')];
+				if(page) {
+					this.$el.append(`<p><a href="${_.escape(page.name)}">${_.escape(page.title)}</a></p>`);
+				}
+			}
 			if(this.model.canEdit() || this.model.canDelete()) {
 				var $flexbox = $('<div style="display: flex;"></div>');
 				this.$el.append($flexbox);
@@ -1386,24 +1449,23 @@ CommentsView = AbstractMessageView.extend({
 
 this.getStartMessagingAppFunction = function(view, node){
 	// need to pass in view and node to get this working.
-	return function(app){
+	return function(actionCableApp){
 
 		// view.on('changepage', function() {
 			// console.log(view.el);
 			// console.log(view.$el.html());
 			// console.log("TEMPLATE DIV", view.$('.notification_template')[0]);
+			// start off with empty messages
 			var messages = new Messages([], {node: node}),
 			app = new AppView({
 				model: messages,
 				node: node,
+				app: actionCableApp,
 				el: view.$('.notification_template')[0] }).render();
 
 			view.on('closepage', function() {
 				app.trigger("stoptimer");
 			});
-
-
-
 
 			window.view = view;
 			window.app = app;
