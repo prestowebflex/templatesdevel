@@ -247,7 +247,10 @@ Message = AbstractModel.extend({
 		message_reply_permission: [],
 		message_reply_view_permission: [],
 		valid_from_set: true,
-		valid_to_set: true
+		valid_to_set: true,
+		can_update: true,
+		can_destroy: true,
+		can_reply: true
 	},
 	initialize: function(attributes, options){
 		options = options || {}
@@ -366,13 +369,13 @@ Message = AbstractModel.extend({
 		}
 	},
 	canReply: function() {
-		return this.depth() < 2;
+		return (this.depth() < 2) && this.get("can_reply");
 	},
 	canDelete: function() {
-		return true;
+		return this.get("can_destroy");
 	},
 	canEdit: function() {
-		return true; //!!this.get('parent_id');
+		return this.get("can_update");
 	},
 	parse: function(resp) {
 		// do the inverse of parse
@@ -407,7 +410,7 @@ Message = AbstractModel.extend({
 			json.valid_to = null;
 		}
 		// place the rest of the keys onto message property
-		json['message'] = _.omit(this.attributes, _.flatten([this.constructor.ROOT_KEYS, this.constructor.IGNORE_KEYS]));
+		json['message'] = _.omit(this.attributes, _.flatten([this.constructor.ROOT_KEYS, this.constructor.IGNORE_KEYS, this.constructor.SERVER_KEYS]));
 		// wrap paramater for rails
 		return {client_guid: (this.collection && this.collection.client_guid), message: json};
 	}
@@ -429,8 +432,8 @@ Message = AbstractModel.extend({
 		valid_to: 'Expires at:'
 	},
 	ROOT_KEYS: ['message_category_id', 'parent_id', 'push_notifiation', 'valid_from', 'valid_to','message_view_permission', 'message_reply_permission', 'message_reply_view_permission'],
-	IGNORE_KEYS: ['editing', 'valid_from_set', 'valid_to_set','sent','draft','owner','id','node_id', 'created_at', 'updated_at'],
-	SERVER_KEYS: ['id', 'updated_at', 'created_at', 'node_id']
+	IGNORE_KEYS: ['editing', 'valid_from_set', 'valid_to_set','sent','draft','owner'],
+	SERVER_KEYS: ['id', 'updated_at', 'created_at', 'node_id', 'can_update', 'can_destroy', 'can_reply']
 }),
 Messages = AbstractCollection.extend({
 	model: Message,
