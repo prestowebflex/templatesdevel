@@ -263,9 +263,18 @@ Message = AbstractModel.extend({
 			this.set({created_at: new Date()});
 		}
 		this.files = new Files();
-		if(!attributes.node_id) {
-			if(options.node) {
+		if(options.node) {
+			if(!attributes.node_id) {
 				this.set({node_id: options.node.get('_id')});
+			}
+			// setup reply view permission by default to include "Owner"
+			// not an array of length == 0
+			if(!_.isArray(attributes.message_reply_view_permission) || attributes.message_reply_view_permission.length == 0) {
+				this.set({
+					message_reply_view_permission: _.chain(options.node.get('message_reply_view_permission'))
+														.filter(function(p){ return p.class_name == 'AppGroup::Owner';})
+														.map(function(p){ return p.id}).value()
+				});
 			}
 		}
 	},
