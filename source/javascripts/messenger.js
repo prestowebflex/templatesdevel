@@ -479,6 +479,10 @@ AWSS3File = BackboneModelFileUpload.extend({
 		this.file = options.file;
 		this.listenTo(this.file, 'change:form_values change:max_file_size change:min_file_size change:upload_url', this.updateFormValues);
 	},
+	aws_signing_info: {
+		min_size: 1,
+		max_size: 524288000 // 500MB
+	},
 	// this is the method to upload a file to aws s3
 	url: null,
 	fileAttribute: 'file',
@@ -607,7 +611,7 @@ File = AbstractModel.extend({
 	},
 	uploadStarted: function(model, xhr, options) {
 		this.set({state: this.constructor.STATE_UPLOADING});
-		this.trigger('uploadstart');
+		this.trigger('uploadstart');	
 	},
 	cancelUpload: function() {
 		this.file.abort();
@@ -643,9 +647,10 @@ File = AbstractModel.extend({
 		this.file.set('Content-Type', file.type);
 		this.set({
 			last_modified: new Date(file.lastModified),
-			name: file.name,
-			size: file.size,
-			type: file.type
+			attachment_name: file.name,
+			attachment_size: file.size,
+			attachment_type: file.type,
+			type: file.type,
 		});
 		// this.file.on('all', console.log);
 		// we also have to listen to this somehow to setup the paramaters for myself.
@@ -659,6 +664,23 @@ File = AbstractModel.extend({
 	},
 	toJSON: function() {
 		return {client_guid: (this.collection && this.collection.client_guid), attachment: this.attributes};
+	},
+	validate: function(attrs, options) {
+		options || (options = {});
+		if(!options.validate) {
+			return false;
+		}
+		var errors = false,
+					e = function(name, value) {
+				if(!_.isObject(errors)) { errors = {}; };
+				if(!_.isArray(errors[name])) { errors[name] = []; };
+				errors[name].push(value);
+			};
+		// make sure the s3 file passes validation
+		if(this.file.validate(this.file.attributes,{validate: true})) {
+			e('file', 'Attached file isn\'t valid');
+		}
+		return errors;
 	}
 },{
 	STATE_NOT_STARTED: 'not_started',
@@ -691,9 +713,13 @@ Files = AbstractCollection.extend({
 			var fileModel = new File({},{node: options.node});
 			this.add(fileModel);
 			fileModel.setFile(file);
-			fileModel.save({},{success:function(){
-				fileModel.upload();
-			}});
+			if(!fileModel.validate(fileModel.attributes,{validate: true})) {
+				fileModel.save({},{success:function(){
+					fileModel.upload();
+				}});
+			} else {
+				fileModel.upload(); // this will trigger the UI to update
+			}
 		}, this);
 	}
 }),
@@ -875,18 +901,19 @@ FileView = AbstractView.extend({
 	initialize: function() {
 		// bind progress to the view
 		this.listenTo(this.model, 'change:state', this.changeState);
-		this.listenTo(this.model, 'change:name', this.updateName);
+		this.listenTo(this.model, 'change:attachment_name', this.updateName);
 		// this.listenTo(this.model, 'uploadstart', this.uploadStarted);
 		this.listenTo(this.model, 'progress', this.updateProgress);
-		// this.listenTo(this.model, 'uploaderror', this.uploadError);
+		this.listenTo(this.model, 'uploaderror', this.uploadError);
 		// this.listenTo(this.model, 'uploadcomplete', this.uploadComplete);
 		this.listenTo(this.model, 'destroy', this.remove);
+		// this.listenTo(this.model, 'change:attachment_url', this.render);
 	},
 	abort: function() {
 		this.model.destroy();
 	},
 	updateName: function() {
-		this.$('h3').text(this.model.get('name'));
+		this.$('h3').text(this.model.get('attachment_name'));
 	},
 	changeState: function() {
 		var newState = this.model.get('state');
@@ -950,21 +977,27 @@ FileView = AbstractView.extend({
 	},
 	render: function(){
 		this.$el.html(`
-			<a>
-				<h3 style="margin-top: 0;">${_.escape(this.model.get('name'))}</h3>
-				<div class="ui-slider  ui-btn-down-a ui-btn-corner-all">
-					<div class="ui-slider-bg ui-btn-active ui-btn-corner-all" style="width: 0%;"></div>
-				</div>
-				<p class="statustext"></p>
-			</a>
+			<a></a>
 			<a class="remove" data-icon="delete">Remove</a>
 			`);
-		this.$('.ui-slider').css({
-			width: '96%',
-			margin: '-6px 2% 6px'
-		});
-		// refresh UI off state
-		this.changeState();
+		if(this.model.get('attachment_url')) {
+			this.$("a:first").html(`<p>COMPLETED!</p>`);
+		} else {
+
+			this.$("a:first").html(`
+					<h3 style="margin-top: 0;">${_.escape(this.model.get('attachment_name'))}</h3>
+					<div class="ui-slider  ui-btn-down-a ui-btn-corner-all">
+						<div class="ui-slider-bg ui-btn-active ui-btn-corner-all" style="width: 0%;"></div>
+					</div>
+					<p class="statustext"></p>
+				`);
+			this.$('.ui-slider').css({
+				width: '96%',
+				margin: '-6px 2% 6px'
+			});
+			// refresh UI off state
+			this.changeState();
+		}
 		this.refreshList();
 //					<input data-highlight="true" type="range" name="slider-1" min="0" max="100" value="0"/>
 		// preview
