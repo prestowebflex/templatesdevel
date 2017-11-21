@@ -262,16 +262,17 @@ Message = AbstractModel.extend({
 		if(!attributes.created_at) {
 			this.set({created_at: new Date()});
 		}
-		this.files = new Files();
-		if(options.node) {
+		var node = options.node || this.collection.node;
+		if(node) {
+			this.files = new Files([], {node: node, client_guid: this.collection.client_guid});
 			if(!attributes.node_id) {
-				this.set({node_id: options.node.get('_id')});
+				this.set({node_id: node.get('_id')});
 			}
 			// setup reply view permission by default to include "Owner"
 			// not an array of length == 0
 			if(!_.isArray(attributes.message_reply_view_permission) || attributes.message_reply_view_permission.length == 0) {
 				this.set({
-					message_reply_view_permission: _.chain(options.node.get('message_reply_view_permission'))
+					message_reply_view_permission: _.chain(node.get('message_reply_view_permission'))
 														.filter(function(p){ return p.class_name == 'AppGroup::Owner';})
 														.map(function(p){ return p.id}).value()
 				});
@@ -352,7 +353,7 @@ Message = AbstractModel.extend({
 				parent_id: this.get('id'),
 				node_id: this.get('node_id'),
 				draft: true
-			});
+			}, {node: this.collection.node, collection: this.collection});
 		model._parent = this;
 		model.collection = this.collection;
 		return model;
@@ -472,13 +473,24 @@ AWSS3File = BackboneModelFileUpload.extend({
 	},
 	initialize: function(attrs,options) {
 		// fix up url and options
-		this.aws_signing_info = options.node.get('aws_signing_info');
-		this.set(this.aws_signing_info.form_values);
-		this.url = this.aws_signing_info.url;
+		// this.aws_signing_info = options.node.get('aws_signing_info');
+		// this.set(this.aws_signing_info.form_values);
+		// this.url = this.aws_signing_info.url;
+		this.file = options.file;
+		this.listenTo(this.file, 'change:form_values change:max_file_size change:min_file_size change:upload_url', this.updateFormValues);
 	},
 	// this is the method to upload a file to aws s3
 	url: null,
 	fileAttribute: 'file',
+	updateFormValues: function() {
+		this.url = this.file.get('upload_url');
+		this.aws_signing_info = {
+			min_size: this.file.get('min_file_size'),
+			max_size: this.file.get('max_file_size'),
+		};
+		// set the rest of the values
+		this.set(this.file.get('form_values'));
+	},
 	parse: function(resp) {
 		var $xml = $(resp),
 			result = {};
@@ -514,7 +526,7 @@ AWSS3File = BackboneModelFileUpload.extend({
 				var extension = file.name.replace(/^.*\./, '').toLowerCase(), foundMimeType = false;
 				_.each(this.constructor.MIME_TYPE_MAP, function(value, key, list){
 					if(_.contains(value, extension)) {
-						this.set({'Content-Type':key}, {silent: true});
+						this.set({'Content-Type':key});
 						foundMimeType = true;
 						return false
 					}
@@ -572,20 +584,20 @@ AWSS3File = BackboneModelFileUpload.extend({
 		"video/MP2T": ["ts"]
 	}
 }),
-File = Backbone.Model.extend({
+File = AbstractModel.extend({
 	defaults: {
 	},
 	// this is the method to send the details of the uploaded file to s3 to our server
-	sync: function(method, model, options) {
-		if(method=="create") {
-			// give this model a FAKE ID for now
-			model.set({id: _.uniqueId('file_')});
-		}
-		model.set({updated_at: new Date()});
-		console.log("FILE.SYNC", method, model, options);
-	},
+	// sync: function(method, model, options) {
+	// 	if(method=="create") {
+	// 		// give this model a FAKE ID for now
+	// 		model.set({id: _.uniqueId('file_')});
+	// 	}
+	// 	model.set({updated_at: new Date()});
+	// 	console.log("FILE.SYNC", method, model, options);
+	// },
 	initialize: function(attrs, options) {
-		this.file = new AWSS3File({},{node: options.node});
+		this.file = new AWSS3File({},{node: options.node, file: this});
 		this.set({state:this.constructor.STATE_NOT_STARTED},{silent: true});
 		this.listenTo(this.file, 'progress', this.progress);
 		this.listenTo(this.file, 'error', this.uploadError);
@@ -601,7 +613,11 @@ File = Backbone.Model.extend({
 		this.file.abort();
 	},
 	uploadComplete: function() {
-		this.set({state: this.constructor.STATE_COMPLETE});
+		// send the aws key to our server to continue processing in background
+		this.save({
+				state: this.constructor.STATE_COMPLETE,
+				attachment_key: this.file.get('key')
+			});
 		this.trigger('uploadcomplete');
 	},
 	uploadError: function(model, xhr, options) {
@@ -636,10 +652,13 @@ File = Backbone.Model.extend({
 		// this.file.save();
 	},
 	upload: function() {
-		this.file.save();
+		this.file.save(); // TODO process the result here error(destroy) / success(update key)
 	},
 	progress: function(percentComplete, loaded, total) {
 		this.trigger('progress', percentComplete, loaded, total);
+	},
+	toJSON: function() {
+		return {client_guid: (this.collection && this.collection.client_guid), attachment: this.attributes};
 	}
 },{
 	STATE_NOT_STARTED: 'not_started',
@@ -648,19 +667,33 @@ File = Backbone.Model.extend({
 	STATE_COMPLETE: 'complete',
 	STATE_ERROR: 'error',
 }),
-Files = Backbone.Collection.extend({
+Files = AbstractCollection.extend({
 	// this is the collection of files
 	model: File,
-	sync: function(method, model, options) {
-		console.log("FILES.SYNC", method, model, options);
+	getuuid: function() {
+		// simple proxy onto the node
+		return this.node.collection.getuuid();
 	},
+	url: function() {
+		return `${this.node.collection.url()}/node/${this.node.get('_id')}/attachments`;
+	},
+	initialize: function(models, options) {
+		options = options || {};
+		this.node = options.node;
+		this.client_guid = options.client_guid;
+	},
+	// sync: function(method, model, options) {
+	// 	console.log("FILES.SYNC", method, model, options);
+	// },
 	addFiles: function(files, options) {
 		options = options || {};
 		_.each(files, function(file) {
 			var fileModel = new File({},{node: options.node});
-			fileModel.setFile(file);
 			this.add(fileModel);
-			fileModel.upload();
+			fileModel.setFile(file);
+			fileModel.save({},{success:function(){
+				fileModel.upload();
+			}});
 		}, this);
 	}
 }),
@@ -842,6 +875,7 @@ FileView = AbstractView.extend({
 	initialize: function() {
 		// bind progress to the view
 		this.listenTo(this.model, 'change:state', this.changeState);
+		this.listenTo(this.model, 'change:name', this.updateName);
 		// this.listenTo(this.model, 'uploadstart', this.uploadStarted);
 		this.listenTo(this.model, 'progress', this.updateProgress);
 		// this.listenTo(this.model, 'uploaderror', this.uploadError);
@@ -850,6 +884,9 @@ FileView = AbstractView.extend({
 	},
 	abort: function() {
 		this.model.destroy();
+	},
+	updateName: function() {
+		this.$('h3').text(this.model.get('name'));
 	},
 	changeState: function() {
 		var newState = this.model.get('state');
@@ -914,7 +951,7 @@ FileView = AbstractView.extend({
 	render: function(){
 		this.$el.html(`
 			<a>
-				<h3 style="margin-top: 0;">${this.model.get('name')}</h3>
+				<h3 style="margin-top: 0;">${_.escape(this.model.get('name'))}</h3>
 				<div class="ui-slider  ui-btn-down-a ui-btn-corner-all">
 					<div class="ui-slider-bg ui-btn-active ui-btn-corner-all" style="width: 0%;"></div>
 				</div>
