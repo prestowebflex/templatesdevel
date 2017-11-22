@@ -814,16 +814,34 @@ AppView = AbstractView.extend({
 		this.model.fetch();
 	},
 	onReceived: function(message) {
-		// TODO ignore messages with the same GUID as US!
+		console.log("INCOMING MESSAGE", message);
+
 		if(message.client_guid == this.model.client_guid) {
 			console.log("IGNORING OWN MESSAGE!");
 			return;
 		}
-		if(message.type == "message" && _.isObject(message.data)) {
+		var type = message.type,
+			data = (message.data);
+		if(!_.isObject(data)) {
+			console.log("IGNORING NON OBJECT MESSAGE");
+			return;
+		}
+		if(type == "message") {
 			// merge existing models to update data
-			this.model.add(message.data, {parse: true, merge: true});
+			this.model.add(data, {parse: true, merge: true});
 		} else if(message.type == "message_delete") {
-			this.model.remove(message.data);
+			this.model.remove(data.id);
+		} else  if(type == "attachment" && data.message_id) {
+			// merge into the correct message_id message
+			var message = this.model.get(data.message_id);
+			if(message) {
+				message.files.add(data, {parse: true, merge: true})
+			}
+		} else if(message.type == "attachment_delete") {
+			var message = this.model.get(data.message_id);
+			if(message) {
+				message.files.remove(data.id);
+			}
 		} else {
 			console.log("IGNORING UNKNOWN MESSAGE", message);
 		}
