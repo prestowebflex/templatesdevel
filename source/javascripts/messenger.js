@@ -265,11 +265,11 @@ Message = AbstractModel.extend({
 		var node = options.node || this.collection.node;
 		this.client_guid = options.client_guid || this.collection.client_guid
 		if(node) {
-			if(!this.get('attachments')) {
-				this.set('attachments', new Files([], {message: this, node: node, client_guid: this.client_guid}))
-			}
 			// bind to this.files for convience.
-			this.files = this.get('attachments');
+			this.files = new Files([], {message: this, node: node, client_guid: this.client_guid});
+			this.updateAttachments();
+			this.on("change:attachments", this.updateAttachments, this);
+
 			if(!attributes.node_id) {
 				this.set({node_id: node.get('_id')});
 			}
@@ -283,6 +283,9 @@ Message = AbstractModel.extend({
 				});
 			}
 		}
+	},
+	updateAttachments: function() {
+		this.files.update(this.get('attachments'), {parse: true})
 	},
 	addFiles: function(files) {
 		this.files.addFiles(files);
@@ -411,9 +414,6 @@ Message = AbstractModel.extend({
 		json.updated_at = new Date(Date.parse(json.updated_at));
 		json.created_at = new Date(Date.parse(json.created_at));
 		json.owner = new User(resp.owner);
-		// using parse this is a new model and no files exists at the moment.
-		// this will end up in the initialize method and deal with from there.
-		json.attachments = new Files(json.attachments, {message: this, parse: true, node: this.collection.node, client_guid: this.collection.client_guid});
 		// should be clean to default onto the response
 		return _.defaults(json,_.omit(resp['message'],_.flatten([specialKeys,this.constructor.IGNORE_KEYS])));
 
