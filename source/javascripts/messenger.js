@@ -263,9 +263,10 @@ Message = AbstractModel.extend({
 			this.set({created_at: new Date()});
 		}
 		var node = options.node || this.collection.node;
+		this.client_guid = options.client_guid || this.collection.client_guid
 		if(node) {
 			if(!this.get('attachments')) {
-				this.set('attachments', new Files([], {message: this, node: node, client_guid: this.collection.client_guid}))
+				this.set('attachments', new Files([], {message: this, node: node, client_guid: this.client_guid}))
 			}
 			// bind to this.files for convience.
 			this.files = this.get('attachments');
@@ -429,7 +430,7 @@ Message = AbstractModel.extend({
 		// place the rest of the keys onto message property
 		json['message'] = _.omit(this.attributes, _.flatten([this.constructor.ROOT_KEYS, this.constructor.IGNORE_KEYS, this.constructor.SERVER_KEYS]));
 		// wrap paramater for rails
-		json['message']['attachment_ids'] = this.files.pluck('id');
+		json['attachment_ids'] = this.files.pluck('id');
 		return {client_guid: (this.collection && this.collection.client_guid), message: json};
 	}
 },{
@@ -664,6 +665,12 @@ File = AbstractModel.extend({
 		// we also have to listen to this somehow to setup the paramaters for myself.
 		// this.file.save();
 	},
+	isImage: function() {
+		return this.get('attachment_type').startsWith('image/');
+	},
+	isVideo: function() {
+		return this.get('attachment_type').startsWith('video/');
+	},
 	upload: function() {
 		this.file.save(); // TODO process the result here error(destroy) / success(update key)
 	},
@@ -738,10 +745,24 @@ AbstractView = Backbone.View.extend({
 		if(!this._subviews) {
 			this._subviews = [];
 		}
+		this.listenTo(view, 'remove', this.removeView);
 		this._subviews.push(view);
 	},
 	clearViews: function() {
+		// clean up listeners on subviews and remove them from the dom
+		_.each(this._subviews, function(view){
+			this.stopListening(view); // no need for callbacks here
+			view.remove();
+		}, this);
 		this._subviews = [];
+	},
+	removeView: function(view) {
+		var idx = _.indexOf(this._subviews, view);
+		if(idx > -1) {
+			this.stopListening(view);
+			// remove the view in place of this array
+			this._subviews.splice(idx, 1);
+		}
 	},
 	_sendEventToViews: function(evtName) {
 		_.each(this._subviews, function(view) {
@@ -753,6 +774,11 @@ AbstractView = Backbone.View.extend({
 	},
 	getNode: function() {
 		return this.options.node;
+	},
+	remove: function() {
+		AbstractView.__super__.remove.apply(this, arguments);
+		this.trigger('remove', this);
+		return this;
 	}
 
 }),
@@ -765,7 +791,7 @@ AppView = AbstractView.extend({
 		return events;
 	},
 	addBlankMessage: function() {
-		this.model.add(new Message({draft: true},{node: this.getNode()}));
+		this.model.add(new Message({draft: true},{client_guid: this.model.client_guid, node: this.getNode()}));
 	},
 	initialize: function(options) {
 		options = options || {}
@@ -798,6 +824,8 @@ AppView = AbstractView.extend({
 			this.model.add(message.data, {parse: true, merge: true});
 		} else if(message.type == "message_delete") {
 			this.model.remove(message.data);
+		} else {
+			console.log("IGNORING UNKNOWN MESSAGE", message);
 		}
 	},
 	tock: function() {
@@ -828,77 +856,6 @@ AppView = AbstractView.extend({
 		window.clearInterval(this._timer);
 		this._timer = null;
 	}
-}),
-FilesListView = AbstractView.extend({
-	events: {
-		'click .uploadfiles': 'processFiles',
-		'change input[type=file]': 'processFiles'
-	},
-	initialize: function() {
-		this.listenTo(this.model, 'add', this.addOne);
-		this.listenTo(this.model, 'reset', this.addAll);
-		this.propogateEventToSubViews('tock');
-		this.addAll();
-		// console.log("INIT", this.options, arguments);
-	},
-	addOne: function(file){
-		var view = new FileView({node: this.getNode(), model: file});
-		this.$("ul").append(view.render().el);
-		this.addView(view);
-	},
-	addAll: function(){
-		this.clearViews();
-		this.$("ul > li").slice(1).remove();
-		this.model.each(this.addOne, this);
-	},
-	processFiles: function(evt) {
-		evt.preventDefault();
-		this.model.addFiles(this.$(':input[type=file]')[0].files, {node: this.getNode()});
-		this.$(':input[type=file]').val('');
-		return false;
-	},
-	render: function() {
-		// TODO add drop button
-		var acceptListForFile = _.chain(AWSS3File.MIME_TYPE_MAP).map(function(value, key){
-			return _.flatten([key,_.map(value, function(v){return `.${v}`;})]);
-		}).flatten().value().join(",");
-		this.$el.html(`
-			<ul data-role="listview">
-				<li data-role="list-divider">
-					<label for="${this.cid}_file" data-icon="plus" data-iconpos="right" data-role="button">Add Images &amp; Videos</label>
-			        <input accept="${acceptListForFile}" type="file" name="files[]" multiple name="file" id="${this.cid}_file" style="display: none;">
-				</li>
-			</ul>
-			`).attr({"data-role":'fieldcontain'});
-		this.addAll();
-
-		// var _this = this;
-
-		// this.$(":input[type=file]").fileupload({
-  //       url: '/demo',
-  //       dataType: 'json',
-  //       done: function (e, data) {
-  //           $.each(data.result.files, function (index, file) {
-  //               $('<p/>').text(file.name).appendTo(_this.$('.files'));
-  //           });
-  //       },
-  //       progressall: function (e, data) {
-  //           var progress = parseInt(data.loaded / data.total * 100, 10);
-  //           _this.$('.progress .progress-bar').css(
-  //               'width',
-  //               progress + '%'
-  //           );
-  //       }
-  //   }).prop('disabled', !$.support.fileInput)
-  //       .parent().addClass($.support.fileInput ? undefined : 'disabled');
-		_.defer(_.bind(function(){
-			this.$el.trigger('create');
-		}, this));
-		return this;
-	}
-	// List of files embedded within the Message Editor
-	// handle the list
-	// handle adding new files
 }),
 FileView = AbstractView.extend({
 	// each file represented on the list
@@ -1016,6 +973,111 @@ FileView = AbstractView.extend({
 		// reodering
 		return this;
 	}
+}),
+FileViewRO = AbstractView.extend({
+	render: function() {
+		if(this.model.isImage()) {
+			this.$el.html(`<img width="100%" src="${_.escape(this.model.get('attachment_url'))}" />`);
+		} else if(this.model.isVideo()) {
+			this.$el.html(`<video width="100%">
+					<source src="${_.escape(this.model.get('attachment_url'))}" type="${_.escape(this.model.get('attachment_type'))}" />
+					Sorry no video1
+				</video>`);
+		}
+		return this;
+	}
+}),
+FilesListView = AbstractView.extend({
+	events: {
+		'click .uploadfiles': 'processFiles',
+		'change input[type=file]': 'processFiles'
+	},
+	initialize: function() {
+		this.listenTo(this.model, 'add', this.addOne);
+		this.listenTo(this.model, 'reset', this.addAll);
+		this.propogateEventToSubViews('tock');
+		this.addAll();
+		// console.log("INIT", this.options, arguments);
+	},
+	addOne: function(file){
+		var view = new this.SUBVIEW_CLASS({node: this.getNode(), model: file});
+		this.$(this.ROOT_SELECTOR).append(view.render().el);
+		this.addView(view);
+	},
+	addAll: function(){
+		this.clearViews();
+		this.$("ul > li").slice(1).remove();
+		this.model.each(this.addOne, this);
+	},
+	processFiles: function(evt) {
+		evt.preventDefault();
+		this.model.addFiles(this.$(':input[type=file]')[0].files, {node: this.getNode()});
+		this.$(':input[type=file]').val('');
+		return false;
+	},
+	render: function() {
+		// TODO add drop button
+		var acceptListForFile = _.chain(AWSS3File.MIME_TYPE_MAP).map(function(value, key){
+			return _.flatten([key,_.map(value, function(v){return `.${v}`;})]);
+		}).flatten().value().join(",");
+		this.$el.html(`
+			<ul data-role="listview">
+				<li data-role="list-divider">
+					<label for="${this.cid}_file" data-icon="plus" data-iconpos="right" data-role="button">Add Images &amp; Videos</label>
+			        <input accept="${acceptListForFile}" type="file" name="files[]" multiple name="file" id="${this.cid}_file" style="display: none;">
+				</li>
+			</ul>
+			`).attr({"data-role":'fieldcontain'});
+		this.addAll();
+
+		// var _this = this;
+
+		// this.$(":input[type=file]").fileupload({
+  //       url: '/demo',
+  //       dataType: 'json',
+  //       done: function (e, data) {
+  //           $.each(data.result.files, function (index, file) {
+  //               $('<p/>').text(file.name).appendTo(_this.$('.files'));
+  //           });
+  //       },
+  //       progressall: function (e, data) {
+  //           var progress = parseInt(data.loaded / data.total * 100, 10);
+  //           _this.$('.progress .progress-bar').css(
+  //               'width',
+  //               progress + '%'
+  //           );
+  //       }
+  //   }).prop('disabled', !$.support.fileInput)
+  //       .parent().addClass($.support.fileInput ? undefined : 'disabled');
+		_.defer(_.bind(function(){
+			this.$el.trigger('create');
+		}, this));
+		return this;
+	},
+	// List of files embedded within the Message Editor
+	// handle the list
+	// handle adding new files
+	SUBVIEW_CLASS: FileView,
+	ROOT_SELECTOR: "ul"
+}),
+FilesListViewRO = FilesListView.extend({
+	events: {}, // no events
+	addAll: function() {
+		this.clearViews();
+		// clear html DOM
+		this.$(".media > *").remove();
+		this.model.each(this.addOne, this);
+	},
+	render: function() {
+		this.$el.html(`
+				<div class="media">
+				</div>
+			`);
+		this.addAll();
+		return this;
+	},
+	SUBVIEW_CLASS: FileViewRO,
+	ROOT_SELECTOR: ".media"
 }),
 // the main message list view
 MessageListView = AbstractView.extend({
@@ -1289,6 +1351,7 @@ MessageRootView = AbstractMessageView.extend({
 	        `;
 	},
 	render: function() {
+		this.clearViews(); // clear out subviews
 		if(this.isComposeMode()) {
 
 			this.$el.html(`<form class='message_form'></form>`);
@@ -1414,6 +1477,11 @@ MessageRootView = AbstractMessageView.extend({
 					this.$el.append(`<p><a href="${_.escape(page.name)}">${_.escape(page.title)}</a></p>`);
 				}
 			}
+	        // add the files list view to the form at this point
+	        this.filesListView = new FilesListViewRO({messageView: this, node: this.getNode(), message: this.model, model: this.model.files});
+			this.addView(this.filesListView);
+			this.$el.append(this.filesListView.render().el);
+
 			if(this.model.canEdit() || this.model.canDelete()) {
 				var $flexbox = $('<div style="display: flex;"></div>');
 				this.$el.append($flexbox);
