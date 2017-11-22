@@ -264,7 +264,11 @@ Message = AbstractModel.extend({
 		}
 		var node = options.node || this.collection.node;
 		if(node) {
-			this.files = new Files([], {node: node, client_guid: this.collection.client_guid});
+			if(!this.get('attachments')) {
+				this.set('attachments', new Files([], {message: this, node: node, client_guid: this.collection.client_guid}))
+			}
+			// bind to this.files for convience.
+			this.files = this.get('attachments');
 			if(!attributes.node_id) {
 				this.set({node_id: node.get('_id')});
 			}
@@ -406,6 +410,9 @@ Message = AbstractModel.extend({
 		json.updated_at = new Date(Date.parse(json.updated_at));
 		json.created_at = new Date(Date.parse(json.created_at));
 		json.owner = new User(resp.owner);
+		// using parse this is a new model and no files exists at the moment.
+		// this will end up in the initialize method and deal with from there.
+		json.attachments = new Files(json.attachments, {message: this, parse: true, node: this.collection.node, client_guid: this.collection.client_guid});
 		// should be clean to default onto the response
 		return _.defaults(json,_.omit(resp['message'],_.flatten([specialKeys,this.constructor.IGNORE_KEYS])));
 
@@ -422,6 +429,7 @@ Message = AbstractModel.extend({
 		// place the rest of the keys onto message property
 		json['message'] = _.omit(this.attributes, _.flatten([this.constructor.ROOT_KEYS, this.constructor.IGNORE_KEYS, this.constructor.SERVER_KEYS]));
 		// wrap paramater for rails
+		json['message']['attachment_ids'] = this.files.pluck('id');
 		return {client_guid: (this.collection && this.collection.client_guid), message: json};
 	}
 },{
@@ -443,7 +451,7 @@ Message = AbstractModel.extend({
 	},
 	ROOT_KEYS: ['message_category_id', 'parent_id', 'push_notifiation', 'valid_from', 'valid_to','message_view_permission', 'message_reply_permission', 'message_reply_view_permission'],
 	IGNORE_KEYS: ['editing', 'valid_from_set', 'valid_to_set','sent','draft','owner'],
-	SERVER_KEYS: ['id', 'updated_at', 'created_at', 'node_id', 'can_update', 'can_destroy', 'can_reply']
+	SERVER_KEYS: ['id', 'updated_at', 'created_at', 'node_id', 'can_update', 'can_destroy', 'can_reply', 'attachments']
 }),
 Messages = AbstractCollection.extend({
 	model: Message,
@@ -702,6 +710,7 @@ Files = AbstractCollection.extend({
 	initialize: function(models, options) {
 		options = options || {};
 		this.node = options.node;
+		this.message = options.message;
 		this.client_guid = options.client_guid;
 	},
 	// sync: function(method, model, options) {
