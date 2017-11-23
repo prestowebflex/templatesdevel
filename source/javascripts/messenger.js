@@ -619,7 +619,7 @@ File = AbstractModel.extend({
 		this.listenTo(this.file, 'progress', this.progress);
 		this.listenTo(this.file, 'error', this.uploadError);
 		this.listenTo(this.file, 'request', this.uploadStarted);
-		this.listenTo(this.file, 'sync', this.uploadComplete)
+		this.listenTo(this.file, 'sync', this.uploadComplete);
 		this.listenTo(this, 'destroy', this.cancelUpload);
 	},
 	uploadStarted: function(model, xhr, options) {
@@ -790,7 +790,7 @@ AppView = AbstractView.extend({
 	events: function() {
 		var events = {};
 		if(this.getNode().get('can_post')) {
-			events['click .ui-btn-right'] = 'addBlankMessage';
+			events['click .create_new_message'] = 'addBlankMessage';
 		}
 		return events;
 	},
@@ -854,19 +854,16 @@ AppView = AbstractView.extend({
 		this.listView.trigger("tock");
 	},
 	render: function() {
-		this.$el.html(
-			`<div class="ui-header ui-bar-a">
-				<h2 class="ui-title">TODO SET A TITLE OR CLEAN THIS PART UP FIXME ???</h2>
-			</div>
-			`
-		);
-		if(this.getNode().get('can_post')) {
-			this.$("div.ui-header").append(`<a href="#" data-role="button" class="ui-btn-right" data-icon="plus">Compose</a>`);
-		}
-		this.$el.css({margin: '-15px'});
+		this.$el.html('');
 		this.listView = new MessageListView({ node: this.getNode(), model: this.model, parent_id: null, messageListViewClass: MessageAndRepliesView});
 		this.addView(this.listView);
 		this.$el.append(this.listView.render().el);
+
+		if(this.getNode().get('can_post')) {
+			this.$el.append(`<p><a href="#" class="create_new_message" data-iconpos="left" data-role="button" data-icon="plus">Compose message</a></p>`);
+		}
+
+		// this.$el.css({margin: '-15px'});
 		_.defer(_.bind(function(){
 			this.$el.trigger('create');
 			// bind the children view to replies
@@ -969,7 +966,11 @@ FileView = AbstractView.extend({
 			<a class="remove" data-icon="delete">Remove</a>
 			`);
 		if(this.model.get('attachment_url')) {
-			this.$("a:first").html(`<p>COMPLETED!</p>`);
+			this.$("a:first").html(`
+				<img src="${this.model.get('attachment_url')}" />
+				<h3 style="margin-top: 0;">${_.escape(this.model.get('attachment_name'))}</h3>
+			`);
+			// this.$("a:first").html(`<p>COMPLETED!</p>`);
 		} else {
 
 			this.$("a:first").html(`
