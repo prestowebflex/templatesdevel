@@ -610,8 +610,12 @@ File = AbstractModel.extend({
 	// 	console.log("FILE.SYNC", method, model, options);
 	// },
 	initialize: function(attrs, options) {
+		options = options || {};
 		this.file = new AWSS3File({},{node: options.node, file: this});
 		this.set({state:this.constructor.STATE_NOT_STARTED},{silent: true});
+		if(options.message) {
+			this.set('message_id', options.message.id);
+		}
 		this.listenTo(this.file, 'progress', this.progress);
 		this.listenTo(this.file, 'error', this.uploadError);
 		this.listenTo(this.file, 'request', this.uploadStarted);
@@ -726,7 +730,7 @@ Files = AbstractCollection.extend({
 	addFiles: function(files, options) {
 		options = options || {};
 		_.each(files, function(file) {
-			var fileModel = new File({},{node: options.node});
+			var fileModel = new File({},{node: options.node, message: this.message});
 			this.add(fileModel);
 			fileModel.setFile(file);
 			if(!fileModel.validate(fileModel.attributes,{validate: true})) {
@@ -993,6 +997,9 @@ FileView = AbstractView.extend({
 	}
 }),
 FileViewRO = AbstractView.extend({
+	initialize: function() {
+		this.listenTo(this.model, 'remove', this.remove);
+	},
 	render: function() {
 		if(this.model.isImage()) {
 			this.$el.html(`<img width="100%" src="${_.escape(this.model.get('attachment_url'))}" />`);
