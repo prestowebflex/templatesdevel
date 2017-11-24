@@ -229,7 +229,22 @@ User = Backbone.Model.extend({
 	// demo user
 	defaults: {
 		avatar_url: "https://www.iconexperience.com/_img/o_collection_png/green_dark_grey/512x512/plain/user.png",
-		name: "Joe Bloggs"
+		name: "Unknown"
+	},
+	initialize: function(attributes, options) {
+		options = options || {};
+		var node = options.node,
+			user;
+		if(node) {
+			user = node.collection.get('user');
+			if(!user) {
+				user = node.collection.get('client');
+			}
+			this.set({
+				name: user.get('display_name'),
+				avatar_url: user.get('avatar_url')
+			});
+		}
 	}
 }),
 Message = AbstractModel.extend({
@@ -265,6 +280,9 @@ Message = AbstractModel.extend({
 		var node = options.node || this.collection.node;
 		this.client_guid = options.client_guid || this.collection.client_guid
 		if(node) {
+			if(!attributes.user) {
+				this.set('owner', new User({},{node: node}));
+			}
 			// bind to this.files for convience.
 			this.files = new Files([], {message: this, node: node, client_guid: this.client_guid});
 			this.updateAttachments();
