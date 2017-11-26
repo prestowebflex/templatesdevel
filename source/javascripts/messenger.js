@@ -229,7 +229,7 @@ User = Backbone.Model.extend({
 	// demo user
 	defaults: {
 		avatar_url: "https://www.iconexperience.com/_img/o_collection_png/green_dark_grey/512x512/plain/user.png",
-		name: "Unknown"
+		display_name: "Unknown"
 	},
 	initialize: function(attributes, options) {
 		options = options || {};
