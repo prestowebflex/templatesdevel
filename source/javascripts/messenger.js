@@ -1198,7 +1198,9 @@ MessageAndRepliesView = AbstractView.extend({
 		this.propogateEventToSubViews('tock');
 		this.on('tock', this.updateTimeAgo, this);
 	},
-	className: 'ui-body ui-body-a',
+	className: function() {
+		return `ui-body ui-body-${this.getNode().get('content')['theme'] || 'a'}`;
+	},
 	render: function() {
 		this.$el.html(`
 				<div>
