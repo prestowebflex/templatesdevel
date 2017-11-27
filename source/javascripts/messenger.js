@@ -301,9 +301,18 @@ Message = AbstractModel.extend({
 				});
 			}
 		}
+		this.listenTo(this, 'remove', this.removeAttachmentsIfNotSaved)
 	},
 	updateAttachments: function() {
 		this.files.update(this.get('attachments'), {parse: true})
+	},
+	removeAttachmentsIfNotSaved: function() {
+		if(this.isNew()) {
+			this.files.each(function(file){
+				console.log("REMOVING MODEL", file);
+				file.destroy();
+			});
+		}
 	},
 	addFiles: function(files) {
 		this.files.addFiles(files);
@@ -487,6 +496,9 @@ Messages = AbstractCollection.extend({
 	url: function() {
 		return `${this.node.collection.url()}/node/${this.node.get('_id')}/messages`;
 	},
+	unsaved: function() {
+		return this.where({id: null});
+	},
 	comparator: function(a,b) {
 		return b.get('updated_at').getTime() - a.get('updated_at').getTime();
 	}	
@@ -504,6 +516,7 @@ AWSS3File = BackboneModelFileUpload.extend({
 		// this.set(this.aws_signing_info.form_values);
 		// this.url = this.aws_signing_info.url;
 		this.file = options.file;
+		this.listenTo(this, 'change:file', this.setupThumbnailContentType);
 		this.listenTo(this.file, 'change:form_values change:max_file_size change:min_file_size change:upload_url', this.updateFormValues);
 	},
 	aws_signing_info: {
@@ -521,6 +534,20 @@ AWSS3File = BackboneModelFileUpload.extend({
 		};
 		// set the rest of the values
 		this.set(this.file.get('form_values'));
+	},
+	setupThumbnailContentType: function(model, file) {
+		this.set('Content-Type', file.type);
+
+		if(this.isImage()) {
+			var reader = new FileReader()
+			_this = this;
+			reader.onload = function() {
+				_this.file.set({thumbnail_url: this.result});
+			};
+			reader.readAsDataURL(this.get('file'));
+		} else if(this.isVideo()) {
+			this.file.set({thumbnail_url: "https://d30y9cdsu7xlg0.cloudfront.net/png/565458-200.png" })
+		}
 	},
 	parse: function(resp) {
 		var $xml = $(resp),
@@ -630,7 +657,9 @@ File = AbstractModel.extend({
 	initialize: function(attrs, options) {
 		options = options || {};
 		this.file = new AWSS3File({},{node: options.node, file: this});
-		this.set({state:this.constructor.STATE_NOT_STARTED},{silent: true});
+		if(!this.get('status')) {
+			this.set({status:this.constructor.STATE_UPLOADING},{silent: true});
+		}
 		if(options.message) {
 			this.set('message_id', options.message.id);
 		}
@@ -641,16 +670,17 @@ File = AbstractModel.extend({
 		this.listenTo(this, 'destroy', this.cancelUpload);
 	},
 	uploadStarted: function(model, xhr, options) {
-		this.set({state: this.constructor.STATE_UPLOADING});
 		this.trigger('uploadstart');	
 	},
 	cancelUpload: function() {
+		this.set({status:this.constructor.STATE_ABORTED});
 		this.file.abort();
 	},
 	uploadComplete: function() {
+		console.log("SYNC TRIGGERED ON FILE");
 		// send the aws key to our server to continue processing in background
 		this.save({
-				state: this.constructor.STATE_COMPLETE,
+				status: this.constructor.STATE_UPLOADED,
 				attachment_key: this.file.get('key')
 			});
 		this.trigger('uploadcomplete');
@@ -669,19 +699,16 @@ File = AbstractModel.extend({
 			// request completed error from aws
 			errorText = `Request failedd: ${xhr.statusText}`;
 		}
-		this.set({state: this.constructor.STATE_ERROR, errorText: errorText});
+		this.set({status: this.constructor.STATE_ERROR, errorText: errorText});
 		this.trigger('uploaderror', errorText);
 	},
 	setFile: function(file) {
-		this.set({state: this.constructor.STATE_INITIALIZED});
 		this.file.set(AWSS3File.prototype.fileAttribute, file);
-		this.file.set('Content-Type', file.type);
 		this.set({
 			last_modified: new Date(file.lastModified),
 			attachment_name: file.name,
 			attachment_size: file.size,
-			attachment_type: file.type,
-			type: file.type,
+			attachment_type: file.type
 		});
 		// this.file.on('all', console.log);
 		// we also have to listen to this somehow to setup the paramaters for myself.
@@ -700,7 +727,7 @@ File = AbstractModel.extend({
 		this.trigger('progress', percentComplete, loaded, total);
 	},
 	toJSON: function() {
-		return {client_guid: (this.collection && this.collection.client_guid), attachment: this.attributes};
+		return {client_guid: (this.collection && this.collection.client_guid), attachment: _.pick(this.attributes, this.constructor.WHITELISTED_ATTRIBUTES)};
 	},
 	validate: function(attrs, options) {
 		options || (options = {});
@@ -720,11 +747,13 @@ File = AbstractModel.extend({
 		return errors;
 	}
 },{
-	STATE_NOT_STARTED: 'not_started',
-	STATE_INITIALIZED: 'initialized',
 	STATE_UPLOADING: 'uploading',
-	STATE_COMPLETE: 'complete',
+	STATE_UPLOADED: 'uploaded',
+	STATE_PROCESSING: 'processing',
+	STATE_PROCESSED: 'processed',
+	STATE_ABORTED: 'aborted',
 	STATE_ERROR: 'error',
+	WHITELISTED_ATTRIBUTES: ['status','attachment_key', 'attachment_size', 'attachment_type', 'message_id']
 }),
 Files = AbstractCollection.extend({
 	// this is the collection of files
@@ -853,11 +882,17 @@ AppView = AbstractView.extend({
 			this.model.add(data, {parse: true, merge: true});
 		} else if(message.type == "message_delete") {
 			this.model.remove(data.id);
-		} else  if(type == "attachment" && data.message_id) {
+		} else  if(type == "attachment") {
 			// merge into the correct message_id message
 			var message = this.model.get(data.message_id);
 			if(message) {
 				message.files.add(data, {parse: true, merge: true})
+			} else {
+				_.each(this.model.unsaved(), function(message) {
+					// send this update to all unsaved messages
+					message.files.update(data, {parse: true, merge: true, add: false, remove: false});
+				});
+				// console.log("IGNORING ATTACHMENT MSG WITHOUT ATTACHMENT", message);
 			}
 		} else if(message.type == "attachment_delete") {
 			var message = this.model.get(data.message_id);
@@ -903,8 +938,9 @@ FileView = AbstractView.extend({
 	tagName: 'li',
 	initialize: function() {
 		// bind progress to the view
-		this.listenTo(this.model, 'change:state', this.changeState);
+		this.listenTo(this.model, 'change:status', this.render);
 		this.listenTo(this.model, 'change:attachment_name', this.updateName);
+		this.listenTo(this.model, 'change:thumbnail_url', this.render);
 		// this.listenTo(this.model, 'uploadstart', this.uploadStarted);
 		this.listenTo(this.model, 'progress', this.updateProgress);
 		this.listenTo(this.model, 'uploaderror', this.uploadError);
@@ -918,40 +954,6 @@ FileView = AbstractView.extend({
 	updateName: function() {
 		this.$('h3').text(this.model.get('attachment_name'));
 	},
-	changeState: function() {
-		var newState = this.model.get('state');
-		if(newState == File.STATE_ERROR) {
-			this.uploadError(this.model.get('errorText'));
-		} else if (newState == File.STATE_INITIALIZED) {
-			// nothing here
-		} else if (newState == File.STATE_COMPLETE) {
-			this.uploadComplete();
-		} else if (newState == File.STATE_UPLOADING ) {
-			this.uploadStarted();
-		}
-	},
-	setupThumbnail: function() {
-		// if no thumbnail????
-		if(this.$("img").length == 0) {
-			if(this.model.file.isImage()) {
-				var prviewImg = $("<img />").prependTo(this.$("a:first")),
-				reader = new FileReader();
-				this.refreshList();
-				reader.onload = function() {
-					prviewImg[0].src = this.result;
-				};
-				reader.readAsDataURL(this.model.file.get('file'));
-			} else if(this.model.file.isVideo()) {
-				$(`<img src="https://d30y9cdsu7xlg0.cloudfront.net/png/565458-200.png" />`).prependTo(this.$("a:first"));
-				this.refreshList();
-			}
-		}
-	},
-	uploadStarted: function() {
-		// if this is a image put a preview of it up as well.
-		this.$('.statustext').text(`Upload starting.`)
-		this.setupThumbnail();
-	},
 	updateProgress: function(pct) {
 		this.$('.ui-slider-bg').css({width: `${pct * 100}%`});
 		this.$('.statustext').text(`Upload ${Math.round(pct * 100)}% complete.`)
@@ -961,11 +963,6 @@ FileView = AbstractView.extend({
 		this.$('.ui-slider').remove();
 		this.$("a").addClass('remove');
 		this.$('.statustext').text(`${_.escape(text)}`)
-	},
-	uploadComplete: function() {
-		this.setupThumbnail();
-		this.$('.ui-slider-bg').css({width: `100%`});
-		this.$('.statustext').text(`Upload complete.`)
 	},
 	refreshList: function(callback) {
 		_.defer(_.bind(function(){
@@ -980,38 +977,52 @@ FileView = AbstractView.extend({
 	},
 	render: function(){
 		this.$el.html(`
-			<a></a>
+			<a>
+				<h3 style="margin-top: 0;">${_.escape(this.model.get('attachment_name'))}</h3>
+			</a>
 			<a class="remove" data-icon="delete">Remove</a>
 			`);
-		if(this.model.get('attachment_url')) {
-			this.$("a:first").html(`
-				<img src="${this.model.get('attachment_url')}" />
-				<h3 style="margin-top: 0;">${_.escape(this.model.get('attachment_name'))}</h3>
-			`);
-			// this.$("a:first").html(`<p>COMPLETED!</p>`);
-		} else {
+		var status = this.model.get('status');
+		console.log(`rendering file view status is ${status}!!!`);
 
-			this.$("a:first").html(`
-					<h3 style="margin-top: 0;">${_.escape(this.model.get('attachment_name'))}</h3>
+		if(status == File.STATE_UPLOADING) {
+			this.$("a:first").append(`
 					<div class="ui-slider  ui-btn-down-a ui-btn-corner-all">
 						<div class="ui-slider-bg ui-btn-active ui-btn-corner-all" style="width: 0%;"></div>
 					</div>
-					<p class="statustext"></p>
+					<p class="statustext">Upload starting.</p>
 				`);
 			this.$('.ui-slider').css({
 				width: '96%',
 				margin: '-6px 2% 6px'
 			});
-			// refresh UI off state
-			this.changeState();
+		} else if(status == File.STATE_UPLOADED) {
+			this.$("a:first").append(`
+					<div class="wobblebar-loader"></div>
+					<p class="statustext">Waiting to process</p>
+				`);			
+		} else if(status == File.STATE_PROCESSING) {
+			this.$("a:first").append(`
+					<div class="wobblebar-loader"></div>
+					<p class="statustext">Processing file</p>
+				`);			
+		} else if(status == File.STATE_PROCESSED) {
+			this.$("a:first").append(`
+					<p class="statustext">Finished</p>
+				`);			
+		} else {
+			this.$("a:first").append(`
+					<p class="statustext">Unknown State - ${status}</p>
+				`);			
+		}
+
+		// if we have a thumbnail url add it in
+		if(this.model.get('thumbnail_url')) {
+			this.$("a:first").prepend(`
+					<img src="${this.model.get('thumbnail_url')}" />
+				`);
 		}
 		this.refreshList();
-//					<input data-highlight="true" type="range" name="slider-1" min="0" max="100" value="0"/>
-		// preview
-		// status
-		// progress bar
-		// cancel / delete 
-		// reodering
 		return this;
 	}
 }),
