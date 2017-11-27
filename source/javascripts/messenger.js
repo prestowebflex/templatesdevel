@@ -939,8 +939,10 @@ FileView = AbstractView.extend({
 	initialize: function() {
 		// bind progress to the view
 		this.listenTo(this.model, 'change:status', this.render);
+		
 		this.listenTo(this.model, 'change:attachment_name', this.updateName);
 		this.listenTo(this.model, 'change:thumbnail_url', this.render);
+
 		// this.listenTo(this.model, 'uploadstart', this.uploadStarted);
 		this.listenTo(this.model, 'progress', this.updateProgress);
 		this.listenTo(this.model, 'uploaderror', this.uploadError);
@@ -976,18 +978,24 @@ FileView = AbstractView.extend({
 		}, this));
 	},
 	render: function(){
-		this.$el.html(`
-			<a>
-				<h3 style="margin-top: 0;">${_.escape(this.model.get('attachment_name'))}</h3>
-			</a>
-			<a class="remove" data-icon="delete">Remove</a>
-			`);
+		if(!this._rendered) {
+			this._rendered = true;
+			this.$el.html(`
+				<a>
+					<h3 data-keep="true" style="margin-top: 0;">${_.escape(this.model.get('attachment_name'))}</h3>
+				</a>
+				<a class="remove" data-icon="delete">Remove</a>
+				`);
+		} else {
+			// clean out for new state
+			this.$("a:first").children().not("[data-keep]").remove();
+		}
 		var status = this.model.get('status');
 		console.log(`rendering file view status is ${status}!!!`);
 
 		if(status == File.STATE_UPLOADING) {
 			this.$("a:first").append(`
-					<div class="ui-slider  ui-btn-down-a ui-btn-corner-all">
+					<div class="ui-slider ui-btn-down-a ui-btn-corner-all">
 						<div class="ui-slider-bg ui-btn-active ui-btn-corner-all" style="width: 0%;"></div>
 					</div>
 					<p class="statustext">Upload starting.</p>
@@ -1019,7 +1027,7 @@ FileView = AbstractView.extend({
 		// if we have a thumbnail url add it in
 		if(this.model.get('thumbnail_url')) {
 			this.$("a:first").prepend(`
-					<img src="${this.model.get('thumbnail_url')}" />
+					<img class="ui-li-thumb" src="${this.model.get('thumbnail_url')}" />
 				`);
 		}
 		this.refreshList();
@@ -1032,13 +1040,20 @@ FileViewRO = AbstractView.extend({
 		this.listenTo(this.model, 'change', this.render);
 	},
 	render: function() {
-		if(this.model.isImage()) {
-			this.$el.html(`<img width="100%" src="${_.escape(this.model.get('attachment_url'))}" />`);
-		} else if(this.model.isVideo()) {
-			this.$el.html(`<video width="100%">
-					<source src="${_.escape(this.model.get('attachment_url'))}" type="${_.escape(this.model.get('attachment_type'))}" />
-					Sorry no video1
-				</video>`);
+		if(this.model.get('status') != File.STATE_PROCESSED) {
+			this.$el.html(`
+				<p>File is processing</p>
+				<div class="wobblebar-loader"></div>
+				`);
+		} else {
+			if(this.model.isImage()) {
+				this.$el.html(`<img width="100%" src="${_.escape(this.model.get('resized_url'))}" />`);
+			} else if(this.model.isVideo()) {
+				this.$el.html(`<video width="100%">
+						<source src="${_.escape(this.model.get('attachment_url'))}" type="${_.escape(this.model.get('attachment_type'))}" />
+						Sorry no video1
+					</video>`);
+			}
 		}
 		return this;
 	}
