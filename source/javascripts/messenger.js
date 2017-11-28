@@ -241,7 +241,7 @@ User = Backbone.Model.extend({
 				user = node.collection.get('client');
 			}
 			this.set({
-				name: user.get('display_name'),
+				display_name: user.get('display_name'),
 				avatar_url: user.get('avatar_url')
 			});
 		}
@@ -321,7 +321,7 @@ Message = AbstractModel.extend({
 		return jQuery.timeago(this.get('updated_at'));
 	},
 	ownerName: function() {
-		return this.get('owner').get('name');
+		return this.get('owner').get('display_name');
 	},
 	ownerAvatarUrl: function() {
 		return this.get('owner').get('avatar_url');
