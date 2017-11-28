@@ -261,7 +261,6 @@ Message = AbstractModel.extend({
 		draft: false,
 		push_notifiation: false,
 		parent_id: null,
-		owner: new User(),
 		message_view_permission: [],
 		message_reply_permission: [],
 		message_reply_view_permission: [],
@@ -284,9 +283,9 @@ Message = AbstractModel.extend({
 		var node = options.node || this.collection.node;
 		this.client_guid = options.client_guid || this.collection.client_guid
 		if(node) {
-			// if(!attributes.user) {
-			// 	this.set('owner', new User({},{node: node}));
-			// }
+			if(!attributes.owner) {
+				this.set('owner', new User({},{node: node}));
+			}
 			// bind to this.files for convience.
 			this.files = new Files([], {message: this, node: node, client_guid: this.client_guid});
 			this.updateAttachments();
