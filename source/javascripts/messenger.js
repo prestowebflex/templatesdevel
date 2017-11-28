@@ -227,24 +227,28 @@ BackboneModelFileUpload = Backbone.Model.extend({
 // a user model to demo with
 User = Backbone.Model.extend({
 	// demo user
-	defaults: {
-		avatar_url: "https://www.iconexperience.com/_img/o_collection_png/green_dark_grey/512x512/plain/user.png",
-		display_name: "Unknown"
-	},
-	initialize: function(attributes, options) {
+	constructor: function(attrs, options) {
 		options = options || {};
-		var node = options.node,
-			user;
+		this.node = options.node;
+		Backbone.Model.apply(this, arguments);
+	},
+	defaults: function() {
+		var data = {
+			avatar_url: "https://www.iconexperience.com/_img/o_collection_png/green_dark_grey/512x512/plain/user.png",
+			display_name: "Unknown"
+		}, node = this.node;
+
 		if(node) {
-			user = node.collection.get('user');
+			var user = node.collection.get('user');
 			if(!user) {
 				user = node.collection.get('client');
 			}
-			this.set({
+			data = {
 				display_name: user.get('display_name'),
 				avatar_url: user.get('avatar_url')
-			});
+			}
 		}
+		return data;
 	}
 }),
 Message = AbstractModel.extend({
