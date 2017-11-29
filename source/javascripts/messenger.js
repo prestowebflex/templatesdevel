@@ -1061,9 +1061,9 @@ FileViewRO = AbstractView.extend({
 			if(this.model.isImage()) {
 				this.$el.html(`<img width="100%" src="${_.escape(this.model.get('resized_url'))}" />`);
 			} else if(this.model.isVideo()) {
-				this.$el.html(`<video width="100%" controls>
+				this.$el.html(`<video width="100%" poster="${_.escape(this.model.get('resized_url'))}" controls>
 						<source src="${_.escape(this.model.get('playlist_url'))}"  />
-						Sorry no video1
+						Sorry no video
 					</video>`);
 			}
 		}
