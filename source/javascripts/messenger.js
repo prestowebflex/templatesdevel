@@ -545,11 +545,11 @@ AWSS3File = BackboneModelFileUpload.extend({
 			var reader = new FileReader()
 			_this = this;
 			reader.onload = function() {
-				_this.file.set({thumbnail_url: this.result});
+				_this.file.set({thumb_url: this.result});
 			};
 			reader.readAsDataURL(this.get('file'));
 		} else if(this.isVideo()) {
-			this.file.set({thumbnail_url: "https://d30y9cdsu7xlg0.cloudfront.net/png/565458-200.png" })
+			this.file.set({thumb_url: "https://d30y9cdsu7xlg0.cloudfront.net/png/565458-200.png" })
 		}
 	},
 	parse: function(resp) {
@@ -944,7 +944,7 @@ FileView = AbstractView.extend({
 		this.listenTo(this.model, 'change:status', this.render);
 		
 		this.listenTo(this.model, 'change:attachment_name', this.updateName);
-		this.listenTo(this.model, 'change:thumbnail_url', this.render);
+		this.listenTo(this.model, 'change:thumb_url', this.render);
 
 		// this.listenTo(this.model, 'uploadstart', this.uploadStarted);
 		this.listenTo(this.model, 'progress', this.updateProgress);
@@ -1016,10 +1016,14 @@ FileView = AbstractView.extend({
 			this.$("a:first").append(`
 					<div class="wobblebar-loader"></div>
 					<p class="statustext">Processing file</p>
-				`);			
+				`);	
 		} else if(status == File.STATE_PROCESSED) {
 			this.$("a:first").append(`
 					<p class="statustext">Finished</p>
+				`);			
+		} else if(status == File.STATE_ERROR) {
+			this.$("a:first").append(`
+					<p class="statustext">Error Processing File</p>
 				`);			
 		} else {
 			this.$("a:first").append(`
@@ -1028,9 +1032,9 @@ FileView = AbstractView.extend({
 		}
 
 		// if we have a thumbnail url add it in
-		if(this.model.get('thumbnail_url')) {
+		if(this.model.get('thumb_url')) {
 			this.$("a:first").prepend(`
-					<img class="ui-li-thumb" src="${this.model.get('thumbnail_url')}" />
+					<img class="ui-li-thumb" src="${this.model.get('thumb_url')}" />
 				`);
 		}
 		this.refreshList();
@@ -1043,7 +1047,12 @@ FileViewRO = AbstractView.extend({
 		this.listenTo(this.model, 'change', this.render);
 	},
 	render: function() {
-		if(this.model.get('status') != File.STATE_PROCESSED) {
+		var status = this.model.get('status');
+		this.$el.show();
+		if(status == File.STATE_ERROR) {
+			this.$el.hide();
+			this.$el.html('');
+		} else if(status != File.STATE_PROCESSED) {
 			this.$el.html(`
 				<p>File is processing</p>
 				<div class="wobblebar-loader"></div>
@@ -1052,8 +1061,8 @@ FileViewRO = AbstractView.extend({
 			if(this.model.isImage()) {
 				this.$el.html(`<img width="100%" src="${_.escape(this.model.get('resized_url'))}" />`);
 			} else if(this.model.isVideo()) {
-				this.$el.html(`<video width="100%">
-						<source src="${_.escape(this.model.get('attachment_url'))}" type="${_.escape(this.model.get('attachment_type'))}" />
+				this.$el.html(`<video width="100%" controls>
+						<source src="${_.escape(this.model.get('playlist_url'))}"  />
 						Sorry no video1
 					</video>`);
 			}
