@@ -539,7 +539,6 @@ AWSS3File = BackboneModelFileUpload.extend({
 		this.set(this.file.get('form_values'));
 	},
 	setupThumbnailContentType: function(model, file) {
-		this.set('Content-Type', file.type);
 
 		if(this.isImage()) {
 			var reader = new FileReader()
@@ -566,6 +565,9 @@ AWSS3File = BackboneModelFileUpload.extend({
 			this.aborted = true;
 			this.xhr.abort("Upload cancelled");
 		}
+	},
+	setFileName: function(name) {
+		this.fileName = name;
 	},
 	validate: function(attrs, options) {
 		options || (options = {});
@@ -613,6 +615,11 @@ AWSS3File = BackboneModelFileUpload.extend({
 	isVideo: function() {
 		return this.get('Content-Type').startsWith('video/');
 	},
+	save: function() {
+		var attrs = _.clone(this.attributes);
+		attrs.key = attrs.key.replace('${filename}',this.fileName);
+		this.constructor.__super__.save.call(this, attrs)
+	},
 	// force datatype to be XML
 	sync: function(method, model, options) {
 		this.previousError = false;
@@ -643,7 +650,20 @@ AWSS3File = BackboneModelFileUpload.extend({
 		"video/quicktime": ["mov"],
 		"video/x-ms-wmv": ["wmv"],
 		"video/MP2T": ["ts"]
+	},
+	inferTypeFromName: function(name) {
+		var extension = name.replace(/^.*\./, '').toLowerCase(),
+			foundMimeType = false;
+		_.each(this.MIME_TYPE_MAP, function(value, key, list){
+			if(_.contains(value, extension)) {
+				foundMimeType = key;
+				return false;
+			}
+			return true;
+		}, this);
+		return foundMimeType;
 	}
+
 }),
 File = AbstractModel.extend({
 	defaults: {
@@ -680,7 +700,7 @@ File = AbstractModel.extend({
 		this.file.abort();
 	},
 	uploadComplete: function() {
-		console.log("SYNC TRIGGERED ON FILE");
+		// console.log("SYNC TRIGGERED ON FILE");
 		// send the aws key to our server to continue processing in background
 		this.save({
 				status: this.constructor.STATE_UPLOADED,
@@ -705,14 +725,27 @@ File = AbstractModel.extend({
 		this.set({status: this.constructor.STATE_ERROR, errorText: errorText});
 		this.trigger('uploaderror', errorText);
 	},
-	setFile: function(file) {
-		this.file.set(AWSS3File.prototype.fileAttribute, file);
-		this.set({
-			last_modified: new Date(file.lastModified),
-			attachment_name: file.name,
-			attachment_size: file.size,
-			attachment_type: file.type
-		});
+	setFile: function(file, callback) {
+		var reader = new FileReader()
+			var _this = this;
+			if(!file.type) {
+				type = AWSS3File.inferTypeFromName(file.name);
+			} else {
+				type = file.type;
+			}
+		reader.onloadend = function() {
+			_this.file.set(AWSS3File.prototype.fileAttribute, new Blob([new Uint8Array(this.result)], {type: type}));
+			_this.file.set('Content-Type', type);
+			_this.file.setFileName(file.name);
+			_this.set({
+				last_modified: new Date(file.lastModified),
+				attachment_name: file.name,
+				attachment_size: file.size,
+				attachment_type: type
+			});
+			callback();
+		};
+		reader.readAsArrayBuffer(file);
 		// this.file.on('all', console.log);
 		// we also have to listen to this somehow to setup the paramaters for myself.
 		// this.file.save();
@@ -782,14 +815,17 @@ Files = AbstractCollection.extend({
 		_.each(files, function(file) {
 			var fileModel = new File({},{node: options.node, message: this.message});
 			this.add(fileModel);
-			fileModel.setFile(file);
-			if(!fileModel.validate(fileModel.attributes,{validate: true})) {
-				fileModel.save({},{success:function(){
-					fileModel.upload();
-				}});
-			} else {
-				fileModel.upload(); // this will trigger the UI to update
-			}
+			_.defer(function(){
+				fileModel.setFile(file, function(){
+					if(!fileModel.validate(fileModel.attributes,{validate: true})) {
+						fileModel.save({},{success:function(){
+							fileModel.upload();
+						}});
+					} else {
+						fileModel.upload(); // this will trigger the UI to update
+					}
+				});
+			});
 		}, this);
 	}
 }),
@@ -994,7 +1030,7 @@ FileView = AbstractView.extend({
 			this.$("a:first").children().not("[data-keep]").remove();
 		}
 		var status = this.model.get('status');
-		console.log(`rendering file view status is ${status}!!!`);
+		// console.log(`rendering file view status is ${status}!!!`);
 
 		if(status == File.STATE_UPLOADING) {
 			this.$("a:first").append(`
@@ -1071,16 +1107,29 @@ FileViewRO = AbstractView.extend({
 	}
 }),
 FilesListView = AbstractView.extend({
-	events: {
-		'click .uploadfiles': 'processFiles',
-		'change input[type=file]': 'processFiles'
+	events: function() {
+		if(this.cordovaCamera) {
+			return {
+					'click .takePhoto': 'takeCameraImage',
+					'click .uploadLibrary': 'uploadCameraImage'
+				}
+
+		} else {
+			return {
+					'change input[type=file]': 'processFiles'
+				}
+		}
 	},
+	cordovaCamera: false,
 	initialize: function() {
 		this.listenTo(this.model, 'add', this.addOne);
 		this.listenTo(this.model, 'reset', this.addAll);
 		this.propogateEventToSubViews('tock');
 		this.addAll();
 		// console.log("INIT", this.options, arguments);
+		if(window.navigator && window.navigator.camera && window.navigator.camera) {
+			this.cordovaCamera = true;
+		}
 	},
 	addOne: function(file){
 		var view = new this.SUBVIEW_CLASS({node: this.getNode(), model: file});
@@ -1092,6 +1141,45 @@ FilesListView = AbstractView.extend({
 		this.$("ul > li").slice(1).remove();
 		this.model.each(this.addOne, this);
 	},
+	takeCameraImage: function() {
+		this.addCameraImage(Camera.PictureSourceType.CAMERA);
+	},
+	uploadCameraImage: function() {
+		this.addCameraImage(Camera.PictureSourceType.PHOTOLIBRARY);
+	},
+	addCameraImage: function(sourceType) {
+		window.navigator.camera.getPicture(
+			_.bind(this._addPictureSuccess, this),
+			_.bind(this._addPictureError, this),
+			{
+				destinationType: Camera.DestinationType.FILE_URI,
+				sourceType: sourceType,
+				mediaType: Camera.MediaType.ALLMEDIA
+
+			});
+	},
+	_addPictureSuccess: function(imgUri) {
+		var a = document.createElement("a");
+		a.href = imgUri;
+		// console.log(imgUri);
+		window.resolveLocalFileSystemURL(a.href, _.bind(function(fileEntry) {
+			// console.log("FILEENTRY", fileEntry);
+			fileEntry.file(_.bind(function(entry){
+				// console.log("FILE", entry);
+				this.model.addFiles([entry], {node: this.getNode()});
+			}, this), function() {
+				console.log("error getting file entry");
+			});
+			// console.log(fileEntry);
+		}, this), _.bind(function(){
+			console.log("FILEENTRY FAILED", arguments);
+		}));
+		// console.log("SUCCESS", arguments);
+	},
+	_addPictureError: function(message) {
+		console.log("FAILURE", arguments);
+	},
+	// this is the browser version
 	processFiles: function(evt) {
 		evt.preventDefault();
 		this.model.addFiles(this.$(':input[type=file]')[0].files, {node: this.getNode()});
@@ -1099,18 +1187,34 @@ FilesListView = AbstractView.extend({
 		return false;
 	},
 	render: function() {
-		// TODO add drop button
-		var acceptListForFile = _.chain(AWSS3File.MIME_TYPE_MAP).map(function(value, key){
-			return _.flatten([key,_.map(value, function(v){return `.${v}`;})]);
-		}).flatten().value().join(",");
-		this.$el.html(`
-			<ul data-role="listview">
-				<li data-role="list-divider">
-					<label for="${this.cid}_file" data-icon="plus" data-iconpos="right" data-role="button">Add Images &amp; Videos</label>
-			        <input accept="${acceptListForFile}" type="file" name="files[]" multiple name="file" id="${this.cid}_file" style="display: none;">
-				</li>
-			</ul>
-			`).attr({"data-role":'fieldcontain'});
+		if(this.cordovaCamera) {
+			this.$el.html(`
+				<ul data-role="listview">
+					<li data-role="list-divider" class="ui-grid-a">
+			            <div class="ui-block-a">
+			            	<a class="takePhoto" data-role="button" data-icon="star">Take photo</a>
+			            </div>
+			            <div class="ui-block-b">
+			            	<a class="uploadLibrary" data-icon="grid" data-role="button">Choose file</a>
+			            </div>
+			            <div style="clear: both;"></div>
+					</li>
+				</ul>
+				`).attr({"data-role":'fieldcontain'});
+		} else {
+			var acceptListForFile = _.chain(AWSS3File.MIME_TYPE_MAP).map(function(value, key){
+				return _.flatten([key,_.map(value, function(v){return `.${v}`;})]);
+			}).flatten().value().join(",");
+			this.$el.html(`
+				<ul data-role="listview">
+					<li data-role="list-divider">
+						<label for="${this.cid}_file" data-icon="plus" data-iconpos="right" data-role="button">Add Images &amp; Videos</label>
+				        <input accept="${acceptListForFile}" type="file" name="files[]" multiple name="file" id="${this.cid}_file" style="display: none;">
+					</li>
+				</ul>
+				`).attr({"data-role":'fieldcontain'});
+
+		}
 		this.addAll();
 
 		// var _this = this;
@@ -1588,6 +1692,10 @@ MessageRootView = AbstractMessageView.extend({
 	        this.$(':input[name$=_set]').trigger('change');
 			// bind the children view to replies
 			// var childrenList = new MessageListView({ el: this.$('.replies'), model: this.model.collection, parent_id: this.model.get('id'), messageListViewClass: MessageView});
+			if(this.isComposeMode()) {
+				// scroll to the top of the messages
+				$("html").scrollTop(this.$el.offset().top);
+			}
 		}, this));
 
 		return this;
