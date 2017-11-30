@@ -720,7 +720,7 @@ File = AbstractModel.extend({
 			errorText = `Failed to connect to server: ${xhr.statusText}`;
 		} else if (xhr.readyState == 4) {
 			// request completed error from aws
-			errorText = `Request failedd: ${xhr.statusText}`;
+			errorText = `Request failed: ${xhr.statusText}`;
 		}
 		this.set({status: this.constructor.STATE_ERROR, errorText: errorText});
 		this.trigger('uploaderror', errorText);
