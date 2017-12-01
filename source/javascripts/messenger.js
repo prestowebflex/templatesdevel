@@ -1881,18 +1881,23 @@ this.getStartMessagingAppFunction = function(view, node){
 				el: view.$('.notification_template')[0] }).render();
 
 			// TODO TEST THIS CODE COMMENTED OUT FOR NOW ALSO NEEDS MORE GUARDS AGAINST NULLS
-			// var fnToWrap = main.connector.get('client').push._handlers.notification[0];
-			// main.connector.get('client').push._handlers.notification[0] = _.wrap(fnToWrap, function(func, data){
-			// 	var additionalData = data.additionalData || {};
-			// 	if(!(additionalData.foreground && additionalData.node && additionalData.node==node.get('name'))) {
-			// 		return func(data);
-			// 	}
-			// });
+			var client = node.collection.get('client'),
+				fnToWrap = client.push && client.push._handlers.notification[0];
+				if(_.isFunction(fnToWrap)) {
+					client.push._handlers.notification[0] = _.wrap(fnToWrap, function(func, data){
+						var additionalData = data.additionalData || {};
+						if(!(additionalData.foreground && additionalData.node && additionalData.node==node.get('name'))) {
+							return func(data);
+						}
+					});
+				}
 
 			view.on('closepage', function() {
 				app.trigger("stoptimer");
 				// debind the function wrapping the notifications system!
-				// main.connector.get('client').push._handlers.notification[0] = fnToWrap;
+				if(_.isFunction(fnToWrap)) {
+					client.push._handlers.notification[0] = fnToWrap;
+				}
 			});
 
 			window.view = view;
