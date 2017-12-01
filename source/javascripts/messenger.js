@@ -903,6 +903,7 @@ AbstractView = Backbone.View.extend({
 
 }),
 AppView = AbstractView.extend({
+	_connected: false,
 	events: function() {
 		var events = {};
 		if(this.getNode().get('can_post')) {
@@ -922,6 +923,9 @@ AppView = AbstractView.extend({
 			// bind message  updates to the main model!
 			// just send them into the main model
 			this.listenTo(this.app, 'received', this.onReceived);
+			this.listenTo(this.app, 'connected', this.onConnect);
+			this.listenTo(this.app, 'disconnected', this.onDisconnect);
+			this.listenTo(this.model, 'sync', this.messagesSynced);
 			this.app.init(true); // force start
 		}
 		// this is just called once to setup the view for the application only
@@ -930,20 +934,35 @@ AppView = AbstractView.extend({
 		this.on("stoptimer",this.clearTock,this);
 		this._timer = window.setInterval(_.bind(this.tock,this), 60000);
 		this.propogateEventToSubViews('tock');
+		$.mobile.showPageLoadingMsg("a","Connecting");
+	},
+	onDisconnect: function() {
+		this._connected = false;
+		$.mobile.showPageLoadingMsg("a","Reconnecting");
+	},
+	onConnect: function() {
+		this._connected = true;
+		$.mobile.showPageLoadingMsg("a","Updating messages");
 		// update the view
 		this.model.fetch();
 	},
+	messagesSynced: function() {
+		$.mobile.hidePageLoadingMsg();
+	},
+	all: function() {
+		console.log("SOCKET ALL", arguments);
+	},
 	onReceived: function(message) {
-		console.log("INCOMING MESSAGE", message);
+		// console.log("INCOMING MESSAGE", message);
 
 		if(message.client_guid == this.model.client_guid) {
-			console.log("IGNORING OWN MESSAGE!");
+			// console.log("IGNORING OWN MESSAGE!");
 			return;
 		}
 		var type = message.type,
 			data = (message.data);
 		if(!_.isObject(data)) {
-			console.log("IGNORING NON OBJECT MESSAGE");
+			// console.log("IGNORING NON OBJECT MESSAGE");
 			return;
 		}
 		if(type == "message") {
@@ -969,7 +988,7 @@ AppView = AbstractView.extend({
 				message.files.remove(data.id);
 			}
 		} else {
-			console.log("IGNORING UNKNOWN MESSAGE", message);
+			// console.log("IGNORING UNKNOWN MESSAGE", message);
 		}
 	},
 	tock: function() {
@@ -1490,20 +1509,20 @@ MessageRootView = AbstractMessageView.extend({
 				events[`${e} form`] = 'dragstop';
 			});
 		}
-		console.log(events);
+		// console.log(events);
 		return events;
 	},
 	dragPreventDefaults: function(e) {
-		console.log('prevented');
+		// console.log('prevented');
 		e.preventDefault();
 		e.stopPropagation();
 	},
 	dragenter: function(e) {
-		console.log('enter', e);
+		// console.log('enter', e);
 		this.$("form").addClass('is-dragover');
 	},
 	dragstop: function(e) {
-		console.log('exit');
+		// console.log('exit');
 		this.$("form").removeClass('is-dragover');
 	},
 	filedrop: function(e) {
