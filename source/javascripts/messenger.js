@@ -305,9 +305,25 @@ Message = AbstractModel.extend({
 			}
 		}
 		this.listenTo(this, 'remove', this.removeAttachmentsIfNotSaved)
+		this.on("change:title change:message", this.updatePushNotificationText, this);
 	},
 	updateAttachments: function() {
 		this.files.update(this.get('attachments'), {parse: true})
+	},
+	updatePushNotificationText: function() {
+		if(this.root().get('push_notifiation')) {
+			if(this.isRoot()) {
+				this.set({
+					push_title: this.get('title'),
+					push_message: this.get('message')
+				});
+			} else {
+				this.set({
+					push_title: `${this.ownerName()} ${this.depth()==1?"Commented":"Replied"}`,
+					push_message: this.get('message')
+				});
+			}
+		}
 	},
 	removeAttachmentsIfNotSaved: function() {
 		if(this.isNew()) {
@@ -403,17 +419,31 @@ Message = AbstractModel.extend({
 		if(!this.collection) {
 			return;
 		}
+		if(!this.get('parent_id')) {
+			return;
+		}
 		return this.collection.get(this.get('parent_id'));
 	},
 	levelName: function() {
 		return this.constructor.MESSAGE_LEVELS[this.depth()] || "Message";
 	},
+	isRoot: function() {
+		return !this.get('parent_id');
+	},
+	root: function() {
+		var parent = this.parent();
+		if(parent) {
+			return parent.root();
+		} else {
+			return this;
+		}
+	},
 	depth: function() {
 		var parent = this.parent();
-		if(!this.parent()) {
+		if(!parent) {
 			return 0;
 		} else {
-			return this.parent().depth() + 1;
+			return parent.depth() + 1;
 		}
 	},
 	canReply: function() {
