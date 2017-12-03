@@ -1880,36 +1880,36 @@ this.getStartMessagingAppFunction = function(view, node){
 				app: actionCableApp,
 				el: view.$('.notification_template')[0] }).render();
 			// TODO TEST THIS CODE COMMENTED OUT FOR NOW ALSO NEEDS MORE GUARDS AGAINST NULLS
-			var client = node.collection.get('client'),
-				fnToWrap = client.push && client.push._handlers.notification[0],
-				wrapPushHandler = function(){
-					if(_.isFunction(fnToWrap) && !fnToWrap.wrapped) {
-						client.push._handlers.notification[0] = _.wrap(fnToWrap, function(func, data){
-							var additionalData = data.additionalData || {};
-							if(!(additionalData.foreground && additionalData.node && additionalData.node==node.get('name'))) {
-								return func(data);
-							}
-						});
-						client.push._handlers.notification[0].wrapped = true
-					}
-				},
-				unwrapPushHandler = function() {
-					if(_.isFunction(fnToWrap)) {
-						client.push._handlers.notification[0] = fnToWrap;
-					}
-				};
+			// var client = node.collection.get('client'),
+			// 	fnToWrap = client.push && client.push._handlers.notification[0],
+			// 	wrapPushHandler = function(){
+			// 		if(_.isFunction(fnToWrap) && !fnToWrap.wrapped) {
+			// 			client.push._handlers.notification[0] = _.wrap(fnToWrap, function(func, data){
+			// 				var additionalData = data.additionalData || {};
+			// 				if(!(additionalData.foreground && additionalData.node && additionalData.node==node.get('name'))) {
+			// 					return func(data);
+			// 				}
+			// 			});
+			// 			client.push._handlers.notification[0].wrapped = true
+			// 		}
+			// 	},
+			// 	unwrapPushHandler = function() {
+			// 		if(_.isFunction(fnToWrap)) {
+			// 			client.push._handlers.notification[0] = fnToWrap;
+			// 		}
+			// 	};
 				// make sure we don't wrap this wrapper function
 
-				wrapPushHandler();
-				document.addEventListener("pause", unwrapPushHandler, false);
-				document.addEventListener("resume", wrapPushHandler, false);
+				// wrapPushHandler();
+				// document.addEventListener("pause", unwrapPushHandler, false);
+				// document.addEventListener("resume", wrapPushHandler, false);
 
 			view.on('closepage', function() {
 				app.trigger("stoptimer");
 				// debind the function wrapping the notifications system!
-				unwrapPushHandler();
-				document.removeEventListener("pause", unwrapPushHandler, false);
-				document.removeEventListener("resume", wrapPushHandler, false);
+				// unwrapPushHandler();
+				// document.removeEventListener("pause", unwrapPushHandler, false);
+				// document.removeEventListener("resume", wrapPushHandler, false);
 			});
 
 			window.view = view;
