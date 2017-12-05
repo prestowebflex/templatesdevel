@@ -656,6 +656,9 @@ AWSS3File = BackboneModelFileUpload.extend({
 		this.aborted = false;
 		options = options || {}
 		options.dataType = "xml";
+		options.beforeSend = function(xhr) {
+			xhr.setRequestHeader('Authorization', '');
+		};
 		this.xhr = Backbone.sync.call(this, method, model, options);
 		return this.xhr;
 		// if(method=="create") {
