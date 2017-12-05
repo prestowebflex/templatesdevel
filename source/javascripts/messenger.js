@@ -753,7 +753,7 @@ File = AbstractModel.extend({
 			// parse the xml and try and make a node respinse from it.
 			if(xhr.responseXML) {
 				$xml = $(xhr.responseXML).find("Error");
-				errorText = `${$xml.find("Code").text()}: ${$xml.find("Message").text()}`;
+				errorText = `${$xml.find("Code").text()}: ${$xml.find("Message").text()} ${$xml.find("ArgumentValue").text()}`;
 			} else {
 				errorText = `Request failed: ${xhr.statusText}`;
 			}
