@@ -750,7 +750,13 @@ File = AbstractModel.extend({
 			errorText = `Failed to connect to server: ${xhr.statusText}`;
 		} else if (xhr.readyState == 4) {
 			// request completed error from aws
-			errorText = `Request failed: ${xhr.statusText}`;
+			// parse the xml and try and make a node respinse from it.
+			if(xhr.responseXML) {
+				$xml = $(xhr.responseXML).find("Error");
+				errorText = `${$xml.find("Code").text()}: ${$xml.find("Message").text()}`;
+			} else {
+				errorText = `Request failed: ${xhr.statusText}`;
+			}
 		}
 		this.set({status: this.constructor.STATE_ERROR, errorText: errorText});
 		this.trigger('uploaderror', errorText);
@@ -1052,7 +1058,9 @@ FileView = AbstractView.extend({
 		// remove progressbar
 		this.$('.ui-slider').remove();
 		this.$("a").addClass('remove');
-		this.$('.statustext').text(`${_.escape(text)}`)
+		this.$('.statustext')
+			.css({whiteSpace:'normal', overflow: 'visible'})
+			.text(text);
 	},
 	refreshList: function(callback) {
 		_.defer(_.bind(function(){
