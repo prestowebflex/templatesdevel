@@ -1219,21 +1219,29 @@ FilesListView = AbstractView.extend({
 			});
 	},
 	_addPictureSuccess: function(imgUri) {
-		var a = document.createElement("a");
-		a.href = imgUri;
-		// console.log(imgUri);
-		window.resolveLocalFileSystemURL(a.href, _.bind(function(fileEntry) {
-			// console.log("FILEENTRY", fileEntry);
-			fileEntry.file(_.bind(function(entry){
-				// console.log("FILE", entry);
-				this.model.addFiles([entry], {node: this.getNode()});
-			}, this), function() {
-				console.log("error getting file entry");
-			});
-			// console.log(fileEntry);
-		}, this), _.bind(function(){
-			console.log("FILEENTRY FAILED", arguments);
-		}));
+		if(!imgUri) {
+			if(navigator && navigator.notification && navigator.notification.alert) {
+				navigator.notification.alert("Unable to load media from remote sources\nPlease choose from your gallery.", function() {});
+			} else {
+				alert("Unable to load media from remote sources\nPlease choose from your gallery.");	
+			}
+		} else {
+			var a = document.createElement("a");
+			a.href = imgUri;
+			// console.log(imgUri);
+			window.resolveLocalFileSystemURL(a.href, _.bind(function(fileEntry) {
+				// console.log("FILEENTRY", fileEntry);
+				fileEntry.file(_.bind(function(entry){
+					// console.log("FILE", entry);
+					this.model.addFiles([entry], {node: this.getNode()});
+				}, this), function() {
+					console.log("error getting file entry");
+				});
+				// console.log(fileEntry);
+			}, this), _.bind(function(){
+				console.log("FILEENTRY FAILED", arguments);
+			}));
+		}
 		// console.log("SUCCESS", arguments);
 	},
 	_addPictureError: function(message) {
