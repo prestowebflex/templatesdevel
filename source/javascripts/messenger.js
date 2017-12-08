@@ -345,8 +345,12 @@ Message = AbstractModel.extend({
 	ownerAvatarUrl: function() {
 		return this.get('owner').get('avatar_url');
 	},
-	getHtml: function(key) {
-		return _.escape(this.get(key));
+	getHtml: function(key, addBr) {
+		var txt = (_.escape(this.get(key)) || "");
+		if(addBr) {
+			return txt.replace(/$/mg,'<br />');
+		}
+		return txt;
 	},
 	validate: function(attrs, options) {
 		options || (options = {});
@@ -1725,7 +1729,7 @@ MessageRootView = AbstractMessageView.extend({
 		} else {
 			// show a message :)
 			this.$el.html(`
-						<p>${this.model.getHtml('message')}</p>
+						<p>${this.model.getHtml('message', true)}</p>
 						`);
 			// put a link to a page
 			if(this.model.get('link_node_id')) {
