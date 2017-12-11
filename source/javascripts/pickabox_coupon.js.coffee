@@ -228,8 +228,19 @@ class Prize
       #  message to be displayed: success or fail
       window.navigator.notification.alert "Coupons created successfully", (->), "Prize awarded"
 
-    generateCouponsError = (data, textStatus, jqXHR) =>
-      window.navigator.notification.confirm "Error generating coupons, retry?", (buttonIndex) ->
+    generateCouponsError = (jqXHR, textStatus, strError) =>
+      message = if jqXHR.readyState == 4
+        try
+          data = JSON.parse jqXHR.responseText
+          data.message
+        catch error
+          "Malformed JSON: #{e.message}"
+      else if jqXHR.readyState == 0
+        "Network error: #{jqXHR.statusText}"
+      else
+        "Other error"
+
+      window.navigator.notification.confirm "#{message}\nRetry creating coupon?", (buttonIndex) ->
         if buttonIndex==1
           # retry ajax
           doAjax()
