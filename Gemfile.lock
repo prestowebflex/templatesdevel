@@ -4,6 +4,15 @@ GIT
   specs:
     jasmine-core (2.0.1)
 
+GIT
+  remote: git://github.com/vast/middleman-es6.git
+  revision: b7964bd199457e930251d9ad3ce00ea6ad70b8d7
+  specs:
+    middleman-es6 (0.1.0)
+      babel-transpiler
+      middleman-core (>= 3.3.12, < 4.0)
+      middleman-sprockets (> 3.3)
+
 GEM
   remote: http://rubygems.org/
   specs:
@@ -35,6 +44,10 @@ GEM
       thread_safe (~> 0.1)
       tzinfo (~> 1.1)
     arel (5.0.1.20140414130214)
+    babel-source (5.8.35)
+    babel-transpiler (0.7.0)
+      babel-source (>= 4.0, < 6)
+      execjs (~> 2.0)
     builder (3.2.2)
     carrierwave (1.2.1)
       activemodel (>= 4.0.0)
@@ -378,6 +391,7 @@ DEPENDENCIES
   jquery-rails (= 2.1.4)
   jquery_mobile_rails (= 1.1.0)
   middleman (~> 3.3.3)
+  middleman-es6!
   middleman-jasmine
   middleman-livereload (~> 3.1.0)
   middleman-sprockets

@@ -29,3 +29,6 @@ gem "jasmine-core", github: "pivotal/jasmine"
 gem "carrierwave_direct"
 
 gem "compass", "~> 1.0"
+
+gem "middleman-es6", github: "vast/middleman-es6"
+

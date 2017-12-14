@@ -40,6 +40,8 @@ configure :development do
   activate :livereload
 end
 
+activate :es6
+
 activate :jasmine do |options|
   #options.fixtures_dir = "sprc"
 end

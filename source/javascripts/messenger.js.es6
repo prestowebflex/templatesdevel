@@ -65,6 +65,7 @@ var isAdvancedUpload = function() {
 		// return ( ( 'draggable' in div ) || ( 'ondragstart' in div && 'ondrop' in div ) ) && 'FormData' in window && 'FileReader' in window;
 },
 showConfirm = function(message, confirmCallback, title, buttonLabels) {
+			var _ref, _ref1;
             if (((_ref = window.navigator) != null ? (_ref1 = _ref.notification) != null ? _ref1.confirm : void 0 : void 0) != null) {
                 window.navigator.notification.confirm(message, confirmCallback, title, buttonLabels);
             } else {
@@ -537,7 +538,7 @@ Messages = AbstractCollection.extend({
 		return this.where({id: null});
 	},
 	comparator: function(a,b) {
-		return b.get('updated_at').getTime() - a.get('updated_at').getTime();
+		return a.get('updated_at').getTime() - b.get('updated_at').getTime();
 	}	
 	// sync: function(method, model, options) {
 	// 	console.log("MESSAGES.SYNC", method, model, options);
@@ -770,7 +771,7 @@ File = AbstractModel.extend({
 	},
 	setFile: function(file, callback) {
 		var reader = new FileReader()
-			var _this = this;
+			var _this = this, type;
 			if(!file.type) {
 				type = AWSS3File.inferTypeFromName(file.name);
 			} else {
@@ -1014,7 +1015,7 @@ AppView = AbstractView.extend({
 		this.$el.append(this.listView.render().el);
 
 		if(this.getNode().get('can_post')) {
-			this.$el.append(`<p><a href="#" class="create_new_message" data-iconpos="left" data-role="button" data-icon="plus">Compose message</a></p>`);
+			this.$el.prepend(`<p><a href="#" data-theme="${this.getNode().get('content')['theme'] || 'c'}" class="create_new_message" data-iconpos="left" data-role="button" data-icon="plus">Compose message</a></p>`);
 		}
 
 		// this.$el.css({margin: '-15px'});
@@ -1272,7 +1273,7 @@ FilesListView = AbstractView.extend({
 			            <div style="clear: both;"></div>
 					</li>
 				</ul>
-				`).attr({"data-role":'fieldcontain'});
+				`)
 		} else {
 			var acceptListForFile = _.chain(AWSS3File.MIME_TYPE_MAP).map(function(value, key){
 				return _.flatten([key,_.map(value, function(v){return `.${v}`;})]);
@@ -1284,8 +1285,19 @@ FilesListView = AbstractView.extend({
 				        <input accept="${acceptListForFile}" type="file" name="files[]" multiple name="file" id="${this.cid}_file" style="display: none;">
 					</li>
 				</ul>
-				`).attr({"data-role":'fieldcontain'});
+				`);
 
+		}
+		this.$el.attr({
+			"data-role":'fieldcontain',
+		});
+		var attachmentTheme = this.getNode().get('content')['attachment_theme'],
+			attachmentDividerTheme = this.getNode().get('content')['attachment_divider_theme'];
+		if(attachmentTheme) {
+			this.$('> ul').attr({'data-theme':attachmentTheme});
+		}
+		if(attachmentDividerTheme) {
+			this.$('> ul').attr({'data-divider-theme':attachmentTheme});
 		}
 		this.addAll();
 
@@ -1387,7 +1399,7 @@ MessageAndRepliesView = AbstractView.extend({
 		this.on('tock', this.updateTimeAgo, this);
 	},
 	className: function() {
-		return `ui-body ui-body-${this.getNode().get('content')['theme'] || 'a'}`;
+		return `ui-body ui-body-${this.getNode().get('content')['body_theme'] || this.getNode().get('content')['theme'] || 'a'}`;
 	},
 	render: function() {
 		this.$el.html(`
@@ -1901,7 +1913,7 @@ this.getStartMessagingAppFunction = function(view, node){
 				model: messages,
 				node: node,
 				app: actionCableApp,
-				el: view.$('.notification_template')[0] }).render();
+				el: view.$('.messenger_template')[0] }).render();
 			// TODO TEST THIS CODE COMMENTED OUT FOR NOW ALSO NEEDS MORE GUARDS AGAINST NULLS
 			// var client = node.collection.get('client'),
 			// 	fnToWrap = client.push && client.push._handlers.notification[0],
@@ -2188,5 +2200,5 @@ this.Message = Message;
 
 
 
-}).call(this);
+}).call(window);
 
