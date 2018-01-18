@@ -25,6 +25,7 @@ Comment 2
 input for new comment
 
 */
+
 if(!_.isFunction(Number.prototype.fileSize)) {
 	// extend Number to get fileSize out of it.
 	Object.defineProperty(Number.prototype,'fileSize',{value:function(a,b,c,d){
@@ -63,6 +64,22 @@ var isAdvancedUpload = function() {
 	return false;
 		// var div = document.createElement( 'div' );
 		// return ( ( 'draggable' in div ) || ( 'ondragstart' in div && 'ondrop' in div ) ) && 'FormData' in window && 'FileReader' in window;
+},
+// helper function for image tags in environment
+image_tag = function(data, key, attributesstr) {
+  var str = "<img ";
+  str += attributesstr;
+  str += " ";
+  if(data[key + "_id"]) {
+    // on app offline process available
+    str += "data-src=\"" + data[key] + "\" data-image=\"" + data[key + "_id"] + "\" ";
+  } else {
+    // live preview not available
+    str += "src=\"" + data[key] + "\" ";
+  }
+
+  str += " />";
+  return str;
 },
 showConfirm = function(message, confirmCallback, title, buttonLabels) {
 			var _ref, _ref1;
@@ -1017,7 +1034,24 @@ AppView = AbstractView.extend({
 		if(this.getNode().get('can_post')) {
 			this.$el.prepend(`<p><a href="#" data-theme="${this.getNode().get('content')['theme'] || 'c'}" class="create_new_message" data-iconpos="left" data-role="button" data-icon="plus">Compose message</a></p>`);
 		}
-
+		var content = this.getNode().get('content');
+		if(content.html) {
+			this.$el.prepend(`<div class="messenger_nodecontent">${content.html}</div>`);
+		}
+		if(content.header_image) {
+			var imageId,
+				imgDiv = $(`<div class="messenger_nodeheader">${image_tag(content,"header_image", 'width="100%"')}</div>`),
+				img = imgDiv.find('img');
+			this.$el.prepend(imgDiv);
+			// need to fill in this image now
+			if(imageId = img.data('image')) {
+			    this.getNode().collection.getAsync('image',imageId,function(image){
+			      image.geturl(function(href){
+			        img.attr('src', href);
+			      });
+			    });
+			}
+		}
 		// this.$el.css({margin: '-15px'});
 		_.defer(_.bind(function(){
 			this.$el.trigger('create');
