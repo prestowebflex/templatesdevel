@@ -1010,7 +1010,7 @@ AppView = AbstractView.extend({
 	},
 	render: function() {
 		this.$el.html('');
-		this.listView = new MessageListView({ node: this.getNode(), model: this.model, parent_id: null, messageListViewClass: MessageAndRepliesView});
+		this.listView = new MessageListView({ reverse: true, node: this.getNode(), model: this.model, parent_id: null, messageListViewClass: MessageAndRepliesView});
 		this.addView(this.listView);
 		this.$el.append(this.listView.render().el);
 
@@ -1378,7 +1378,7 @@ MessageListView = AbstractView.extend({
 	},
 	resort: function() {
 		this._subviews = _.sortBy(this._subviews, function(v) {
-			return this.model.indexOf(v.model);
+			return (this.model.indexOf(v.model) * (this.options.reverse?-1:1))
 		},this);
 		_.each(this._subviews, function(v) {
 			this.$el.append(v.$el);
