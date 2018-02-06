@@ -424,8 +424,8 @@ class TileFlip
 
     @game_state.flipTile(number)
 
-    console.log(nToCollect + ' <= ' + nCollected)
-    console.log(@wonPrize)
+    # console.log(nToCollect + ' <= ' + nCollected)
+    # console.log(@wonPrize)
 
     if (nToCollect <= nCollected)
 
@@ -436,7 +436,14 @@ class TileFlip
         coupons = @wonPrize._getCouponData()
         # show the first won coupon in the panel
         # note $ here is a alias for jQuery.find()
-        html $(".game_over"), window.jQuery('<div></div>').html(window.jQuery(@wonPrize.html).find('img').first())
+        # console.log "WON PRIZE"
+        won_html = window.jQuery('<div></div>')
+        if @wonPrize.winning_image
+          won_html.append "<img data-src='#{@wonPrize.winning_image}', data-image='#{@wonPrize.winning_image_id}' width='100%'/>"
+        else
+          won_html.html $(@wonPrize.html).find('img').first()
+        html $(".game_over"), won_html
+
         if coupons.length > 1
           $(".game_over").append("<p>Plus " + (coupons.length-1) + " more</p>")
         # if more than one coupon won then indicate this below the first coupon
@@ -508,10 +515,12 @@ class Prize
   validTo: new Date(2038,1,1) # leave this out for now
   validFrom: new Date(0) # leave this out for now
   html: ""
+  winning_image: null
+  winning_image_id: null
   number_collected: 0
   number_to_collect: 0
   constructor: (@id, @data = {}) ->
-    {@html, @odds, @number_to_collect, @number_collected} = @data
+    {@winning_image, @winning_image_id, @html, @odds, @number_to_collect, @number_collected} = @data
     @odds = Number(@odds)
     @number_to_collect = Number(@number_to_collect)
     @number_collected = Number(@number_collected)

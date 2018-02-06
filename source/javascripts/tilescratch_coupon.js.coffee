@@ -573,8 +573,8 @@ class TileScratch
     @game_state.save()
 
     # put enough of the won prize in the array
-    console.log('wonPrize')
-    console.log(wonPrize)
+    # console.log('wonPrize')
+    # console.log(wonPrize)
 
 
     if wonPrize?
@@ -697,16 +697,24 @@ class TileScratch
     prize?.getCoupon couponId
 
   checkGameOver: (forceGameOver) ->
-    console.log('checkGameOver');
+    # console.log('checkGameOver');
     
     if @wonPrize && (@prizes_to_collect <= @collected_prize_count)
       @wonPrize.generateCoupons(@node)
       coupons = @wonPrize._getCouponData()
       # show the first won coupon in the panel
-      html $(".game_over"), $('<div></div>').html($(@wonPrize.html).find('img').first())
+      won_html = window.jQuery('<div></div>')
+      if @wonPrize.winning_image
+        won_html.append "<img data-src='#{@wonPrize.winning_image}', data-image='#{@wonPrize.winning_image_id}' width='100%'/>"
+      else
+        won_html.html $(@wonPrize.html).find('img').first()
+      html $(".game_over"), won_html
+      # console.log "GAME OVER HTML IS ", $('.game_over').html()
+
 
       if coupons.length > 1
         $(".game_over").append("<p>Plus " + (coupons.length-1) + " more</p>")
+      $(".game_over").show()
       # if more than one coupon won then indicate this below the first coupon
       # todo: think of better alternatives than this approach
       $('.tile-flip-btn .ui-btn-inner').text(@wonPrize.number_to_collect + ' found, you win!')
@@ -738,10 +746,12 @@ class Prize
   validTo: new Date(2038,1,1) # leave this out for now
   validFrom: new Date(0) # leave this out for now
   html: ""
+  winning_image: null
+  winning_image_id: null
   number_collected: 0
   number_to_collect: 0
   constructor: (@id, @data = {}) ->
-    {@html, @odds, @number_to_collect, @number_collected} = @data
+    {@winning_image, @winning_image_id, @html, @odds, @number_to_collect, @number_collected} = @data
     @odds = Number(@odds)
     @number_to_collect = Number(@number_to_collect)
     @number_collected = Number(@number_collected)
