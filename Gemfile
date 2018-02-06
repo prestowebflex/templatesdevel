@@ -16,6 +16,7 @@ gem "wdm", "~> 0.1.0", :platforms => [:mswin, :mingw]
 # Windows does not come with time zone data
 gem "tzinfo-data", platforms: [:mswin, :mingw]
 
+gem 'puma'
 
 gem "jquery_mobile_rails",  "1.1.0", require: false
 
