@@ -703,18 +703,21 @@ class TileScratch
       @wonPrize.generateCoupons(@node)
       coupons = @wonPrize._getCouponData()
       # show the first won coupon in the panel
-      won_html = window.jQuery('<div></div>')
-      if @wonPrize.winning_image
-        won_html.append "<img data-src='#{@wonPrize.winning_image}', data-image='#{@wonPrize.winning_image_id}' width='100%'/>"
-      else
-        won_html.html $(@wonPrize.html).find('img').first()
-      html $(".game_over"), won_html
-      # console.log "GAME OVER HTML IS ", $('.game_over').html()
+      setTimeout(=>
+        won_html = window.jQuery('<div></div>')
+        if @wonPrize.winning_image
+          won_html.append "<img data-src='#{@wonPrize.winning_image}', data-image='#{@wonPrize.winning_image_id}' width='100%'/>"
+        else
+          won_html.html $(@wonPrize.html).find('img').first()
+        html $(".game_over"), won_html
+        # console.log "GAME OVER HTML IS ", $('.game_over').html()
+        $(".game_over").fadeIn(1000)
+      , 2000)
 
 
       if coupons.length > 1
         $(".game_over").append("<p>Plus " + (coupons.length-1) + " more</p>")
-      $(".game_over").show()
+
       # if more than one coupon won then indicate this below the first coupon
       # todo: think of better alternatives than this approach
       $('.tile-flip-btn .ui-btn-inner').text(@wonPrize.number_to_collect + ' found, you win!')
@@ -725,16 +728,18 @@ class TileScratch
     if @is_game_complete || forceGameOver
       unless is_continuing_after_gameover
         is_continuing_after_gameover = true
-        $('.game_over').fadeIn()
-        $('.panel').fadeOut()      
-        @game_state.reset()
-        $('canvas').hide()
-        unless (@drawn >= @max_daily_draws)
-          $('.game_over').click -> 
-            $(this).hide()
-            $('.panel').show()
-            $('canvas').show()      
-      window.clearInterval sampleInterval
+        setTimeout(=>
+          $('.game_over').fadeIn()
+          $('.panel').fadeOut()      
+          @game_state.reset()
+          $('canvas').hide()
+          unless (@drawn >= @max_daily_draws)
+            $('.game_over').click -> 
+              $(this).hide()
+              $('.panel').show()
+              $('canvas').show()      
+          window.clearInterval sampleInterval
+        ,3000)
 
 
 
