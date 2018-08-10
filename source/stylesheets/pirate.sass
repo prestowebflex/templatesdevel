@@ -1,0 +1,119 @@
+$bg: 'pirate/stage.jpg'
+$scale: 0.4
+@font-face
+    font-family: 'rapscallion'
+    src: image-url('fonts/rapscallion/Rapscallion.eot')
+    src: image-url('fonts/rapscallion/Rapscallion.eot?#iefix') format('embedded-opentype'), /* IE6-IE8 */ image-url('fonts/rapscallion/Rapscallion.woff2') format('woff2'), /* Super Modern Browsers */ image-url('../fonts/rapscallion/Rapscallion.woff') format('woff'), /* Pretty Modern Browsers */ image-url('fonts/rapscallion/Rapscallion.ttf') format('truetype'), /* Safari, Android, iOS */ image-url('fonts/rapscallion/Rapscallion.svg#svgFontName') format('svg')
+    /* IE9 Compat Modes */
+    /* Legacy iOS */
+
+.pirate-island-container
+    // make sure this fills the stage
+    // width: calc(100% + 30px)
+    // height: image-height($bg) * $scale
+    position: absolute
+    left: 0
+    right: 0
+    height: 0 //calc(100% - 42px) to be set via js
+    // bottom: 0
+    // height: 200px
+    // margin: -15px
+    margin-top: -15px
+    background-color: #715e45
+    z-index: 2000 // cover the footer (if any)
+    overflow: hidden
+    // all fonts are the same
+    font-family: 'rapscallion'
+    color: black
+    // -webkit-text-shadow: 0 0 10px rgba(101, 1,1, 0.5) //#650101 //cf
+    text-shadow: 0 0 10px rgba(101, 1,1, 0.5) // #650101 //cf
+    
+.pirate-island
+    font-size: 80px
+    // everything inside here is px units perfect
+    // it's scaled with a transform
+    margin: 0 auto
+    position: relative
+    width: image-width($bg)
+    height: image-height($bg)
+    background-image: image-url($bg)
+    // transform: scale($scale)
+    transform-origin: 0 0
+    // object-fit: contain
+
+.pirate-heading
+    position: absolute
+    top: 20px
+.pirate-mystery-island, .pirate-diamond-island, .pirate-gold-island, .pirate-silver-island, .pirate-antique-island
+    // background-color: rgba(75,75,75,0.5)
+    height: 300px
+    // width: 100%
+    position: absolute
+    right: 30px
+.pirate-mystery-island
+    top: 210px
+    left: 180px
+.pirate-diamond-island
+    top: 550px
+    left: 180px
+.pirate-gold-island
+    top: 890px
+    left: 200px
+.pirate-silver-island
+    top: 1220px
+    left: 200px 
+.pirate-antique-island
+    top: 1550px
+    left: 200px 
+
+.pirate-subheading
+    font-size: 80%
+
+$islands: mystery diamond gold silver antique xx
+@for $i from 1 to length($islands)
+    $island: nth($islands, $i)
+    .pirate-#{$island}-island
+        .status.found:before, .status.togo:before
+            display: block
+            position: absolute
+            top: -20px
+            left: -100px
+            height: 100px
+            width: 80px
+            content: ''
+            background-size: cover
+            background-repeat: no-repeat
+        .status.found:before
+            $img: "pirate/#{$island}-island-loot-img.png"
+            background-image: image-url($img)
+        .status.togo:before
+            // next island picture
+            $nextisland: nth($islands, max(1,$i - 1))
+            background-image: image-url("pirate/#{$nextisland}-island-loot-img.png")
+
+
+.status
+    position: absolute
+    &.found, &.togo
+        font-size: 90%
+        position: relative
+        left: 200px
+    &.found
+        top: 120px
+        &:after
+            position: absolute
+            display: block
+            top: -10px
+            right: 250px
+            content: ''
+            background-image: image-url('pirate/face.png')
+            height: 180px
+            width: 160px
+            background-size: cover
+    &.togo
+        top: 145px
+        left: 230px
+    &.completed
+        color: red
+        top: 140px
+        right: 40px
