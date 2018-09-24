@@ -544,15 +544,18 @@ class TileScratch
       panel = $('.panel[data-box="'+flippedId+'"]')
       panel.addClass('flipped').addClass('locked')
 
-    # make it reset at midnight every day by default
-    interval = RepeatingIntervalGenerator.generate(_.extend {type: "everyday", hour:0, minute:0}, data, {length: 0, allday: 0, times: 1})[0]
-    period = interval.prev().getStart() # get the start of the previous period
-    @next_period = interval.getStart() # this is the time to start the next interval
-    # filter this by date number of records is the box count
-    @drawn = _.chain(@node.where(_datatype:"tilescratch")).select((v) ->
-        d = new Date(v.get("timedrawn"))
-        d.valueOf() > period.valueOf()
-       ).value().length
+    if data['type'] == 'once'
+      @drawn = @node.where(_datatype:"tilescratch").length
+    else
+      # make it reset at midnight every day by default
+      interval = RepeatingIntervalGenerator.generate(_.extend {type: "everyday", hour:0, minute:0}, data, {length: 0, allday: 0, times: 1})[0]
+      period = interval.prev().getStart() # get the start of the previous period
+      @next_period = interval.getStart() # this is the time to start the next interval
+      # filter this by date number of records is the box count
+      @drawn = _.chain(@node.where(_datatype:"tilescratch")).select((v) ->
+          d = new Date(v.get("timedrawn"))
+          d.valueOf() > period.valueOf()
+        ).value().length
 
 
   shuffle = (arr) ->
