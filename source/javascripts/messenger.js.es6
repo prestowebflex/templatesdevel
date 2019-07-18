@@ -942,7 +942,8 @@ AppView = AbstractView.extend({
 		}
 		return events;
 	},
-	addBlankMessage: function() {
+	addBlankMessage: function(evt) {
+		evt.preventDefault()
 		this.model.add(new Message({draft: true},{client_guid: this.model.client_guid, node: this.getNode()}));
 	},
 	initialize: function(options) {
